@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512" role="img" aria-label="Logo SukiOS">
+  <defs>
+    <!-- Gradien Aurora: ungu → teal, arah 135° -->
+    <linearGradient id="aurora" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#7C5CFF"/>
+      <stop offset="1" stop-color="#35D0BA"/>
+    </linearGradient>
+    <!-- Highlight kaca: lembut, tanpa garis tepi -->
+    <linearGradient id="glass" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#FFFFFF" stop-opacity=".18"/>
+      <stop offset=".55" stop-color="#FFFFFF" stop-opacity=".03"/>
+      <stop offset="1" stop-color="#0B0D12" stop-opacity=".12"/>
+    </linearGradient>
+    <radialGradient id="sheen" cx=".34" cy=".06" r=".78">
+      <stop offset="0" stop-color="#FFFFFF" stop-opacity=".26"/>
+      <stop offset=".45" stop-color="#FFFFFF" stop-opacity=".08"/>
+      <stop offset="1" stop-color="#FFFFFF" stop-opacity="0"/>
+    </radialGradient>
+    <clipPath id="tile">
+      <rect x="0" y="0" width="512" height="512" rx="174"/>
+    </clipPath>
+  </defs>
+
+  <!-- Dasar squircle + gradien Aurora -->
+  <rect x="0" y="0" width="512" height="512" rx="174" fill="url(#aurora)"/>
+
+  <!-- Lapisan kaca (Suki Glass) -->
+  <g clip-path="url(#tile)">
+    <rect x="0" y="0" width="512" height="512" fill="url(#glass)"/>
+    <rect x="0" y="0" width="512" height="512" fill="url(#sheen)"/>
+  </g>
+
+  <!-- Huruf S: satu kurva kontinu, ujung membulat -->
+  <g transform="translate(40 32) scale(4.4)" fill="none" stroke="#FFFFFF"
+     stroke-width="8.5" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M70 33c-3-7-10-11-20-11-11 0-19 5-19 13 0 8 7 12 19 15 12 3 20 7 20 16 0 9-9 14-20 14-11 0-19-4-22-11"/>
+  </g>
+
+  <!-- Border halus khas kaca -->
+  <rect x="1" y="1" width="510" height="510" rx="173" fill="none"
+        stroke="#FFFFFF" stroke-opacity=".16" stroke-width="2"/>
+</svg>

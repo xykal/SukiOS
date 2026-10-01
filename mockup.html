@@ -1,0 +1,1278 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SukiOS — Mockup Interaktif</title>
+<style>
+/* ============================================================
+   SukiOS · Suki Glass Design System v1.0
+   Semua token di bawah ini memetakan 1:1 ke DESIGN.md
+   ============================================================ */
+:root{
+  /* Brand */
+  --accent:#7C5CFF;
+  --accent-2:#35D0BA;
+  --accent-subtle:rgba(124,92,255,.16);
+  --on-accent:#ffffff;
+
+  /* Dark neutrals (default) */
+  --bg-base:#0B0D12;
+  --bg-surface:#12151D;
+  --bg-elevated:#1A1F2B;
+  --bg-overlay:#242A38;
+  --stroke-subtle:rgba(255,255,255,.07);
+  --stroke-strong:rgba(255,255,255,.14);
+  --text-primary:#F2F4F8;
+  --text-secondary:#A8B0C0;
+  --text-disabled:#5A6274;
+  --mica:rgba(18,21,29,.62);
+  --acrylic:rgba(26,31,43,.72);
+  --danger:#FF5F56;
+  --success:#3FD08A;
+  --warning:#FFB44C;
+  --info:#5B9DFF;
+
+  /* Shape */
+  --r-xs:4px; --r-sm:8px; --r-md:12px; --r-lg:16px; --r-xl:24px; --r-full:999px;
+  --el1:0 2px 8px rgba(0,0,0,.18);
+  --el2:0 8px 24px rgba(0,0,0,.28);
+  --el3:0 16px 40px rgba(0,0,0,.38);
+  --el4:0 24px 64px rgba(0,0,0,.48);
+
+  /* Motion */
+  --m-instant:90ms; --m-fast:150ms; --m-base:220ms; --m-slow:320ms;
+  --ease:cubic-bezier(.2,0,0,1);
+  --ease-slow:cubic-bezier(.05,.7,.1,1);
+
+  /* Metrics */
+  --taskbar-h:48px;
+  --blur:28px;
+}
+:root[data-theme="light"]{
+  --bg-base:#EEF1F7; --bg-surface:#F8FAFD; --bg-elevated:#FFFFFF; --bg-overlay:#FFFFFF;
+  --stroke-subtle:rgba(10,15,30,.08); --stroke-strong:rgba(10,15,30,.14);
+  --text-primary:#0E1320; --text-secondary:#4A5468; --text-disabled:#98A0B0;
+  --mica:rgba(248,250,253,.66); --acrylic:rgba(255,255,255,.76);
+  --el1:0 2px 8px rgba(20,30,60,.08);
+  --el2:0 8px 24px rgba(20,30,60,.12);
+  --el3:0 16px 40px rgba(20,30,60,.16);
+  --el4:0 24px 64px rgba(20,30,60,.2);
+}
+:root[data-blur="off"]{ --blur:0px; --mica:var(--bg-surface); --acrylic:var(--bg-elevated); }
+
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;overflow:hidden}
+body{
+  font-family:Inter,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  background:var(--bg-base); color:var(--text-primary);
+  -webkit-font-smoothing:antialiased; user-select:none;
+}
+button{font:inherit;color:inherit;background:none;border:none;cursor:pointer}
+.icon{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:1.75;
+      stroke-linecap:round;stroke-linejoin:round;flex:none}
+
+/* ===================== BOOT SPLASH ===================== */
+#boot{position:fixed;inset:0;z-index:9999;background:radial-gradient(circle at 50% 40%,#161B29,#07080C 70%);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:22px;transition:opacity var(--m-slow) var(--ease)}
+#boot.hide{opacity:0;pointer-events:none}
+.boot-logo{width:96px;height:96px;border-radius:30px;background:linear-gradient(135deg,var(--accent),var(--accent-2));
+  display:grid;place-items:center;box-shadow:0 20px 60px rgba(124,92,255,.45);animation:bootIn 900ms var(--ease-slow) both}
+@keyframes bootIn{from{transform:scale(.7);opacity:0}to{transform:scale(1);opacity:1}}
+.boot-logo svg{width:54px;height:54px;stroke:#fff;fill:none;stroke-width:9;stroke-linecap:round}
+.boot-text{color:#E8ECF6;font-size:15px;letter-spacing:.14em;text-transform:uppercase;font-weight:600;opacity:.85}
+.boot-dots{display:flex;gap:6px}
+.boot-dots i{width:6px;height:6px;border-radius:50%;background:var(--accent);opacity:.3;animation:dot 1.2s infinite}
+.boot-dots i:nth-child(2){animation-delay:.15s}.boot-dots i:nth-child(3){animation-delay:.3s}
+@keyframes dot{0%,100%{opacity:.25;transform:scale(.85)}50%{opacity:1;transform:scale(1)}}
+#bootTip{position:absolute;bottom:36px;color:#7B849B;font-size:12px}
+
+/* ===================== WALLPAPER ===================== */
+#wallpaper{position:fixed;inset:0;background:var(--bg-base);overflow:hidden;filter:brightness(var(--bright,1))}
+#wallpaper .wp{position:absolute;inset:0;transition:opacity 500ms var(--ease)}
+.wp-aurora{background:
+  radial-gradient(900px 640px at 18% 12%,rgba(124,92,255,.55),transparent 62%),
+  radial-gradient(760px 620px at 82% 22%,rgba(53,208,186,.40),transparent 60%),
+  radial-gradient(820px 700px at 62% 96%,rgba(255,122,182,.30),transparent 62%),
+  linear-gradient(160deg,#0A0C12,#0E1220 55%,#0A0D16)}
+.wp-ember{background:
+  radial-gradient(820px 620px at 22% 20%,rgba(255,180,76,.42),transparent 60%),
+  radial-gradient(760px 640px at 78% 78%,rgba(255,95,86,.34),transparent 62%),
+  linear-gradient(160deg,#120C0A,#1A1010 60%,#0C0908)}
+.wp-mint{background:
+  radial-gradient(840px 620px at 25% 78%,rgba(53,208,186,.46),transparent 62%),
+  radial-gradient(720px 620px at 78% 18%,rgba(91,157,255,.32),transparent 60%),
+  linear-gradient(160deg,#08110F,#0A1620 60%,#070C10)}
+.wp-noir{background:
+  radial-gradient(900px 700px at 50% 30%,rgba(180,190,220,.16),transparent 60%),
+  linear-gradient(160deg,#08090C,#111318 60%,#05060A)}
+.grain{position:absolute;inset:0;opacity:.05;pointer-events:none;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence baseFrequency='.8' numOctaves='3'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)'/%3E%3C/svg%3E")}
+
+/* ===================== DESKTOP ===================== */
+#desktop{position:fixed;inset:0 0 var(--taskbar-h) 0;overflow:hidden}
+#iconGrid{position:absolute;inset:12px auto auto 12px;display:grid;
+  grid-auto-flow:column;grid-template-rows:repeat(6,100px);gap:0}
+.dicon{width:80px;height:100px;display:flex;flex-direction:column;align-items:center;gap:6px;
+  padding:8px 4px;border-radius:var(--r-sm);border:1px solid transparent;cursor:default;touch-action:none}
+.dicon:hover{background:rgba(255,255,255,.07);border-color:var(--stroke-subtle)}
+.dicon.sel{background:var(--accent-subtle);border-color:rgba(124,92,255,.5)}
+.dicon .glyph{width:48px;height:48px;border-radius:14px;display:grid;place-items:center;
+  box-shadow:0 6px 16px rgba(0,0,0,.32)}
+.dicon .glyph svg{width:24px;height:24px;stroke:#fff;fill:none;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+.dicon span{font-size:10.5px;font-weight:600;color:#fff;text-shadow:0 1px 4px rgba(0,0,0,.7);
+  text-align:center;line-height:1.25;max-width:76px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+/* ===================== WINDOWS ===================== */
+#winLayer{position:absolute;inset:0}
+.win{position:absolute;display:flex;flex-direction:column;min-width:320px;min-height:240px;
+  border-radius:var(--r-lg);overflow:hidden;background:var(--acrylic);
+  backdrop-filter:blur(var(--blur));-webkit-backdrop-filter:blur(var(--blur));
+  border:1px solid var(--stroke-strong);box-shadow:var(--el1);
+  transition:opacity var(--m-slow) var(--ease-slow),transform var(--m-slow) var(--ease-slow)}
+.win.active{box-shadow:var(--el3);border-color:color-mix(in srgb,var(--accent) 45%,transparent)}
+.win.animating{transition:left var(--m-slow) var(--ease-slow),top var(--m-slow) var(--ease-slow),
+  width var(--m-slow) var(--ease-slow),height var(--m-slow) var(--ease-slow),opacity var(--m-base),transform var(--m-base)}
+.win.minimized{opacity:0;transform:scale(.2) translateY(120px);pointer-events:none}
+.win.opening{opacity:0;transform:scale(.94)}
+.win .titlebar{height:40px;display:flex;align-items:center;gap:10px;padding:0 8px 0 14px;
+  flex:none;cursor:grab;touch-action:none}
+.win .titlebar:active{cursor:grabbing}
+.win .titlebar .wicon{width:16px;height:16px;flex:none;border-radius:5px;display:grid;place-items:center}
+.win .titlebar .wicon svg{width:11px;height:11px;stroke:#fff;fill:none;stroke-width:2.2}
+.win .titlebar .wtitle{font-size:15px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1}
+.wctl{display:flex;gap:4px}
+.wbtn{width:32px;height:32px;border-radius:var(--r-sm);display:grid;place-items:center;transition:background var(--m-instant)}
+.wbtn:hover{background:var(--stroke-subtle)}
+.wbtn.close:hover{background:var(--danger)}
+.wbtn.close:hover .icon{stroke:#fff}
+.wbtn .icon{width:14px;height:14px}
+.wbody{flex:1;overflow:auto;padding:16px;font-size:14px;line-height:1.5;user-select:text}
+.win.maximized{border-radius:0;border-color:transparent}
+.rz{position:absolute;touch-action:none}
+.rz.n{top:0;left:8px;right:8px;height:6px;cursor:ns-resize}
+.rz.s{bottom:0;left:8px;right:8px;height:6px;cursor:ns-resize}
+.rz.w{left:0;top:8px;bottom:8px;width:6px;cursor:ew-resize}
+.rz.e{right:0;top:8px;bottom:8px;width:6px;cursor:ew-resize}
+.rz.nw{top:0;left:0;width:14px;height:14px;cursor:nwse-resize}
+.rz.ne{top:0;right:0;width:14px;height:14px;cursor:nesw-resize}
+.rz.sw{bottom:0;left:0;width:14px;height:14px;cursor:nesw-resize}
+.rz.se{bottom:0;right:0;width:14px;height:14px;cursor:nwse-resize}
+.win.maximized .rz{display:none}
+.win.snapping .wbody,.win.snapping .titlebar{opacity:.85}
+
+/* Snap preview */
+#snapPreview{position:absolute;border-radius:var(--r-lg);background:var(--accent-subtle);
+  border:2px solid var(--accent);opacity:0;transition:all var(--m-instant) linear;pointer-events:none;z-index:5}
+
+/* ===================== TASKBAR ===================== */
+#taskbar{position:fixed;left:0;right:0;bottom:0;height:var(--taskbar-h);z-index:60;
+  display:flex;align-items:center;gap:6px;padding:0 12px;
+  background:var(--mica);backdrop-filter:blur(var(--blur));-webkit-backdrop-filter:blur(var(--blur));
+  border-top:1px solid var(--stroke-subtle)}
+#taskbar.pos-top{top:0;bottom:auto;border-top:none;border-bottom:1px solid var(--stroke-subtle)}
+.tb-btn{height:36px;min-width:36px;padding:0 8px;border-radius:var(--r-sm);display:flex;align-items:center;
+  gap:8px;transition:background var(--m-instant);position:relative}
+.tb-btn:hover{background:var(--stroke-subtle)}
+.tb-btn.on{background:var(--accent-subtle)}
+.tb-btn .glyph{width:26px;height:26px;border-radius:8px;display:grid;place-items:center;flex:none}
+.tb-btn .glyph svg{width:15px;height:15px;stroke:#fff;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+#searchPill{height:34px;border-radius:var(--r-full);background:var(--stroke-subtle);
+  border:1px solid var(--stroke-subtle);display:flex;align-items:center;gap:8px;padding:0 14px;
+  color:var(--text-secondary);font-size:12.5px;min-width:210px}
+#searchPill:hover{background:var(--bg-elevated);color:var(--text-primary)}
+#tbApps{display:flex;align-items:center;gap:4px;flex:1;overflow:hidden}
+.tb-app{position:relative;padding-bottom:6px}
+.tb-app .glyph{width:30px;height:30px;border-radius:9px;display:grid;place-items:center;transition:transform var(--m-fast)}
+.tb-app:hover .glyph{transform:translateY(-2px)}
+.tb-app .glyph svg{width:16px;height:16px;stroke:#fff;fill:none;stroke-width:1.9}
+.tb-app .dot{position:absolute;bottom:0;left:50%;transform:translateX(-50%);width:16px;height:3px;
+  border-radius:2px;background:var(--text-disabled);transition:all var(--m-fast)}
+.tb-app.run .dot{background:var(--accent)}
+.tb-app.act .dot{width:24px;background:var(--accent)}
+#tray{margin-left:auto;display:flex;align-items:center;gap:2px}
+#tray .tb-btn{gap:6px;font-size:12px;font-weight:500}
+#clock{text-align:right;line-height:1.15}
+#clock b{display:block;font-size:12.5px;font-weight:600;font-variant-numeric:tabular-nums}
+#clock i{font-style:normal;font-size:11px;color:var(--text-secondary)}
+.badge{position:absolute;top:4px;right:4px;min-width:15px;height:15px;border-radius:var(--r-full);
+  background:var(--danger);color:#fff;font-size:9.5px;font-weight:700;display:grid;place-items:center;padding:0 3px}
+
+/* ===================== PANELS ===================== */
+.panel{position:fixed;z-index:70;background:var(--mica);
+  backdrop-filter:blur(calc(var(--blur) + 8px));-webkit-backdrop-filter:blur(calc(var(--blur) + 8px));
+  border:1px solid var(--stroke-strong);box-shadow:var(--el2);
+  opacity:0;transform:translateY(14px) scale(.97);pointer-events:none;
+  transition:opacity var(--m-base) var(--ease),transform var(--m-base) var(--ease)}
+.panel.open{opacity:1;transform:none;pointer-events:auto}
+
+/* Start menu */
+#startMenu{left:50%;margin-left:-320px;bottom:calc(var(--taskbar-h) + 12px);width:640px;
+  max-width:calc(100vw - 24px);height:640px;max-height:calc(100vh - var(--taskbar-h) - 32px);
+  border-radius:var(--r-xl);padding:18px;display:flex;flex-direction:column;gap:14px;
+  transform-origin:bottom center}
+:root[data-taskbar="top"] #startMenu{top:calc(var(--taskbar-h) + 12px);bottom:auto;transform-origin:top center}
+#startMenu.open{transform:none}
+.searchfield{height:44px;border-radius:var(--r-full);background:var(--bg-elevated);
+  border:1px solid var(--stroke-subtle);display:flex;align-items:center;gap:10px;padding:0 16px;flex:none}
+.searchfield input{flex:1;background:none;border:none;outline:none;color:var(--text-primary);font-size:14px;user-select:text}
+.searchfield input::placeholder{color:var(--text-disabled)}
+.stabs{display:flex;gap:6px;flex:none}
+.stab{padding:7px 14px;border-radius:var(--r-full);font-size:12.5px;font-weight:600;color:var(--text-secondary)}
+.stab:hover{background:var(--stroke-subtle)}
+.stab.on{background:var(--accent-subtle);color:var(--accent)}
+.spanel{flex:1;overflow:auto;padding-right:4px}
+.grid-apps{display:grid;grid-template-columns:repeat(6,1fr);gap:4px;align-content:start}
+.gapp{padding:12px 6px;border-radius:var(--r-md);display:flex;flex-direction:column;align-items:center;gap:8px;text-align:center}
+.gapp:hover{background:var(--stroke-subtle)}
+.gapp .glyph{width:38px;height:38px;border-radius:11px;display:grid;place-items:center}
+.gapp .glyph svg{width:19px;height:19px;stroke:#fff;fill:none;stroke-width:1.9}
+.gapp span{font-size:11.5px;font-weight:500;line-height:1.3;max-width:100%;overflow:hidden;
+  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+.list-apps{display:flex;flex-direction:column;gap:2px}
+.lapp{display:flex;align-items:center;gap:12px;padding:9px 12px;border-radius:var(--r-sm);font-size:13.5px;font-weight:500}
+.lapp:hover{background:var(--stroke-subtle)}
+.lapp .glyph{width:28px;height:28px;border-radius:8px;display:grid;place-items:center;flex:none}
+.lapp .glyph svg{width:14px;height:14px;stroke:#fff;fill:none;stroke-width:1.9}
+.lapp small{margin-left:auto;color:var(--text-disabled);font-size:11px}
+.sfooter{flex:none;display:flex;align-items:center;gap:12px;padding-top:12px;border-top:1px solid var(--stroke-subtle)}
+.suser{display:flex;align-items:center;gap:10px;font-size:13px;font-weight:600;padding:6px 10px;border-radius:var(--r-sm)}
+.suser:hover{background:var(--stroke-subtle)}
+.avatar{width:30px;height:30px;border-radius:50%;background:linear-gradient(135deg,var(--accent),var(--accent-2));
+  display:grid;place-items:center;font-size:12px;font-weight:700;color:#fff}
+.pbtn{margin-left:auto;width:38px;height:38px;border-radius:var(--r-sm);display:grid;place-items:center}
+.pbtn:hover{background:var(--stroke-subtle);color:var(--accent)}
+.empty{color:var(--text-disabled);text-align:center;padding:38px 0;font-size:13px}
+
+/* Quick settings */
+#quickPanel{right:12px;bottom:calc(var(--taskbar-h) + 12px);width:400px;max-width:calc(100vw - 24px);
+  border-radius:var(--r-xl);padding:18px;display:flex;flex-direction:column;gap:16px}
+.slider{width:100%;-webkit-appearance:none;appearance:none;height:4px;border-radius:2px;
+  background:linear-gradient(90deg,var(--accent) var(--p,50%),var(--stroke-strong) var(--p,50%));outline:none}
+.slider::-webkit-slider-thumb{-webkit-appearance:none;width:16px;height:16px;border-radius:50%;background:#fff;
+  box-shadow:0 2px 6px rgba(0,0,0,.4);cursor:pointer}
+.slider::-moz-range-thumb{width:16px;height:16px;border:none;border-radius:50%;background:#fff;cursor:pointer}
+.srow{display:flex;align-items:center;gap:10px;font-size:12.5px}
+.srow span{color:var(--text-secondary);width:74px;flex:none}
+.qgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+.qtile{display:flex;flex-direction:column;align-items:center;gap:8px;padding:14px 4px;border-radius:var(--r-lg);
+  background:var(--stroke-subtle);border:1px solid transparent;transition:all var(--m-fast)}
+.qtile span{font-size:11px;color:var(--text-secondary);font-weight:500}
+.qtile.on{background:var(--accent);border-color:var(--accent)}
+.qtile.on span{color:var(--on-accent)}
+.qtile:not(.on):hover{background:var(--bg-elevated);border-color:var(--stroke-strong)}
+
+/* Task view */
+#taskView{position:fixed;inset:0;z-index:65;background:rgba(8,10,16,.62);
+  backdrop-filter:blur(22px);-webkit-backdrop-filter:blur(22px);
+  display:flex;align-items:center;justify-content:center;gap:22px;flex-wrap:wrap;padding:60px 40px;
+  opacity:0;pointer-events:none;transition:opacity var(--m-base) var(--ease)}
+#taskView.open{opacity:1;pointer-events:auto}
+.tvcard{width:300px;height:210px;border-radius:var(--r-lg);background:var(--bg-elevated);
+  border:1px solid var(--stroke-strong);box-shadow:var(--el3);overflow:hidden;cursor:pointer;
+  display:flex;flex-direction:column;transform:translateY(16px) scale(.96);opacity:0;
+  transition:transform var(--m-base) var(--ease),opacity var(--m-base) var(--ease),box-shadow var(--m-fast)}
+#taskView.open .tvcard{transform:none;opacity:1}
+.tvcard:hover{box-shadow:var(--el4)}
+.tvcard .tvhead{display:flex;align-items:center;gap:8px;padding:10px 12px;font-size:12.5px;font-weight:600;
+  border-bottom:1px solid var(--stroke-subtle);flex:none}
+.tvcard .tvhead .x{margin-left:auto;width:24px;height:24px;border-radius:6px;display:grid;place-items:center}
+.tvcard .tvhead .x:hover{background:var(--danger)}
+.tvbody{flex:1;background:linear-gradient(135deg,rgba(255,255,255,.04),rgba(255,255,255,.01));
+  display:grid;place-items:center;color:var(--text-disabled);font-size:11.5px}
+
+/* Context menu */
+#ctx{position:fixed;z-index:90;min-width:230px;padding:6px;border-radius:var(--r-md);
+  background:var(--acrylic);backdrop-filter:blur(30px);-webkit-backdrop-filter:blur(30px);
+  border:1px solid var(--stroke-strong);box-shadow:var(--el3);display:none}
+#ctx.open{display:block;animation:ctxIn 120ms var(--ease)}
+@keyframes ctxIn{from{opacity:0;transform:scale(.96) translateY(-4px)}to{opacity:1;transform:none}}
+.citem{display:flex;align-items:center;gap:12px;padding:9px 12px;border-radius:var(--r-sm);font-size:13px;width:100%}
+.citem:hover{background:var(--stroke-subtle)}
+.citem .icon{width:16px;height:16px;color:var(--text-secondary)}
+.citem.danger:hover{background:color-mix(in srgb,var(--danger) 22%,transparent);color:#FF9A93}
+.csep{height:1px;background:var(--stroke-subtle);margin:5px 8px}
+
+/* Toasts */
+#toasts{position:fixed;right:12px;bottom:calc(var(--taskbar-h) + 12px);z-index:95;
+  display:flex;flex-direction:column;gap:10px;align-items:flex-end}
+.toast{width:340px;max-width:calc(100vw - 24px);padding:14px 16px;border-radius:var(--r-md);
+  background:var(--acrylic);backdrop-filter:blur(30px);-webkit-backdrop-filter:blur(30px);
+  border:1px solid var(--stroke-strong);box-shadow:var(--el4);
+  display:flex;gap:12px;animation:tin var(--m-base) var(--ease)}
+@keyframes tin{from{opacity:0;transform:translateX(40px)}to{opacity:1;transform:none}}
+.toast.out{opacity:0;transform:translateX(40px);transition:all var(--m-base)}
+.toast b{font-size:13px;display:block;margin-bottom:3px}
+.toast p{font-size:12px;color:var(--text-secondary);line-height:1.4}
+.toast .glyph{width:30px;height:30px;border-radius:9px;display:grid;place-items:center;flex:none}
+
+/* ============ APP CONTENT STYLES ============ */
+.row{display:flex;gap:12px;align-items:center}
+.card{background:var(--stroke-subtle);border:1px solid var(--stroke-subtle);border-radius:var(--r-md);padding:14px}
+.card+.card{margin-top:12px}
+.h1{font-size:20px;font-weight:650;margin-bottom:4px;letter-spacing:-.01em}
+.muted{color:var(--text-secondary);font-size:12.5px}
+.btn{padding:8px 14px;border-radius:var(--r-sm);background:var(--accent);color:var(--on-accent);
+  font-size:12.5px;font-weight:600}
+.btn.ghost{background:transparent;border:1px solid var(--stroke-strong);color:var(--text-primary)}
+.sw{display:flex;align-items:center;justify-content:space-between;padding:10px 0;font-size:13px}
+.toggle{width:44px;height:24px;border-radius:var(--r-full);background:var(--stroke-strong);position:relative;
+  transition:background var(--m-fast);flex:none}
+.toggle::after{content:'';position:absolute;top:2px;left:2px;width:20px;height:20px;border-radius:50%;
+  background:#fff;transition:transform var(--m-fast) var(--ease)}
+.toggle.on{background:var(--accent)}
+.toggle.on::after{transform:translateX(20px)}
+.swatches{display:flex;gap:10px;flex-wrap:wrap;margin-top:10px}
+.swatch{width:34px;height:34px;border-radius:var(--r-sm);border:2px solid transparent;cursor:pointer;
+  transition:transform var(--m-fast)}
+.swatch:hover{transform:scale(1.1)}
+.swatch.on{border-color:var(--text-primary);box-shadow:0 0 0 2px var(--bg-base) inset}
+.wpgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:10px;margin-top:10px}
+.wpcard{height:66px;border-radius:var(--r-md);border:2px solid transparent;cursor:pointer;overflow:hidden;position:relative}
+.wpcard.on{border-color:var(--accent)}
+.wpcard i{position:absolute;inset:0}
+textarea{width:100%;height:100%;min-height:220px;background:none;border:none;outline:none;resize:none;
+  color:var(--text-primary);font:inherit;font-size:14px;line-height:1.6;user-select:text}
+.calc{display:flex;flex-direction:column;height:100%;gap:12px}
+.calc .out{text-align:right;font-size:34px;font-weight:600;font-variant-numeric:tabular-nums;
+  padding:10px 6px;overflow:hidden;text-overflow:ellipsis}
+.calc .keys{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;flex:1}
+.calc .keys button{border-radius:var(--r-md);background:var(--stroke-subtle);font-size:17px;font-weight:500;
+  transition:background var(--m-instant)}
+.calc .keys button:hover{background:var(--stroke-strong)}
+.calc .keys button.op{color:var(--accent)}
+.calc .keys button.eq{background:var(--accent);color:var(--on-accent)}
+.flist{display:flex;height:100%;gap:14px}
+.fside{width:150px;flex:none;display:flex;flex-direction:column;gap:2px}
+.fside button{text-align:left;padding:8px 10px;border-radius:var(--r-sm);font-size:12.5px;color:var(--text-secondary)}
+.fside button:hover{background:var(--stroke-subtle);color:var(--text-primary)}
+.fside button.on{background:var(--accent-subtle);color:var(--accent);font-weight:600}
+.fmain{flex:1;overflow:auto}
+.fitem{display:flex;align-items:center;gap:12px;padding:9px 10px;border-radius:var(--r-sm);font-size:13px}
+.fitem:hover{background:var(--stroke-subtle)}
+.fitem small{margin-left:auto;color:var(--text-disabled);font-size:11.5px}
+.phgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(92px,1fr));gap:10px}
+.phgrid i{aspect-ratio:1;border-radius:var(--r-md);display:block}
+.pm{display:flex;flex-direction:column;align-items:center;gap:16px;padding:10px}
+.pm .art{width:150px;height:150px;border-radius:var(--r-xl);box-shadow:var(--el3);
+  background:linear-gradient(135deg,var(--accent),var(--accent-2))}
+.pbar{width:100%;height:4px;border-radius:2px;background:var(--stroke-strong);overflow:hidden}
+.pbar i{display:block;height:100%;width:38%;background:var(--accent);animation:play 9s linear infinite}
+@keyframes play{from{width:8%}to{width:100%}}
+.pctrl{display:flex;gap:18px;align-items:center;font-size:22px}
+.browser{display:flex;flex-direction:column;height:100%;gap:12px}
+.urlbar{height:36px;border-radius:var(--r-full);background:var(--stroke-subtle);display:flex;align-items:center;
+  gap:10px;padding:0 14px;font-size:12.5px;color:var(--text-secondary)}
+.page{flex:1;border-radius:var(--r-md);background:var(--stroke-subtle);padding:22px;overflow:auto}
+.bar{height:9px;border-radius:5px;background:var(--stroke-strong);margin-bottom:10px}
+.tm{display:flex;flex-direction:column;gap:10px}
+.tmrow{display:flex;align-items:center;gap:12px;padding:11px 12px;border-radius:var(--r-sm);background:var(--stroke-subtle);font-size:12.5px}
+.tmrow .glyph{width:26px;height:26px;border-radius:8px;display:grid;place-items:center;flex:none}
+.tmrow .glyph svg{width:14px;height:14px;stroke:#fff;fill:none;stroke-width:1.9}
+.tmrow .kill{margin-left:auto;font-size:11.5px;color:var(--danger);font-weight:600;padding:5px 9px;border-radius:6px}
+.tmrow .kill:hover{background:color-mix(in srgb,var(--danger) 20%,transparent)}
+::-webkit-scrollbar{width:10px;height:10px}
+::-webkit-scrollbar-thumb{background:var(--stroke-strong);border-radius:6px;border:3px solid transparent;background-clip:content-box}
+::-webkit-scrollbar-thumb:hover{background:var(--text-disabled);background-clip:content-box;border:3px solid transparent}
+</style>
+</head>
+<body>
+
+<!-- ============ BOOT ============ -->
+<div id="boot">
+  <div class="boot-logo">
+    <svg viewBox="0 0 100 100"><path d="M68 34c-2-6-8-9-16-9-9 0-15 4-15 11 0 7 6 10 15 12s16 5 16 13-8 14-18 14c-8 0-15-3-17-9"/></svg>
+  </div>
+  <div class="boot-text">SukiOS</div>
+  <div class="boot-dots"><i></i><i></i><i></i></div>
+  <div id="bootTip">Suki Glass v1.0 · memuat desktop…</div>
+</div>
+
+<!-- ============ WALLPAPER ============ -->
+<div id="wallpaper">
+  <div class="wp wp-aurora" id="wpLayer"></div>
+  <div class="grain"></div>
+</div>
+
+<!-- ============ DESKTOP ============ -->
+<div id="desktop">
+  <div id="iconGrid"></div>
+  <div id="winLayer"></div>
+  <div id="snapPreview"></div>
+</div>
+
+<!-- ============ TASKBAR ============ -->
+<div id="taskbar">
+  <button class="tb-btn" id="startBtn" title="Start (Win / Ctrl+Space)"></button>
+  <button class="tb-btn" id="searchPill" title="Cari (Ctrl+Space)">
+    <svg class="icon" viewBox="0 0 24 24" style="width:15px;height:15px"><circle cx="11" cy="11" r="7"/><path d="M16.5 16.5 21 21"/></svg>
+    <span>Cari aplikasi, file, pengaturan…</span>
+  </button>
+  <button class="tb-btn" id="tvBtn" title="Task View (Alt+Tab)"></button>
+  <div id="tbApps"></div>
+  <div id="tray">
+    <button class="tb-btn" id="qsBtn" title="Quick Settings">
+      <svg class="icon" viewBox="0 0 24 24" style="width:16px;height:16px"><path d="M2 8.5a15 15 0 0 1 20 0"/><path d="M5.5 12.5a10 10 0 0 1 13 0"/><path d="M9 16.4a5 5 0 0 1 6 0"/><circle cx="12" cy="20" r=".6" fill="currentColor" stroke="none"/></svg>
+      <svg class="icon" viewBox="0 0 24 24" style="width:16px;height:16px"><path d="M11 5 6 9H3v6h3l5 4z"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/></svg>
+      <svg class="icon" viewBox="0 0 24 24" style="width:16px;height:16px"><rect x="2" y="7" width="17" height="10" rx="2.5"/><path d="M22 10.5v3"/><rect x="4.5" y="9.5" width="12" height="5" rx="1" fill="currentColor" stroke="none"/></svg>
+      <div id="clock"><b>--:--</b><i>memuat…</i></div>
+      <span class="badge" id="notifBadge">3</span>
+    </button>
+  </div>
+</div>
+
+<!-- ============ START MENU ============ -->
+<div class="panel" id="startMenu">
+  <div class="searchfield">
+    <svg class="icon" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M16.5 16.5 21 21"/></svg>
+    <input id="sSearch" placeholder="Cari aplikasi, file, pengaturan…" autocomplete="off">
+  </div>
+  <div class="stabs">
+    <button class="stab on" data-tab="pinned">Disematkan</button>
+    <button class="stab" data-tab="all">Semua Aplikasi</button>
+    <button class="stab" data-tab="recent">Terakhir</button>
+  </div>
+  <div class="spanel" id="sPanel"></div>
+  <div class="sfooter">
+    <button class="suser"><span class="avatar">S</span> Pengguna SukiOS</button>
+    <button class="pbtn" id="powerBtn" title="Power">
+      <svg class="icon" viewBox="0 0 24 24"><path d="M12 3v9"/><path d="M6.5 6.5a8 8 0 1 0 11 0"/></svg>
+    </button>
+  </div>
+</div>
+
+<!-- ============ QUICK SETTINGS ============ -->
+<div class="panel" id="quickPanel">
+  <div class="srow"><span>Kecerahan</span><input type="range" class="slider" id="brightness" min="35" max="130" value="100"></div>
+  <div class="srow"><span>Volume</span><input type="range" class="slider" id="volume" min="0" max="100" value="62"></div>
+  <div class="qgrid" id="qgrid"></div>
+  <div class="card" style="display:flex;align-items:center;gap:12px">
+    <span class="avatar" style="width:34px;height:34px;border-radius:11px">
+      <svg class="icon" viewBox="0 0 24 24" style="width:17px;height:17px"><path d="M12 3v9"/><path d="M6.5 6.5a8 8 0 1 0 11 0"/></svg>
+    </span>
+    <div><b style="font-size:13px">Baterai 87%</b><div class="muted">Sekitar 6 jam 20 menit tersisa</div></div>
+  </div>
+</div>
+
+<!-- ============ TASK VIEW ============ -->
+<div id="taskView"></div>
+
+<!-- ============ CONTEXT MENU ============ -->
+<div id="ctx"></div>
+<div id="toasts"></div>
+
+<script>
+/* ============================================================================
+   SukiOS Mockup — Window Manager, Shell & Apps
+   ========================================================================== */
+const $ = s => document.querySelector(s);
+const $$ = s => [...document.querySelectorAll(s)];
+
+/* ---------- Ikonografi (24dp, stroke 1.75, round) ---------- */
+const P = {
+  search:'<circle cx="11" cy="11" r="7"/><path d="M16.5 16.5 21 21"/>',
+  grid:'<rect x="3" y="3" width="7.5" height="7.5" rx="2"/><rect x="13.5" y="3" width="7.5" height="7.5" rx="2"/><rect x="3" y="13.5" width="7.5" height="7.5" rx="2"/><rect x="13.5" y="13.5" width="7.5" height="7.5" rx="2"/>',
+  folder:'<path d="M3 7.5A2 2 0 0 1 5 5.5h3.2l1.8 2H19a2 2 0 0 1 2 2v7.5a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>',
+  note:'<path d="M6 3.5h8.5L19 8v12.5H6z"/><path d="M14.5 3.5V8H19"/><path d="M9 12h7M9 15.5h5"/>',
+  calc:'<rect x="4" y="3" width="16" height="18" rx="2.5"/><path d="M8 7h8"/><path d="M8 12h.01M12 12h.01M16 12h.01M8 16h.01M12 16h.01M16 16h.01"/>',
+  globe:'<circle cx="12" cy="12" r="9"/><path d="M3 12h18"/><path d="M12 3a15 15 0 0 1 0 18a15 15 0 0 1 0-18z"/>',
+  image:'<rect x="3" y="4" width="18" height="16" rx="2.5"/><circle cx="8.5" cy="9.5" r="1.5"/><path d="m4 17 5-5 4 4 3-2.5 4 3.5"/>',
+  music:'<path d="M9 18V6l11-2v12"/><circle cx="6.5" cy="18" r="2.5"/><circle cx="17.5" cy="16" r="2.5"/>',
+  activity:'<path d="M3 12h3.5l2.5-6 3.5 12 2.5-6H21"/>',
+  power:'<path d="M12 3v9"/><path d="M6.5 6.5a8 8 0 1 0 11 0"/>',
+  wifi:'<path d="M2 8.5a15 15 0 0 1 20 0"/><path d="M5.5 12.5a10 10 0 0 1 13 0"/><path d="M9 16.4a5 5 0 0 1 6 0"/><circle cx="12" cy="20" r=".7" fill="currentColor" stroke="none"/>',
+  bluetooth:'<path d="m7 7 10 10-5 4V3l5 4L7 17"/>',
+  moon:'<path d="M20 14.5A8.5 8.5 0 0 1 9.5 4a8.5 8.5 0 1 0 10.5 10.5z"/>',
+  flash:'<path d="M13 2 4.5 13.5H11l-1 8.5 9-12H12.5z"/>',
+  bellOff:'<path d="M8 18a4 4 0 0 0 8 0z"/><path d="M18 15.5V11a6 6 0 0 0-9-5.2"/><path d="M6 11v4.5L4.5 18h13"/><path d="m3 3 18 18"/>',
+  cast:'<path d="M3 19h.01"/><path d="M3 15a6 6 0 0 1 6 6"/><path d="M3 11a10 10 0 0 1 10 10"/><path d="M3 7V5.5A2 2 0 0 1 5 3.5h14a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2h-5"/>',
+  rotate:'<path d="M21 10a9 9 0 0 0-15.5-5M3 4v5h5"/><path d="M3 14a9 9 0 0 0 15.5 5M21 20v-5h-5"/>',
+  minus:'<path d="M5 12h14"/>',
+  square:'<rect x="5.5" y="5.5" width="13" height="13" rx="2.5"/>',
+  restore:'<rect x="4" y="7.5" width="11" height="11" rx="2"/><path d="M8 5.5h9a2 2 0 0 1 2 2v9"/>',
+  close:'<path d="m6 6 12 12M18 6 6 18"/>',
+  trash:'<path d="M4 7h16"/><path d="M9 7V5h6v2"/><path d="M6.5 7l1 13h9l1-13"/>',
+  refresh:'<path d="M21 12a9 9 0 1 1-2.6-6.4"/><path d="M21 4v5h-5"/>',
+  pin:'<path d="M9 4h6l-1 6 3 3H7l3-3z"/><path d="M12 13v7"/>',
+  info:'<circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7.6h.01"/>',
+  plus:'<path d="M12 5v14M5 12h14"/>',
+  chev:'<path d="m9 6 6 6-6 6"/>',
+  pen:'<path d="M4 20h4L19 9l-4-4L4 16z"/><path d="m14 5 4 4"/>',
+  lock:'<rect x="5" y="10.5" width="14" height="10" rx="2.5"/><path d="M8.5 10.5V8a3.5 3.5 0 0 1 7 0v2.5"/>',
+  bolt:'<path d="M13 2 4.5 13.5H11l-1 8.5 9-12H12.5z"/>',
+  window:'<rect x="3" y="4" width="18" height="16" rx="2.5"/><path d="M3 8.5h18"/>'
+};
+const ic = (n,cls='icon') => `<svg class="${cls}" viewBox="0 0 24 24">${P[n]||P.grid}</svg>`;
+
+/* ---------- Katalog aplikasi ---------- */
+const APPS = {
+  files:   {name:'Files',        icon:'folder',   color:'linear-gradient(135deg,#7C5CFF,#5B8CFF)', render:renderFiles},
+  notes:   {name:'Notes',        icon:'note',     color:'linear-gradient(135deg,#FFB44C,#FF7AB6)', render:renderNotes},
+  calc:    {name:'Calculator',   icon:'calc',     color:'linear-gradient(135deg,#35D0BA,#5B9DFF)', render:renderCalc},
+  browser: {name:'Browser',      icon:'globe',    color:'linear-gradient(135deg,#5B9DFF,#35D0BA)', render:renderBrowser},
+  photos:  {name:'Photos',       icon:'image',    color:'linear-gradient(135deg,#FF7AB6,#7C5CFF)', render:renderPhotos},
+  music:   {name:'Music',        icon:'music',    color:'linear-gradient(135deg,#7C5CFF,#35D0BA)', render:renderMusic},
+  task:    {name:'Task Manager', icon:'activity', color:'linear-gradient(135deg,#3FD08A,#35D0BA)', render:renderTask},
+  settings:{name:'Settings',     icon:'window',   color:'linear-gradient(135deg,#4A5468,#242A38)', render:renderSettings}
+};
+const DESKTOP_ICONS = ['files','notes','browser','calc','photos','music','task','settings'];
+
+/* ---------- State ---------- */
+const state = {
+  windows:[], zTop:10, activeId:null, seq:0, recent:[], tab:'pinned',
+  search:'', startOpen:false, tvOpen:false, dragging:false
+};
+let DESK = {w:0,h:0};
+function measure(){ DESK = {w:window.innerWidth, h:window.innerHeight - parseInt(getComputedStyle(document.documentElement).getPropertyValue('--taskbar-h'))}; }
+measure();
+window.addEventListener('resize',()=>{ measure(); layoutIcons(); windows_.forEach(w=>clamp(w)); });
+
+/* ---------- Toast ---------- */
+function toast(title,body,icon='info'){
+  const t=document.createElement('div');
+  t.className='toast';
+  t.innerHTML=`<span class="glyph" style="background:linear-gradient(135deg,var(--accent),var(--accent-2))">${ic(icon,'icon'==='' ? '' : 'icon')}</span>
+    <div><b>${title}</b><p>${body}</p></div>`;
+  t.querySelector('svg').style.cssText='width:16px;height:16px;stroke:#fff;fill:none;stroke-width:1.75';
+  $('#toasts').appendChild(t);
+  setTimeout(()=>{t.classList.add('out');setTimeout(()=>t.remove(),260);},4600);
+}
+
+/* ============================ DESKTOP ICONS ============================ */
+function buildIcons(){
+  const g=$('#iconGrid'); g.innerHTML='';
+  DESKTOP_ICONS.forEach(id=>{
+    const a=APPS[id];
+    const d=document.createElement('div');
+    d.className='dicon'; d.dataset.app=id;
+    d.innerHTML=`<span class="glyph" style="background:${a.color}">${ic(a.icon)}</span><span>${a.name}</span>`;
+    d.addEventListener('dblclick',()=>openApp(id));
+    d.addEventListener('click',e=>{e.stopPropagation();
+      $$('.dicon').forEach(x=>x.classList.remove('sel')); d.classList.add('sel');
+      if(matchMedia('(hover:none)').matches) openApp(id);});
+    d.addEventListener('contextmenu',e=>{e.preventDefault();e.stopPropagation();iconMenu(e,id,d);});
+    g.appendChild(d);
+  });
+  layoutIcons();
+}
+function layoutIcons(){
+  const g=$('#iconGrid');
+  const rows = Math.max(3, Math.floor((DESK.h-24)/100));
+  g.style.gridTemplateRows = `repeat(${rows},100px)`;
+}
+/* drag ikon desktop dengan snap ke grid */
+$('#iconGrid').addEventListener('pointerdown',e=>{
+  const el=e.target.closest('.dicon'); if(!el) return;
+  if(e.button===2) return;
+  const r=el.getBoundingClientRect(), sx=e.clientX, sy=e.clientY;
+  let moved=false;
+  const move=ev=>{
+    if(Math.abs(ev.clientX-sx)>6||Math.abs(ev.clientY-sy)>6){
+      if(!moved){moved=true;el.style.zIndex=99;el.style.position='relative';}
+      el.style.transform=`translate(${ev.clientX-sx}px,${ev.clientY-sy}px)`;
+      el.style.opacity=.85;
+    }
+  };
+  const up=ev=>{
+    window.removeEventListener('pointermove',move);window.removeEventListener('pointerup',up);
+    el.style.transform='';el.style.opacity='';el.style.zIndex='';
+    if(moved){ toast('Ikon dipindahkan','Posisi ikon tersimpan (snap ke grid) — di app asli disimpan ke Room DB.','grid'); }
+  };
+  window.addEventListener('pointermove',move);window.addEventListener('pointerup',up);
+});
+
+/* ============================ WINDOW MANAGER ============================ */
+const winLayer = $('#winLayer');
+function windows_(){ return state.windows; }
+function app(id){ return APPS[id]; }
+
+function openApp(id, opts={}){
+  const a=app(id); if(!a) return;
+  if(!state.recent.includes(id)) state.recent.unshift(id);
+  const exist = state.windows.find(w=>w.app===id);
+  if(exist && !opts.multi){ if(exist.min) toggleMin(exist.id); focusWin(exist.id); return exist; }
+
+  const compact = DESK.w < 760;
+  const w = compact ? DESK.w : Math.min(900, Math.round(DESK.w*0.62));
+  const h = compact ? DESK.h : Math.min(560, Math.round(DESK.h*0.72));
+  const off = (state.seq%6)*26;
+  const win = {
+    id:'w'+(++state.seq), app:id, title:a.name,
+    x: compact?0: Math.round((DESK.w-w)/2)+off-40,
+    y: compact?0: Math.round((DESK.h-h)/2)+off-40,
+    w, h, min:false, max:compact, z:++state.zTop, prev:null
+  };
+  const el=document.createElement('div');
+  el.className='win opening'; el.dataset.id=win.id;
+  el.innerHTML=`
+    <div class="titlebar">
+      <span class="wicon" style="background:${a.color}">${ic(a.icon)}</span>
+      <span class="wtitle">${a.name}</span>
+      <div class="wctl">
+        <button class="wbtn" data-act="min" title="Minimize">${ic('minus')}</button>
+        <button class="wbtn" data-act="max" title="Maximize / Restore">${ic('square')}</button>
+        <button class="wbtn close" data-act="close" title="Tutup (Alt+F4)">${ic('close')}</button>
+      </div>
+    </div>
+    <div class="wbody"></div>
+    <div class="rz n"></div><div class="rz s"></div><div class="rz w"></div><div class="rz e"></div>
+    <div class="rz nw"></div><div class="rz ne"></div><div class="rz sw"></div><div class="rz se"></div>`;
+  win.el=el; winLayer.appendChild(el);
+  win.body = el.querySelector('.wbody');
+  win.body.innerHTML = a.render(win);
+  wireWin(win);
+  state.windows.push(win);
+  applyBounds(win);
+  if(win.max) setMax(win,true,false);
+  requestAnimationFrame(()=>el.classList.remove('opening'));
+  focusWin(win.id); renderTaskbar(); bindAppEvents(win);
+  if(a.after) a.after(win);
+  return win;
+}
+function findWin(id){ return state.windows.find(w=>w.id===id); }
+
+function applyBounds(w){
+  const s=w.el.style;
+  if(w.max){ s.left='0px'; s.top='0px'; s.width=DESK.w+'px'; s.height=DESK.h+'px'; }
+  else { s.left=w.x+'px'; s.top=w.y+'px'; s.width=w.w+'px'; s.height=w.h+'px'; }
+  w.el.classList.toggle('maximized', w.max);
+}
+function clamp(w){ /* pastikan jendela tetap di layar */
+  if(w.max) return;
+  w.w=Math.min(w.w,DESK.w); w.h=Math.min(w.h,DESK.h);
+  w.x=Math.max(-w.w+80,Math.min(w.x,DESK.w-80));
+  w.y=Math.max(0,Math.min(w.y,DESK.h-40));
+  applyBounds(w);
+}
+function focusWin(id){
+  const w=findWin(id); if(!w) return;
+  state.activeId=id; w.z=++state.zTop; w.el.style.zIndex=w.z;
+  state.windows.forEach(x=>x.el.classList.toggle('active',x.id===id));
+  renderTaskbar();
+}
+function closeWin(id){
+  const w=findWin(id); if(!w) return;
+  w.el.classList.add('minimized');
+  setTimeout(()=>{ w.el.remove(); },300);
+  state.windows=state.windows.filter(x=>x.id!==id);
+  if(state.activeId===id){ const top=[...state.windows].filter(x=>!x.min).sort((a,b)=>b.z-a.z)[0]; state.activeId=top?top.id:null; if(top) focusWin(top.id); }
+  renderTaskbar(); if(state.tvOpen) renderTaskView();
+}
+function toggleMin(id){
+  const w=findWin(id); if(!w) return;
+  w.min=!w.min; w.el.classList.toggle('minimized',w.min);
+  if(!w.min) focusWin(id); else { if(state.activeId===id) state.activeId=null; }
+  renderTaskbar(); if(state.tvOpen) renderTaskView();
+}
+function setMax(w,on,animate=true){
+  if(on){
+    w.prev={x:w.x,y:w.y,w:w.w,h:w.h};
+    w.max=true; applyBounds(w);
+    w.el.querySelector('[data-act="max"]').innerHTML=ic('restore');
+  } else {
+    w.max=false;
+    if(w.prev){ Object.assign(w,{x:w.prev.x,y:w.prev.y,w:w.prev.w,h:w.prev.h}); }
+    w.prev=null; applyBounds(w);
+    w.el.querySelector('[data-act="max"]').innerHTML=ic('square');
+    clamp(w);
+  }
+  if(animate){ w.el.classList.add('animating'); setTimeout(()=>w.el.classList.remove('animating'),360); }
+}
+function snap(w,zone){
+  if(!zone) return;
+  w.el.classList.add('animating');
+  if(zone==='max'){ setMax(w,true); }
+  else{
+    if(w.max) w.max=false, w.prev=null;
+    const H=DESK.h, W=DESK.w, half=Math.round(W/2), halfH=Math.round(H/2);
+    const b={left:[0,0,half,H], right:[W-half,0,half,H],
+             ne:[half,0,half,halfH], nw:[0,0,half,halfH],
+             se:[half,halfH,half,halfH], sw:[0,halfH,half,halfH]}[zone];
+    w.x=b[0]; w.y=b[1]; w.w=b[2]; w.h=b[3]; applyBounds(w);
+    w.el.classList.remove('maximized');
+  }
+  setTimeout(()=>w.el.classList.remove('animating'),380);
+  toast('Jendela di-snap', zone==='max'?'Maximize':'Tata letak '+zone.toUpperCase()+' · snap assist akan menawarkan app lain untuk mengisi sisa ruang.', 'window');
+}
+function snapZoneAt(x,y){
+  const m=28;
+  if(y<m) return 'max';
+  if(x<m) return y<DESK.h/2 ? 'nw' : 'sw';
+  if(x>DESK.w-m) return y<DESK.h/2 ? 'ne' : 'se';
+  return null;
+}
+
+/* ---- Interaksi jendela: drag, resize, tombol ---- */
+function wireWin(w){
+  const bar=w.el.querySelector('.titlebar');
+  const btn=w.el.querySelector('.wctl');
+  btn.addEventListener('pointerdown',e=>e.stopPropagation());
+  bar.addEventListener('dblclick',()=>setMax(w,!w.max));
+  bar.addEventListener('contextmenu',e=>{e.preventDefault();winMenu(e,w);});
+  btn.querySelectorAll('.wbtn').forEach(b=>b.addEventListener('click',e=>{
+    e.stopPropagation(); const a=b.dataset.act;
+    if(a==='min') toggleMin(w.id);
+    if(a==='max') setMax(w,!w.max);
+    if(a==='close') closeWin(w.id);
+  }));
+  burtDrag(w,bar);
+  w.el.addEventListener('pointerdown',()=>focusWin(w.id),true);
+  w.el.querySelectorAll('.rz').forEach(h=>resizeHandle(w,h,h.className.split(' ')[1]));
+}
+function burtDrag(w,bar){
+  bar.addEventListener('pointerdown',e=>{
+    if(e.button!==0) return;
+    focusWin(w.id);
+    const sx=e.clientX, sy=e.clientY;
+    let ox=w.x, oy=w.y, started=false, zone=null;
+    if(w.max){ // un-maximize saat mulai drag: ukuran kembali, kursor tetap di title bar
+      const rel=e.clientX/DESK.w;
+      const py=e.clientY;
+      setMax(w,false,false);
+      w.x=-Math.round(w.w*rel); w.y=Math.max(0,py-20);
+      applyBounds(w); ox=w.x; oy=w.y;
+    }
+    bar.setPointerCapture(e.pointerId);
+    const move=ev=>{
+      started=true; document.body.style.userSelect='none';
+      w.x=ox+(ev.clientX-sx); w.y=Math.max(-6,oy+(ev.clientY-sy));
+      applyBounds(w);
+      zone=snapZoneAt(ev.clientX,ev.clientY);
+      showSnap(zone);
+    };
+    const up=ev=>{
+      bar.removeEventListener('pointermove',move); bar.removeEventListener('pointerup',up);
+      document.body.style.userSelect='';
+      hideSnap();
+      if(started && zone) snap(w,zone);
+      else clamp(w);
+    };
+    bar.addEventListener('pointermove',move); bar.addEventListener('pointerup',up);
+  });
+}
+let snapTimer=null;
+function showSnap(zone){
+  const p=$('#snapPreview');
+  if(!zone){ p.style.opacity=0; return; }
+  const W=DESK.w,H=DESK.h,half=Math.round(W/2),hh=Math.round(H/2);
+  const b={max:[0,0,W,H], left:[0,0,half,H], right:[W-half,0,half,H],
+    nw:[0,0,half,hh], ne:[half,0,half,hh], sw:[0,hh,half,hh], se:[half,hh,half,hh]}[zone];
+  p.style.cssText=`position:absolute;left:${b[0]}px;top:${b[1]}px;width:${b[2]}px;height:${b[3]}px;opacity:1`;
+}
+function hideSnap(){ $('#snapPreview').style.opacity=0; }
+function resizeHandle(w,h,dir){
+  h.addEventListener('pointerdown',e=>{
+    e.stopPropagation(); focusWin(w.id);
+    const sx=e.clientX, sy=e.clientY, o={x:w.x,y:w.y,w:w.w,h:w.h};
+    h.setPointerCapture(e.pointerId);
+    const move=ev=>{
+      const dx=ev.clientX-sx, dy=ev.clientY-sy;
+      if(dir.includes('e')) w.w=Math.max(320,o.w+dx);
+      if(dir.includes('s')) w.h=Math.max(240,o.h+dy);
+      if(dir.includes('w')){ const nw=Math.max(320,o.w-dx); w.x=o.x+(o.w-nw); w.w=nw; }
+      if(dir.includes('n')){ const nh=Math.max(240,o.h-dy); w.y=o.y+(o.h-nh); w.h=nh; }
+      applyBounds(w);
+    };
+    const up=()=>{ h.removeEventListener('pointermove',move); h.removeEventListener('pointerup',up); };
+    h.addEventListener('pointermove',move); h.addEventListener('pointerup',up);
+  });
+}
+
+/* ============================ TASKBAR ============================ */
+function renderTaskbar(){
+  $('#startBtn').innerHTML = `<span class="glyph" style="background:linear-gradient(135deg,var(--accent),var(--accent-2))">${ic('grid')}</span>`;
+  $('#tvBtn').innerHTML = `<span class="glyph" style="background:var(--stroke-subtle)">${ic('window')}</span>`;
+  const box=$('#tbApps'); box.innerHTML='';
+  // pinned + running
+  const pinned=['files','browser','notes','calc'];
+  const ids=[...new Set([...pinned,...state.windows.map(w=>w.app)])];
+  ids.forEach(id=>{
+    const a=APPS[id];
+    const running=state.windows.filter(w=>w.app===id);
+    const active=running.some(w=>w.id===state.activeId);
+    const b=document.createElement('button');
+    b.className='tb-btn tb-app'+(running.length?' run':'')+(active?' act':'');
+    b.title=a.name+(running.length>1?` (${running.length})`:'');
+    b.innerHTML=`<span class="glyph" style="background:${a.color}">${ic(a.icon)}</span><span class="dot"></span>`;
+    b.addEventListener('click',()=>{
+      if(!running.length) return openApp(id);
+      const win=[...running].sort((x,y)=>y.z-x.z)[0];
+      if(active && !win.min) toggleMin(win.id);          // jendela aktif → minimize
+      else { if(win.min) toggleMin(win.id); focusWin(win.id); }  // → fokus / restore
+    });
+    b.addEventListener('contextmenu',e=>{e.preventDefault();taskbarMenu(e,id,running);});
+    box.appendChild(b);
+  });
+  $('#tvBtn').classList.toggle('on',state.tvOpen);
+}
+
+/* ============================ START MENU ============================ */
+function renderStart(){
+  const p=$('#sPanel');
+  let list=Object.entries(APPS).map(([id,a])=>({id,...a}));
+  if(state.search){
+    const q=state.search.toLowerCase();
+    list=list.filter(a=>a.name.toLowerCase().includes(q));
+  }
+  if(state.search && !list.length){
+    p.innerHTML=`<div class="empty">Tidak ada aplikasi cocok.<br><br>
+      <button class="btn" onclick="toast('Pencarian web','Di app asli, query diteruskan ke browser default.','globe')">Cari "${state.search}" di web</button></div>`;
+    return;
+  }
+  if(state.search || state.tab==='all'){
+    p.innerHTML=`<div class="list-apps">${list.map(a=>`
+      <button class="lapp" data-open="${a.id}">
+        <span class="glyph" style="background:${a.color}">${ic(a.icon)}</span>${a.name}
+        <small>Aplikasi</small></button>`).join('')}</div>`;
+  } else if(state.tab==='recent'){
+    const r=state.recent.slice(0,8).map(id=>({id,...APPS[id]}));
+    p.innerHTML = r.length ? `<div class="list-apps">${r.map(a=>`
+      <button class="lapp" data-open="${a.id}">
+        <span class="glyph" style="background:${a.color}">${ic(a.icon)}</span>${a.name}
+        <small>Terakhir dibuka</small></button>`).join('')}</div>`
+      : `<div class="empty">Belum ada aplikasi yang dibuka.</div>`;
+  } else {
+    p.innerHTML=`<div class="grid-apps">${list.map(a=>`
+      <button class="gapp" data-open="${a.id}">
+        <span class="glyph" style="background:${a.color}">${ic(a.icon)}</span><span>${a.name}</span></button>`).join('')}</div>`;
+  }
+  p.querySelectorAll('[data-open]').forEach(b=>b.addEventListener('click',()=>{openApp(b.dataset.open);toggleStart(false);}));
+}
+function toggleStart(v){
+  state.startOpen = v===undefined ? !state.startOpen : v;
+  $('#startMenu').classList.toggle('open',state.startOpen);
+  $('#startBtn').classList.toggle('on',state.startOpen);
+  if(state.startOpen){ closeQS(); closeCtx(); setTimeout(()=>$('#sSearch').focus(),120); }
+}
+$('#startBtn').addEventListener('click',()=>toggleStart());
+$('#searchPill').addEventListener('click',()=>toggleStart(true));
+$('#sSearch').addEventListener('input',e=>{state.search=e.target.value.trim();renderStart();});
+$$('.stab').forEach(t=>t.addEventListener('click',()=>{
+  $$('.stab').forEach(x=>x.classList.remove('on')); t.classList.add('on');
+  state.tab=t.dataset.tab; state.search=''; $('#sSearch').value=''; renderStart();
+}));
+$('#powerBtn').addEventListener('click',e=>{
+  e.stopPropagation();
+  ctxAt(e.currentTarget, [
+    {label:'Kunci layar',icon:'lock',fn:()=>toast('Layar dikunci','Lock screen SukiOS muncul di app asli.','lock')},
+    {label:'Mode tidur',icon:'moon',fn:()=>toast('Mode tidur','Desktop diredupkan, proses dijeda.','moon')},
+    {sep:true},
+    {label:'Restart SukiOS',icon:'refresh',fn:()=>location.reload()},
+    {label:'Matikan sistem',icon:'power',danger:true,fn:()=>{document.body.style.transition='opacity .5s';document.body.style.opacity=0;setTimeout(()=>location.reload(),600);}}
+  ],true);
+});
+
+/* ============================ QUICK SETTINGS ============================ */
+const QS=[
+  {id:'wifi',  label:'Wi-Fi',    icon:'wifi',      on:true},
+  {id:'bt',    label:'Bluetooth',icon:'bluetooth', on:true},
+  {id:'dnd',   label:'Jangan Ganggu',icon:'bellOff',on:false},
+  {id:'flash', label:'Senter',   icon:'flash',     on:false},
+  {id:'rot',   label:'Rotasi',   icon:'rotate',    on:true},
+  {id:'cast',  label:'Cast',     icon:'cast',      on:false},
+  {id:'night', label:'Night Light',icon:'moon',    on:false},
+  {id:'perf',  label:'Mode Turbo',icon:'bolt',     on:false}
+];
+function renderQS(){
+  const g=$('#qgrid'); g.innerHTML='';
+  QS.forEach(q=>{
+    const b=document.createElement('button');
+    b.className='qtile'+(q.on?' on':''); b.dataset.id=q.id;
+    b.innerHTML=`${ic(q.icon)}<span>${q.label}</span>`;
+    b.firstChild.style.cssText='width:20px;height:20px;stroke:'+(q.on?'#fff':'var(--text-primary)');
+    b.addEventListener('click',()=>{
+      q.on=!q.on; renderQS();
+      toast(q.label+(q.on?' aktif':' nonaktif'), 'Toggle ini akan memanggil API sistem Android yang sesungguhnya.', q.icon);
+      if(q.id==='night') document.documentElement.style.filter=q.on?'sepia(.32) saturate(1.15)':'';
+    });
+    g.appendChild(b);
+  });
+}
+function toggleQS(v){
+  const p=$('#quickPanel'); const open = v===undefined? !p.classList.contains('open') : v;
+  p.classList.toggle('open',open); $('#qsBtn').classList.toggle('on',open);
+  if(open){ toggleStart(false); renderQS(); }
+}
+function closeQS(){ $('#quickPanel').classList.remove('open'); $('#qsBtn').classList.remove('on'); }
+$('#qsBtn').addEventListener('click',()=>toggleQS());
+$('#brightness').addEventListener('input',e=>{
+  document.documentElement.style.setProperty('--bright',(e.target.value/100));
+  e.target.style.setProperty('--p',((e.target.value-35)/(130-35)*100)+'%');
+});
+$('#volume').addEventListener('input',e=>{
+  e.target.style.setProperty('--p',e.target.value+'%');
+  document.documentElement.style.setProperty('--accent-2',e.target.value>50?'#35D0BA':'#5B9DFF');
+});
+
+/* ============================ TASK VIEW ============================ */
+function renderTaskView(){
+  const tv=$('#taskView');
+  if(!state.windows.length){
+    tv.innerHTML='<div class="empty" style="font-size:14px">Tidak ada jendela terbuka.<br><br>Buka aplikasi dari Start Menu (Ctrl+Space).</div>';
+    return;
+  }
+  tv.innerHTML = state.windows.map((w,i)=>`
+    <div class="tvcard" data-id="${w.id}" style="transition-delay:${i*30}ms">
+      <div class="tvhead">
+        <span class="glyph" style="width:16px;height:16px;border-radius:5px;background:${APPS[w.app].color}"></span>
+        ${w.title}
+        <button class="x" data-close="${w.id}">${ic('close')}</button>
+      </div>
+      <div class="tvbody">${w.max?'Maximized':w.w+' × '+w.h+' dp'} · z-index ${w.z}</div>
+    </div>`).join('');
+  tv.querySelectorAll('.tvcard').forEach(c=>c.addEventListener('click',e=>{
+    if(e.target.closest('[data-close]')) return;
+    const w=findWin(c.dataset.id); if(w&&w.min) toggleMin(w.id);
+    focusWin(c.dataset.id); toggleTV(false);
+  }));
+  tv.querySelectorAll('[data-close]').forEach(b=>b.addEventListener('click',e=>{
+    e.stopPropagation(); closeWin(b.dataset.close);
+  }));
+}
+function toggleTV(v){
+  state.tvOpen = v===undefined? !state.tvOpen : v;
+  if(state.tvOpen) renderTaskView();
+  $('#taskView').classList.toggle('open',state.tvOpen);
+  renderTaskbar();
+}
+$('#tvBtn').addEventListener('click',()=>toggleTV());
+
+/* ============================ CONTEXT MENU ============================ */
+function closeCtx(){ $('#ctx').classList.remove('open'); }
+function ctxAt(anchor,items,useRect=false){
+  const c=$('#ctx'); c.innerHTML='';
+  items.forEach(it=>{
+    if(it.sep){ c.insertAdjacentHTML('beforeend','<div class="csep"></div>'); return; }
+    const b=document.createElement('button');
+    b.className='citem'+(it.danger?' danger':'');
+    b.innerHTML=`${ic(it.icon||'chev')}<span>${it.label}</span>`;
+    b.addEventListener('click',()=>{closeCtx();it.fn&&it.fn();});
+    c.appendChild(b);
+  });
+  const r = useRect? anchor.getBoundingClientRect() : {left:anchor.x,top:anchor.y};
+  c.classList.add('open');
+  const cr=c.getBoundingClientRect();
+  c.style.left=Math.min(r.left, window.innerWidth-cr.width-8)+'px';
+  c.style.top=Math.min(r.top, window.innerHeight-cr.height-8)+'px';
+}
+document.addEventListener('pointerdown',e=>{
+  if(!e.target.closest('#ctx')) closeCtx();
+  if(!e.target.closest('#startMenu')&&!e.target.closest('#startBtn')&&!e.target.closest('#searchPill')) toggleStart(false);
+  if(!e.target.closest('#quickPanel')&&!e.target.closest('#qsBtn')) closeQS();
+});
+$('#desktop').addEventListener('contextmenu',e=>{
+  if(e.target.closest('.win')) return;
+  e.preventDefault();
+  ctxAt({x:e.clientX,y:e.clientY},[
+    {label:'Ikon baru',icon:'plus',fn:()=>toast('Tambahkan ikon','Pilih aplikasi dari daftar di app asli.','plus')},
+    {label:'Susun ikon otomatis',icon:'grid',fn:()=>toast('Ikon disusun','Grid 5 × 6 dirapikan.','grid')},
+    {sep:true},
+    {label:'Ganti wallpaper',icon:'image',fn:()=>openApp('settings')},
+    {label:'Pengaturan desktop',icon:'window',fn:()=>openApp('settings')},
+    {sep:true},
+    {label:'Refresh desktop',icon:'refresh',fn:()=>toast('Desktop di-refresh','Tidak ada perubahan.','refresh')}
+  ]);
+});
+function iconMenu(e,id,d){
+  $$('.dicon').forEach(x=>x.classList.remove('sel')); d.classList.add('sel');
+  ctxAt({x:e.clientX,y:e.clientY},[
+    {label:'Buka',icon:'chev',fn:()=>openApp(id)},
+    {label:'Buka di jendela baru',icon:'window',fn:()=>openApp(id,{multi:true})},
+    {sep:true},
+    {label:'Pin ke taskbar',icon:'pin',fn:()=>toast('Disematkan ke taskbar',APPS[id].name+' sekarang ada di taskbar Suki Bar.','pin')},
+    {label:'Ganti nama',icon:'pen',fn:()=>toast('Ganti nama','Dialog rename muncul di app asli.','pen')},
+    {sep:true},
+    {label:'Uninstall',icon:'trash',danger:true,fn:()=>toast('Konfirmasi uninstall',APPS[id].name+' — di app asli memakai dialog sistem Android.','trash')}
+  ]);
+}
+function winMenu(e,w){
+  ctxAt({x:e.clientX,y:e.clientY},[
+    {label:'Restore',icon:'restore',fn:()=>setMax(w,false)},
+    {label:'Minimize',icon:'minus',fn:()=>toggleMin(w.id)},
+    {label:'Maximize',icon:'square',fn:()=>setMax(w,true)},
+    {sep:true},
+    {label:'Snap ke kiri',icon:'window',fn:()=>snap(w,'left')},
+    {label:'Snap ke kanan',icon:'window',fn:()=>snap(w,'right')},
+    {sep:true},
+    {label:'Tutup',icon:'close',danger:true,fn:()=>closeWin(w.id)}
+  ]);
+}
+function taskbarMenu(e,id,running){
+  ctxAt({x:e.clientX,y:e.clientY},[
+    ...(running.length?[{label:'Tampilkan semua jendela',icon:'window',fn:()=>running.forEach(w=>{if(w.min)toggleMin(w.id);}),},{sep:true}]:[]),
+    {label:'Buka aplikasi',icon:'plus',fn:()=>openApp(id)},
+    {label:'Buka di jendela baru',icon:'window',fn:()=>openApp(id,{multi:true})},
+    {sep:true},
+    ...(running.length?[{label:'Tutup semua jendela',icon:'close',danger:true,fn:()=>running.forEach(w=>closeWin(w.id))}]:[{label:'Lepas dari taskbar',icon:'close',danger:true,fn:()=>toast('Dilepas','App dilepas dari taskbar.','close')}])
+  ]);
+}
+
+/* ============================ APP CONTENT ============================ */
+function bindAppEvents(w){ const f=APPS[w.app].bind; if(f) f(w); }
+
+function renderFiles(){
+  const files=[['📁','Dokumen','12 item','—'],['📁','Gambar','248 item','—'],['📁','Musik','64 item','—'],
+    ['📄','Proposal SukiOS.pdf','2,4 MB','Hari ini'],['📊','Roadmap.xlsx','840 KB','Kemarin'],
+    ['🖼️','wallpaper-aurora.png','5,1 MB','Kemarin'],['🗒️','catatan-ide.txt','4 KB','3 hari lalu'],
+    ['🎬','demo-launcher.mp4','88 MB','Minggu lalu']];
+  return `<div class="flist">
+    <div class="fside">
+      <button class="on">🏠 Beranda</button><button>📄 Dokumen</button><button>⬇️ Unduhan</button>
+      <button>🖼️ Gambar</button><button>🎵 Musik</button><button>🎬 Video</button>
+      <div style="height:8px"></div>
+      <button>💾 Internal</button><button>💳 Kartu SD</button><button>🔌 USB OTG</button>
+    </div>
+    <div class="fmain">
+      <div class="row" style="margin-bottom:12px">
+        <b style="font-size:15px">Beranda</b>
+        <span class="muted" style="margin-left:auto">Mode: List</span>
+      </div>
+      ${files.map(f=>`<div class="fitem"><span style="font-size:17px">${f[0]}</span>
+        <span>${f[1]}</span><small>${f[2]} · ${f[3]}</small></div>`).join('')}
+    </div></div>`;
+}
+
+function renderNotes(){
+  return `<div style="display:flex;flex-direction:column;height:100%;gap:10px">
+    <div class="row"><b style="font-size:15px">Catatan Cepat</b>
+      <span class="muted" style="margin-left:auto">tersimpan otomatis</span></div>
+    <div style="flex:1;background:var(--stroke-subtle);border-radius:var(--r-md);padding:14px">
+      <textarea placeholder="Tulis apa saja…">Ide SukiOS:
+- Window engine pakai VirtualDisplay + ActivityView
+- Capability probe di first-run
+- Fallback split-screen kalau app menolak freeform
+
+TODO minggu ini:
+- PoC drag & resize 60fps
+- Desain ikon desktop 48dp
+- Uji di HP RAM 4GB</textarea>
+    </div></div>`;
+}
+
+function renderCalc(){
+  const keys=['C','( )','%','÷','7','8','9','×','4','5','6','−','1','2','3','+','0','.','⌫','='];
+  return `<div class="calc">
+    <div class="out" id="cOut">0</div>
+    <div class="keys">${keys.map(k=>{
+      const op=['÷','×','−','+','%'].includes(k), eq=k==='=';
+      return `<button class="${eq?'eq':op?'op':''}" data-k="${k}">${k}</button>`;}).join('')}</div>
+  </div>`;
+}
+
+function renderBrowser(){
+  return `<div class="browser">
+    <div class="urlbar">${ic('lock','icon')}<span style="width:14px;height:14px">🔒</span>suki.os/beranda</div>
+    <div class="page">
+      <div style="width:46%;height:26px;border-radius:8px;background:var(--accent);opacity:.85;margin-bottom:18px"></div>
+      <div class="bar" style="width:88%"></div><div class="bar" style="width:74%"></div>
+      <div class="bar" style="width:92%"></div><div class="bar" style="width:60%"></div>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin:22px 0">
+        ${[1,2,3].map(()=>'<div style="height:86px;border-radius:12px;background:linear-gradient(135deg,rgba(124,92,255,.35),rgba(53,208,186,.25))"></div>').join('')}
+      </div>
+      <div class="bar" style="width:82%"></div><div class="bar" style="width:68%"></div>
+    </div></div>`;
+}
+
+function renderPhotos(){
+  const g=['linear-gradient(135deg,#7C5CFF,#35D0BA)','linear-gradient(135deg,#FF7AB6,#7C5CFF)',
+    'linear-gradient(135deg,#FFB44C,#FF7AB6)','linear-gradient(135deg,#5B9DFF,#35D0BA)',
+    'linear-gradient(135deg,#3FD08A,#5B9DFF)','linear-gradient(135deg,#242A38,#7C5CFF)',
+    'linear-gradient(135deg,#35D0BA,#0B0D12)','linear-gradient(135deg,#FF5F56,#FFB44C)',
+    'linear-gradient(135deg,#7C5CFF,#242A38)','linear-gradient(135deg,#5B9DFF,#7C5CFF)',
+    'linear-gradient(135deg,#FFB44C,#3FD08A)','linear-gradient(135deg,#FF7AB6,#0B0D12)'];
+  return `<div class="row" style="margin-bottom:14px"><b style="font-size:15px">Galeri</b>
+    <span class="muted" style="margin-left:auto">248 foto · 12 album</span></div>
+    <div class="phgrid">${g.map(s=>`<i style="background:${s}"></i>`).join('')}</div>`;
+}
+
+function renderMusic(){
+  return `<div class="pm">
+    <div class="art"></div>
+    <div style="text-align:center"><b style="font-size:16px">Aurora Drive</b>
+      <div class="muted">SukiOS Soundtrack · 2026</div></div>
+    <div class="pbar"><i></i></div>
+    <div class="pctrl">
+      <svg class="icon" viewBox="0 0 24 24"><path d="M19 5 8 12l11 7z"/><path d="M5 5v14"/></svg>
+      <svg class="icon" viewBox="0 0 24 24" style="width:34px;height:34px"><circle cx="12" cy="12" r="9"/><path d="M10 9l5 3-5 3z" fill="currentColor"/></svg>
+      <svg class="icon" viewBox="0 0 24 24"><path d="m5 5 11 7-11 7z"/><path d="M19 5v14"/></svg>
+    </div></div>`;
+}
+
+function renderTask(){
+  return `<div class="card" style="margin-bottom:14px">
+    <div class="row"><b style="font-size:14px">Penggunaan Sumber Daya</b>
+      <span class="muted" style="margin-left:auto">Mockup</span></div>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:14px">
+      <div><div class="muted">CPU</div><b style="font-size:20px">14%</b>
+        <div class="pbar" style="margin-top:8px"><i style="width:14%;animation:none"></i></div></div>
+      <div><div class="muted">RAM</div><b style="font-size:20px">1,2 GB</b>
+        <div class="pbar" style="margin-top:8px"><i style="width:38%;animation:none"></i></div></div>
+      <div><div class="muted">Baterai</div><b style="font-size:20px">87%</b>
+        <div class="pbar" style="margin-top:8px"><i style="width:87%;animation:none;background:var(--success)"></i></div></div>
+    </div></div>
+    <b style="font-size:13px">Proses aktif (${state.windows.length} jendela)</b>
+    <div class="tm" id="tmList" style="margin-top:10px"></div>`;
+}
+
+function renderSettings(){
+  const accents=['#7C5CFF','#35D0BA','#5B9DFF','#FF7AB6','#FFB44C','#3FD08A','#FF5F56','#8B5CF6','#0EA5E9','#F97316','#14B8A6','#64748B'];
+  return `<div style="display:flex;gap:18px;height:100%">
+    <div class="fside" style="width:170px">
+      <button class="on">🎨 Personalisasi</button><button>🪟 Taskbar</button><button>🧩 Jendela</button>
+      <button>⚡ Performa</button><button>🔒 Privasi</button><button>ℹ️ Tentang</button>
+    </div>
+    <div style="flex:1;overflow:auto">
+      <div class="h1">Personalisasi</div>
+      <div class="muted" style="margin-bottom:16px">Sesuaikan tampilan SukiOS. Semua perubahan langsung terlihat.</div>
+
+      <div class="card">
+        <b style="font-size:13px">Warna Aksen</b>
+        <div class="muted">Dipakai untuk elemen aktif, tombol utama, dan indikator fokus.</div>
+        <div class="swatches" id="accSw">
+          ${accents.map((c,i)=>`<button class="swatch ${i===0?'on':''}" data-c="${c}" style="background:${c}"></button>`).join('')}
+        </div>
+      </div>
+
+      <div class="card">
+        <b style="font-size:13px">Wallpaper</b>
+        <div class="muted">4 preset bawaan SukiOS.</div>
+        <div class="wpgrid" id="wpSw">
+          ${['aurora','ember','mint','noir'].map((n,i)=>{
+            const bg={aurora:'linear-gradient(135deg,#7C5CFF,#35D0BA)',ember:'linear-gradient(135deg,#FFB44C,#FF5F56)',
+              mint:'linear-gradient(135deg,#35D0BA,#5B9DFF)',noir:'linear-gradient(135deg,#242A38,#08090C)'}[n];
+            return `<div class="wpcard ${i===0?'on':''}" data-wp="${n}" style="background:${bg}"><i style="background:${bg}"></i></div>`;}).join('')}
+        </div>
+      </div>
+
+      <div class="card">
+        <b style="font-size:13px">Tampilan</b>
+        <div class="sw"><span>Tema gelap</span><button class="toggle on" id="swTheme"></button></div>
+        <div class="sw"><span>Efek transparansi (blur)</span><button class="toggle on" id="swBlur"></button></div>
+        <div class="sw"><span>Taskbar di atas</span><button class="toggle" id="swTb"></button></div>
+        <div class="sw"><span>Skala teks lebih besar</span><button class="toggle" id="swTxt"></button></div>
+      </div>
+
+      <div class="card">
+        <div class="row"><b style="font-size:13px">SukiOS</b>
+          <span class="muted" style="margin-left:auto">v0.9 mockup</span></div>
+        <div class="muted" style="margin-top:8px">Versi Android minimum: 10 (API 29) · Target: Android 16 (API 36)<br>
+        Suki Glass Design System v1.0 · Dibuat dari nol, tanpa merek pihak lain.</div>
+      </div>
+    </div></div>`;
+}
+
+/* ---- Binding per-app (dipanggil setelah render) ---- */
+APPS.calc.bind=w=>{
+  let cur='0', prev=null, op=null, fresh=true;
+  const out=w.body.querySelector('#cOut');
+  const show=v=>out.textContent=String(v).slice(0,14);
+  const calc=(a,b,o)=>({'+':a+b,'−':a-b,'×':a*b,'÷':b?a/b:NaN}[o]);
+  w.body.querySelectorAll('.keys button').forEach(b=>b.addEventListener('click',()=>{
+    const k=b.dataset.k;
+    if(k==='C'){cur='0';prev=null;op=null;fresh=true;}
+    else if('0123456789.'.includes(k)){ cur = (fresh||cur==='0') ? (k==='.'?'0.':k) : cur+k; fresh=false; }
+    else if(k==='⌫'){ cur=cur.length>1?cur.slice(0,-1):'0'; }
+    else if(k==='='){ if(prev!==null&&op){ cur=String(calc(prev,parseFloat(cur),op)); prev=null;op=null;fresh=true; } }
+    else { const n=parseFloat(cur); prev = (prev!==null&&op)?calc(prev,n,op):n; op=k; fresh=true; cur=String(prev); }
+    show(isNaN(parseFloat(cur))?'Error':cur);
+  }));
+};
+APPS.task.bind=w=>{
+  const render=()=>{
+    const l=w.body.querySelector('#tmList'); if(!l) return;
+    l.innerHTML = state.windows.length ? state.windows.map(x=>`
+      <div class="tmrow">
+        <span class="glyph" style="background:${APPS[x.app].color}">${ic(APPS[x.app].icon)}</span>
+        <span>${x.title}</span>
+        <small class="muted">${x.w}×${x.h} dp</small>
+        <button class="kill" data-k="${x.id}">Akhiri</button>
+      </div>`).join('') : '<div class="empty">Tidak ada proses aktif.</div>';
+    l.querySelectorAll('[data-k]').forEach(b=>b.addEventListener('click',()=>{
+      closeWin(b.dataset.k); toast('Proses diakhiri','Jendela ditutup oleh Task Manager.','activity');
+    }));
+  };
+  w.renderList=render; render();
+};
+APPS.settings.bind=w=>{
+  w.body.querySelectorAll('#accSw .swatch').forEach(s=>s.addEventListener('click',()=>{
+    const c=s.dataset.c;
+    document.documentElement.style.setProperty('--accent',c);
+    document.documentElement.style.setProperty('--accent-subtle',hexA(c,.18));
+    w.body.querySelectorAll('.swatch').forEach(x=>x.classList.remove('on')); s.classList.add('on');
+    toast('Warna aksen diubah','Seluruh shell SukiOS mengikuti aksen baru secara instan.','window');
+  }));
+  w.body.querySelectorAll('#wpSw .wpcard').forEach(s=>s.addEventListener('click',()=>{
+    const wp=s.dataset.wp, el=$('#wpLayer');
+    el.className='wp wp-'+wp;
+    w.body.querySelectorAll('.wpcard').forEach(x=>x.classList.remove('on')); s.classList.add('on');
+  }));
+  const tg=(id,fn)=>{ const b=w.body.querySelector(id); if(b) b.addEventListener('click',()=>{b.classList.toggle('on');fn(b.classList.contains('on'));}); };
+  tg('#swTheme',on=>document.documentElement.dataset.theme = on?'dark':'light');
+  tg('#swBlur',on=>document.documentElement.dataset.blur = on?'on':'off');
+  tg('#swTb',on=>{
+    document.documentElement.dataset.taskbar = on?'top':'bottom';
+    $('#taskbar').classList.toggle('pos-top',on);
+    $('#desktop').style.inset = on? 'var(--taskbar-h) 0 0 0' : '0 0 var(--taskbar-h) 0';
+    measure(); state.windows.forEach(x=>{ if(x.max) applyBounds(x); });
+  });
+  tg('#swTxt',on=>document.documentElement.style.fontSize = on?'17px':'16px');
+};
+function hexA(hex,a){
+  const n=parseInt(hex.slice(1),16); return `rgba(${n>>16&255},${n>>8&255},${n&255},${a})`;
+}
+
+/* Saat jendela berubah, refresh Task Manager & Task View */
+const _rt=renderTaskbar;
+renderTaskbar=function(){ _rt();
+  state.windows.forEach(w=>{ if(w.app==='task'&&w.renderList) w.renderList(); });
+  if(state.tvOpen) renderTaskView();
+};
+
+/* ============================ GLOBAL ============================ */
+$('#desktop').addEventListener('pointerdown',e=>{
+  if(e.target.id==='desktop'||e.target.id==='iconGrid'||e.target.id==='winLayer'){
+    $$('.dicon').forEach(x=>x.classList.remove('sel'));
+  }
+});
+/* klik dua kali area desktop kosong = buka Task View (seperti "Show desktop" terbalik) */
+$('#desktop').addEventListener('dblclick',e=>{ if(e.target.closest('.win,.dicon')) return; toggleTV(); });
+
+document.addEventListener('keydown',e=>{
+  const meta = e.metaKey||e.ctrlKey;
+  if(e.key==='Escape'){ toggleStart(false); closeQS(); closeCtx(); toggleTV(false); }
+  if((e.key==='Meta'&&!e.ctrlKey&&!e.altKey)||(meta&&e.code==='Space')){ e.preventDefault(); toggleStart(); }
+  if(e.altKey&&e.key==='Tab'){ e.preventDefault(); toggleTV(); }
+  if(e.altKey&&e.key==='F4'){ e.preventDefault(); if(state.activeId) closeWin(state.activeId); }
+  if(meta&&e.key.toLowerCase()==='d'){ e.preventDefault(); state.windows.forEach(w=>{ if(!w.min) toggleMin(w.id); }); }
+  if(meta&&(e.key==='ArrowLeft'||e.key==='ArrowRight')){
+    e.preventDefault(); const w=findWin(state.activeId); if(w) snap(w, e.key==='ArrowLeft'?'left':'right');
+  }
+  if(meta&&e.key==='ArrowUp'){ const w=findWin(state.activeId); if(w){e.preventDefault();setMax(w,true);} }
+});
+
+/* Jam & tanggal */
+function tick(){
+  const d=new Date();
+  $('#clock').innerHTML = `<b>${d.toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'})}</b>
+    <i>${d.toLocaleDateString('id-ID',{day:'numeric',month:'short'})}</i>`;
+}
+setInterval(tick,1000); tick();
+
+/* Notifikasi sambutan */
+setTimeout(()=>toast('Selamat datang di SukiOS 👋','Mockup interaktif. Coba geser jendela ke tepi layar untuk snap, atau tekan Ctrl+Space untuk Start Menu.','grid'),1800);
+
+/* Tombol Super (Meta) membuka Start — seperti OS desktop */
+window.addEventListener('keyup',e=>{ if(e.key==='Meta'&&!e.ctrlKey&&!e.metaKey){} });
+
+/* Boot */
+buildIcons(); renderTaskbar(); renderStart(); renderQS();
+window.addEventListener('load',()=>{
+  setTimeout(()=>{
+    $('#boot').classList.add('hide');
+    setTimeout(()=>$('#boot').remove(),400);
+    setTimeout(()=>openApp('task'),650);
+  },1500);
+});
+</script>
+</body>
+</html>

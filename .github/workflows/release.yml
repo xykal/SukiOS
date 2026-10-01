@@ -1,0 +1,152 @@
+name: Release APK (signed, draft)
+
+# Alur rilis:
+#   1. push tag vX.Y.Z  ->  workflow ini membangun APK release
+#   2. APK ditandatangani dengan keystore dari GitHub Secrets (bila tersedia)
+#   3. APK dilampirkan ke DRAFT release — belum publik sampai dipublikasikan manual
+#   4. workflow "Cleanup CI traces" menghapus riwayat run + artifact task ini
+#      setelah selesai; draft release dan APK-nya TIDAK dihapus (deliverable).
+
+on:
+  push:
+    tags: [ 'v*' ]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Tag rilis (contoh: v0.1.0-poc)'
+        required: true
+        type: string
+      notes:
+        description: 'Catatan tambahan untuk catatan rilis (opsional)'
+        required: false
+        default: ''
+        type: string
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+defaults:
+  run:
+    working-directory: poc
+
+jobs:
+  release:
+    name: Bangun APK bertanda tangan lalu buat draft release
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Pastikan Android SDK (platform 35 + build-tools 35)
+        working-directory: .
+        run: |
+          set -euo pipefail
+          SDKMANAGER="$(ls "${ANDROID_SDK_ROOT}"/cmdline-tools/*/bin/sdkmanager 2>/dev/null | head -1 || true)"
+          if [ -n "$SDKMANAGER" ]; then
+            yes | "$SDKMANAGER" --licenses >/dev/null 2>&1 || true
+            "$SDKMANAGER" "platform-tools" "platforms;android-35" "build-tools;35.0.0" >/dev/null 2>&1 || true
+          fi
+
+      - name: Set up Gradle 8.11.1
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.11.1'
+
+      - name: Siapkan keystore dari secrets (bila ada)
+        id: ks
+        env:
+          KEYSTORE_B64: ${{ secrets.SUKIOS_KEYSTORE_BASE64 }}
+        run: |
+          set -euo pipefail
+          if [ -n "${KEYSTORE_B64:-}" ]; then
+            printf '%s' "$KEYSTORE_B64" | base64 -d > "${RUNNER_TEMP}/sukios-release.jks"
+            echo "signed=1" >> "$GITHUB_OUTPUT"
+            echo "Keystore rilis disiapkan di runner. Nilainya tidak pernah dicetak ke log."
+          else
+            echo "signed=0" >> "$GITHUB_OUTPUT"
+            echo "::warning title=Signing rilis belum diset::Secrets keystore belum ada; APK akan memakai debug key dan ditandai tidak resmi pada catatan rilis."
+          fi
+
+      - name: Build release APK
+        env:
+          SUKIOS_KEYSTORE_FILE: ${{ steps.ks.outputs.signed == '1' && format('{0}/sukios-release.jks', runner.temp) || '' }}
+          SUKIOS_KEYSTORE_PASSWORD: ${{ secrets.SUKIOS_KEYSTORE_PASSWORD }}
+          SUKIOS_KEY_ALIAS: ${{ secrets.SUKIOS_KEY_ALIAS }}
+          SUKIOS_KEY_PASSWORD: ${{ secrets.SUKIOS_KEY_PASSWORD }}
+        run: gradle :app:assembleRelease --no-daemon --stacktrace
+
+      - name: Siapkan berkas APK dan metadata
+        id: meta
+        run: |
+          set -euo pipefail
+          TAG="${{ github.event.inputs.tag || github.ref_name }}"
+          APK="$(find app/build/outputs/apk/release -name '*.apk' | head -1)"
+          if [ -z "$APK" ]; then
+            echo "::error::APK release tidak ditemukan."
+            exit 1
+          fi
+          OUT="SukiOS-PoC-${TAG}.apk"
+          cp "$APK" "$OUT"
+          VERSION="$(grep -m1 'versionName' app/build.gradle.kts | sed 's/.*"\(.*\)".*/\1/')"
+          {
+            echo "tag=${TAG}"
+            echo "apk=${OUT}"
+            echo "sha=$(git rev-parse --short HEAD)"
+            echo "version=${VERSION}"
+          } >> "$GITHUB_OUTPUT"
+          ls -lh "$OUT"
+
+      - name: Buat draft release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SIGNED: ${{ steps.ks.outputs.signed }}
+          NOTES_EXTRA: ${{ github.event.inputs.notes }}
+        run: |
+          set -euo pipefail
+          if [ "${SIGNED}" = "1" ]; then
+            SIGN_LINE="Ditandatangani dengan keystore rilis dari GitHub Secrets."
+          else
+            SIGN_LINE="PERINGATAN: ditandatangani dengan debug key karena secrets keystore rilis belum diset. Jangan dipakai untuk distribusi publik."
+          fi
+
+          {
+            echo "## SukiOS PoC ${{ steps.meta.outputs.tag }}"
+            echo
+            echo "APK PoC untuk menguji window engine (5 lane uji) di perangkat nyata."
+            echo
+            echo "- Commit: \`${{ steps.meta.outputs.sha }}\`"
+            echo "- versionName: \`${{ steps.meta.outputs.version }}\`"
+            echo "- ${SIGN_LINE}"
+            echo "- Status: build ini belum diuji di perangkat sampai ada laporan balik."
+            echo
+            echo "${NOTES_EXTRA}"
+            echo
+            echo "Panduan uji: \`poc/README.md\`."
+          } > "${RUNNER_TEMP}/notes.md"
+
+          TARGET=""
+          if [ "${GITHUB_EVENT_NAME}" = "workflow_dispatch" ]; then
+            TARGET="--target ${GITHUB_REF_NAME}"
+          fi
+
+          gh release create "${{ steps.meta.outputs.tag }}" "${{ steps.meta.outputs.apk }}" \
+            --draft \
+            --title "SukiOS PoC ${{ steps.meta.outputs.tag }}" \
+            --notes-file "${RUNNER_TEMP}/notes.md" \
+            ${TARGET}
+
+          echo "Draft release dibuat. Riwayat run ini akan dibersihkan oleh workflow Cleanup CI traces; draft release tetap ada."

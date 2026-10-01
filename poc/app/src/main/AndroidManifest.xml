@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!--
+      QUERY_ALL_PACKAGES
+      Google Play mengizinkan permission ini untuk LAUNCHER (lihat PRD §8).
+      Di sini dipakai untuk mengukur: berapa banyak app yang terlihat oleh SukiOS.
+      Alternatif yang lebih hemat izin: blok <queries> di bawah (sudah dipasang).
+    -->
+    <uses-permission android:name="android.permission.QUERY_ALL_PACKAGES" />
+
+    <!-- Dipakai HANYA untuk uji coba "taskbar melayang di atas app lain" -->
+    <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
+
+    <!-- Cara Play-friendly untuk melihat app yang punya launcher, tanpa izin di atas -->
+    <queries>
+        <intent>
+            <action android:name="android.intent.action.MAIN" />
+            <category android:name="android.intent.category.LAUNCHER" />
+        </intent>
+    </queries>
+
+    <application
+        android:allowBackup="false"
+        android:icon="@mipmap/ic_launcher"
+        android:label="@string/app_name"
+        android:roundIcon="@mipmap/ic_launcher_round"
+        android:supportsRtl="true"
+        android:theme="@style/SukiTheme">
+
+        <!--
+          configChanges: WAJIB untuk host yang memakai virtual display / activity embedding.
+          Kalau Activity di-recreate, semua jendela embed ikut mati.
+        -->
+        <activity
+            android:name=".MainActivity"
+            android:configChanges="orientation|screenSize|screenLayout|smallestScreenSize|keyboard|keyboardHidden|density|uiMode|layoutDirection|fontScale|locale|touchscreen|navigation"
+            android:exported="true"
+            android:launchMode="singleTask"
+            android:resizeableActivity="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+
+        <service
+            android:name=".OverlayTaskbarService"
+            android:exported="false" />
+
+    </application>
+
+</manifest>

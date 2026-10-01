@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">SukiOS PoC</string>
+    <string name="overlay_running">SukiOS Taskbar (overlay aktif)</string>
+    <string name="overlay_stop">Hentikan</string>
+</resources>

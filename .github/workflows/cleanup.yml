@@ -1,0 +1,96 @@
+name: Cleanup CI traces
+
+# Policy cleanup: setelah setiap build/release selesai, hapus riwayat run +
+# artifact yang dibuat task itu. Logika pembersihan ada di tools/cleanup_ci.py
+# supaya bisa dibaca dan diaudit, bukan tersembunyi di dalam YAML.
+#
+# Yang TIDAK dihapus: release, tag, branch, run milik workflow lain, dan run
+# yang gagal (default) agar log error bisa didiagnosis lebih dulu.
+# Cache Gradle bersama tidak dihapus kecuali purge_caches=true, karena
+# menghapusnya memperlambat build berikutnya.
+
+on:
+  workflow_run:
+    workflows: [ "Build APK", "Release APK (signed, draft)" ]
+    types: [ completed ]
+  workflow_dispatch:
+    inputs:
+      run_id:
+        description: 'ID run yang akan dibersihkan (wajib untuk mode manual)'
+        required: true
+        type: string
+      purge_caches:
+        description: 'Hapus juga cache yang bisa diatribusikan ke run ini'
+        required: false
+        type: boolean
+        default: false
+      keep_run_record:
+        description: 'Hanya hapus artifact; biarkan riwayat run tetap ada'
+        required: false
+        type: boolean
+        default: false
+      include_failed:
+        description: 'Tetap bersihkan walau run berstatus gagal'
+        required: false
+        type: boolean
+        default: false
+
+permissions:
+  actions: write
+  contents: read
+
+concurrency:
+  group: cleanup-ci-traces
+  cancel-in-progress: false
+
+jobs:
+  cleanup:
+    name: Bersihkan jejak CI
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Tentukan target dan kebijakan
+        id: t
+        env:
+          EVENT: ${{ github.event_name }}
+          WR_ID: ${{ github.event.workflow_run.id }}
+          WR_CONCLUSION: ${{ github.event.workflow_run.conclusion }}
+          IN_RUN_ID: ${{ inputs.run_id }}
+          IN_PURGE: ${{ inputs.purge_caches }}
+          IN_KEEP: ${{ inputs.keep_run_record }}
+          IN_FAILED: ${{ inputs.include_failed }}
+        run: |
+          set -euo pipefail
+          if [ "$EVENT" = "workflow_run" ]; then
+            RID="$WR_ID"; CONC="$WR_CONCLUSION"
+            PURGE="false"; KEEP="false"; INC_FAILED="false"
+          else
+            RID="$IN_RUN_ID"; CONC="manual"
+            PURGE="${IN_PURGE:-false}"; KEEP="${IN_KEEP:-false}"; INC_FAILED="${IN_FAILED:-false}"
+          fi
+          if ! printf '%s' "$RID" | grep -Eq '^[0-9]+$'; then
+            echo "::error::run_id tidak valid: '$RID'"
+            exit 1
+          fi
+          {
+            echo "run_id=$RID"
+            echo "purge_caches=$PURGE"
+            echo "keep_run=$KEEP"
+            echo "include_failed=$INC_FAILED"
+          } >> "$GITHUB_OUTPUT"
+          echo "Target: run $RID (pemicu: $EVENT, status: $CONC, purge_caches=$PURGE, keep_run=$KEEP, include_failed=$INC_FAILED)"
+
+      - name: Jalankan pembersih
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          RUN_ID: ${{ steps.t.outputs.run_id }}
+          CURRENT_RUN_ID: ${{ github.run_id }}
+          PURGE_CACHES: ${{ steps.t.outputs.purge_caches }}
+          KEEP_RUN: ${{ steps.t.outputs.keep_run }}
+          INCLUDE_FAILED: ${{ steps.t.outputs.include_failed }}
+        run: python3 tools/cleanup_ci.py

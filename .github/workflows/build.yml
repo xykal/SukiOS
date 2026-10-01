@@ -1,0 +1,67 @@
+name: Build APK
+
+# Verifikasi kompilasi. Workflow ini TIDAK menyimpan artifact/s APK:
+# APK yang bisa dipasang diterbitkan lewat workflow Release (draft release).
+# Setelah selesai, workflow "Cleanup CI traces" membersihkan riwayat run-nya.
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: build-${{ github.ref }}
+  cancel-in-progress: true
+
+defaults:
+  run:
+    working-directory: poc
+
+jobs:
+  build:
+    name: Verifikasi kompilasi
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Pastikan Android SDK (platform 35 + build-tools 35)
+        working-directory: .
+        run: |
+          set -euo pipefail
+          SDKMANAGER="$(ls "${ANDROID_SDK_ROOT}"/cmdline-tools/*/bin/sdkmanager 2>/dev/null | head -1 || true)"
+          if [ -n "$SDKMANAGER" ]; then
+            yes | "$SDKMANAGER" --licenses >/dev/null 2>&1 || true
+            "$SDKMANAGER" "platform-tools" "platforms;android-35" "build-tools;35.0.0" >/dev/null 2>&1 || true
+          fi
+          ls "${ANDROID_SDK_ROOT}/platforms" || true
+
+      - name: Set up Gradle 8.11.1
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.11.1'
+
+      - name: Build debug
+        run: gradle :app:assembleDebug --no-daemon --stacktrace
+
+      - name: Build release (debug-signed bila secrets keystore belum ada)
+        run: gradle :app:assembleRelease --no-daemon --stacktrace
+
+      - name: Ringkasan hasil
+        run: |
+          set -euo pipefail
+          echo "APK yang dihasilkan pada run ini:"
+          find app/build/outputs/apk -name '*.apk' -exec ls -lh {} \; || true
+          echo "(tidak diunggah sebagai artifact — pakai tag rilis untuk APK yang bisa dipasang)"
