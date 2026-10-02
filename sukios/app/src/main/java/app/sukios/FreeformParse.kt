@@ -30,7 +30,7 @@ data class TaskRow(
  *
  * Bentuk dump diperiksa terhadap SUMBER AOSP (ActivityStack.dump / Task.toFullString / RootWindowContainer
  * .dumpActivities) untuk Android 10, 11 dan 14; fixture ujinya meniru bentuk itu. Yang belum terbukti adalah
- * perilaku di ROM pabrikan kall: Laboratorium menyimpan potongan dump mentah supaya itu bisa diperiksa.
+ * perilaku di ROM pabrikan tertentu: Laboratorium menyimpan potongan dump mentah supaya itu bisa diperiksa.
  */
 object FreeformParse {
 

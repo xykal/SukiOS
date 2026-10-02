@@ -210,7 +210,8 @@ class WinEngine {
     /** Zona yang akan dipakai bila geseran dilepas sekarang; null bila jendela masih di tengah. Pratinjau memakai aturan yang sama. */
     fun previewZone(id: Int, sw: Float, sh: Float, density: Float = this.density): SnapZone? {
         val win = find(id) ?: return null
-        val edge = 96f * density
+        // Tepi kiri/kanan sempit (24 dp): jendela lebar yang digeser sedikit tidak boleh langsung menempel.
+        val edge = 24f * density
         val topEdge = 40f * density
         val work = workArea(sw, sh)
         return when {
