@@ -126,7 +126,11 @@ jobs:
           {
             echo "## SukiOS PoC ${{ steps.meta.outputs.tag }}"
             echo
-            echo "APK PoC untuk menguji window engine (5 lane uji) di perangkat nyata."
+            echo "APK PoC untuk menguji window engine (6 lane uji) di perangkat nyata."
+            echo
+            echo "Yang baru di 0.2.0: mode kunci landscape + desktop penuh, panel Akses Lanjutan"
+            echo "(Shizuku: force-resizable, izin overlay, peluncuran app ke display lain), mode Go"
+            echo "untuk perangkat RAM rendah, dan tampilan matte tanpa neon."
             echo
             echo "- Commit: \`${{ steps.meta.outputs.sha }}\`"
             echo "- versionName: \`${{ steps.meta.outputs.version }}\`"

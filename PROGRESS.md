@@ -80,7 +80,12 @@ Permintaan kall: kunci landscape + desktop penuh, engine pembuka izin untuk Andr
 **Verifikasi**
 - Uji statis Kotlin: saldo kurung, import API baru, cakupan `WinKind`, arity pemanggilan, referensi usang — bersih.
 - Uji mockup (jsdom): semua interaksi inti jalan, tanpa error.
-- Kompilasi di CI: menunggu run berikutnya (dicatat setelah selesai).
+- CI build 1 (run 36988978988, commit 7952258): **gagal** — 3 error di `WindowChrome.kt` (argumen `drawLine` salah urutan). Seluruh kode Shizuku, LANE 6, dan mode desktop lolos kompilasi.
+- Perbaikan commit `e2c300b`; CI build 2 (run 36989176265): **sukses**. Riwayat run dihapus otomatis oleh pembersih, kesimpulan tercatat di log pembersih run 36989402222.
+- Rilis `v0.2.0-poc` (draft, debug-signed): dibuat setelah build sukses.
+
+**Pelajaran**
+- Verifikasi lewat CI menemukan bug nyata yang tidak tertangkap uji statis (kesalahan urutan argumen pada API Compose). Karena itu klaim "berfungsi" selalu menunggu CI.
 
 ### Langkah berikutnya
 1. Uji 5 lane di perangkat nyata, kirim laporan lewat tombol "Salin laporan" di app.
