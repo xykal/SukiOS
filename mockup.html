@@ -11,27 +11,27 @@
    ============================================================ */
 :root{
   /* Brand */
-  --accent:#7C5CFF;
-  --accent-2:#35D0BA;
-  --accent-subtle:rgba(124,92,255,.16);
+  --accent:#6E8CA8;
+  --accent-2:#7B9E8C;
+  --accent-subtle:rgba(110,140,168,.16);
   --on-accent:#ffffff;
 
   /* Dark neutrals (default) */
-  --bg-base:#0B0D12;
-  --bg-surface:#12151D;
-  --bg-elevated:#1A1F2B;
-  --bg-overlay:#242A38;
+  --bg-base:#0F1113;
+  --bg-surface:#17191C;
+  --bg-elevated:#1E2124;
+  --bg-overlay:#262A2E;
   --stroke-subtle:rgba(255,255,255,.07);
   --stroke-strong:rgba(255,255,255,.14);
-  --text-primary:#F2F4F8;
-  --text-secondary:#A8B0C0;
-  --text-disabled:#5A6274;
-  --mica:rgba(18,21,29,.62);
-  --acrylic:rgba(26,31,43,.72);
-  --danger:#FF5F56;
-  --success:#3FD08A;
-  --warning:#FFB44C;
-  --info:#5B9DFF;
+  --text-primary:#E7E8EA;
+  --text-secondary:#A0A4A9;
+  --text-disabled:#6B7076;
+  --mica:rgba(23,25,28,.72);
+  --acrylic:rgba(30,33,36,.80);
+  --danger:#B4675F;
+  --success:#7FA98A;
+  --warning:#C0A06A;
+  --info:#7E93AC;
 
   /* Shape */
   --r-xs:4px; --r-sm:8px; --r-md:12px; --r-lg:16px; --r-xl:24px; --r-full:999px;
@@ -50,9 +50,9 @@
   --blur:28px;
 }
 :root[data-theme="light"]{
-  --bg-base:#EEF1F7; --bg-surface:#F8FAFD; --bg-elevated:#FFFFFF; --bg-overlay:#FFFFFF;
+  --bg-base:#EDEEEF; --bg-surface:#F6F7F8; --bg-elevated:#FFFFFF; --bg-overlay:#FFFFFF;
   --stroke-subtle:rgba(10,15,30,.08); --stroke-strong:rgba(10,15,30,.14);
-  --text-primary:#0E1320; --text-secondary:#4A5468; --text-disabled:#98A0B0;
+  --text-primary:#14161A; --text-secondary:#4E5359; --text-disabled:#9AA0A6;
   --mica:rgba(248,250,253,.66); --acrylic:rgba(255,255,255,.76);
   --el1:0 2px 8px rgba(20,30,60,.08);
   --el2:0 8px 24px rgba(20,30,60,.12);
@@ -73,11 +73,11 @@ button{font:inherit;color:inherit;background:none;border:none;cursor:pointer}
       stroke-linecap:round;stroke-linejoin:round;flex:none}
 
 /* ===================== BOOT SPLASH ===================== */
-#boot{position:fixed;inset:0;z-index:9999;background:radial-gradient(circle at 50% 40%,#161B29,#07080C 70%);
+#boot{position:fixed;inset:0;z-index:9999;background:#0E1013;
   display:flex;flex-direction:column;align-items:center;justify-content:center;gap:22px;transition:opacity var(--m-slow) var(--ease)}
 #boot.hide{opacity:0;pointer-events:none}
-.boot-logo{width:96px;height:96px;border-radius:30px;background:linear-gradient(135deg,var(--accent),var(--accent-2));
-  display:grid;place-items:center;box-shadow:0 20px 60px rgba(124,92,255,.45);animation:bootIn 900ms var(--ease-slow) both}
+.boot-logo{width:96px;height:96px;border-radius:30px;background:var(--accent);
+  display:grid;place-items:center;box-shadow:0 18px 40px rgba(0,0,0,.45);animation:bootIn 900ms var(--ease-slow) both}
 @keyframes bootIn{from{transform:scale(.7);opacity:0}to{transform:scale(1);opacity:1}}
 .boot-logo svg{width:54px;height:54px;stroke:#fff;fill:none;stroke-width:9;stroke-linecap:round}
 .boot-text{color:#E8ECF6;font-size:15px;letter-spacing:.14em;text-transform:uppercase;font-weight:600;opacity:.85}
@@ -90,22 +90,10 @@ button{font:inherit;color:inherit;background:none;border:none;cursor:pointer}
 /* ===================== WALLPAPER ===================== */
 #wallpaper{position:fixed;inset:0;background:var(--bg-base);overflow:hidden;filter:brightness(var(--bright,1))}
 #wallpaper .wp{position:absolute;inset:0;transition:opacity 500ms var(--ease)}
-.wp-aurora{background:
-  radial-gradient(900px 640px at 18% 12%,rgba(124,92,255,.55),transparent 62%),
-  radial-gradient(760px 620px at 82% 22%,rgba(53,208,186,.40),transparent 60%),
-  radial-gradient(820px 700px at 62% 96%,rgba(255,122,182,.30),transparent 62%),
-  linear-gradient(160deg,#0A0C12,#0E1220 55%,#0A0D16)}
-.wp-ember{background:
-  radial-gradient(820px 620px at 22% 20%,rgba(255,180,76,.42),transparent 60%),
-  radial-gradient(760px 640px at 78% 78%,rgba(255,95,86,.34),transparent 62%),
-  linear-gradient(160deg,#120C0A,#1A1010 60%,#0C0908)}
-.wp-mint{background:
-  radial-gradient(840px 620px at 25% 78%,rgba(53,208,186,.46),transparent 62%),
-  radial-gradient(720px 620px at 78% 18%,rgba(91,157,255,.32),transparent 60%),
-  linear-gradient(160deg,#08110F,#0A1620 60%,#070C10)}
-.wp-noir{background:
-  radial-gradient(900px 700px at 50% 30%,rgba(180,190,220,.16),transparent 60%),
-  linear-gradient(160deg,#08090C,#111318 60%,#05060A)}
+.wp-charcoal{background:linear-gradient(170deg,#16191D,#0E1013)}
+.wp-slate{background:linear-gradient(170deg,#151A20,#0F1317)}
+.wp-moss{background:linear-gradient(170deg,#141A17,#0E1310)}
+.wp-sand{background:linear-gradient(170deg,#1A1714,#131110)}
 .grain{position:absolute;inset:0;opacity:.05;pointer-events:none;
   background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence baseFrequency='.8' numOctaves='3'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)'/%3E%3C/svg%3E")}
 
@@ -238,7 +226,7 @@ button{font:inherit;color:inherit;background:none;border:none;cursor:pointer}
 .sfooter{flex:none;display:flex;align-items:center;gap:12px;padding-top:12px;border-top:1px solid var(--stroke-subtle)}
 .suser{display:flex;align-items:center;gap:10px;font-size:13px;font-weight:600;padding:6px 10px;border-radius:var(--r-sm)}
 .suser:hover{background:var(--stroke-subtle)}
-.avatar{width:30px;height:30px;border-radius:50%;background:linear-gradient(135deg,var(--accent),var(--accent-2));
+.avatar{width:30px;height:30px;border-radius:50%;background:var(--accent);
   display:grid;place-items:center;font-size:12px;font-weight:700;color:#fff}
 .pbtn{margin-left:auto;width:38px;height:38px;border-radius:var(--r-sm);display:grid;place-items:center}
 .pbtn:hover{background:var(--stroke-subtle);color:var(--accent)}
@@ -304,7 +292,8 @@ button{font:inherit;color:inherit;background:none;border:none;cursor:pointer}
 .toast.out{opacity:0;transform:translateX(40px);transition:all var(--m-base)}
 .toast b{font-size:13px;display:block;margin-bottom:3px}
 .toast p{font-size:12px;color:var(--text-secondary);line-height:1.4}
-.toast .glyph{width:30px;height:30px;border-radius:9px;display:grid;place-items:center;flex:none}
+.toast .glyph{width:30px;height:30px;border-radius:9px;display:grid;place-items:center;flex:none;
+  background:rgba(110,140,168,.20)!important}
 
 /* ============ APP CONTENT STYLES ============ */
 .row{display:flex;gap:12px;align-items:center}
@@ -351,11 +340,14 @@ textarea{width:100%;height:100%;min-height:220px;background:none;border:none;out
 .fitem{display:flex;align-items:center;gap:12px;padding:9px 10px;border-radius:var(--r-sm);font-size:13px}
 .fitem:hover{background:var(--stroke-subtle)}
 .fitem small{margin-left:auto;color:var(--text-disabled);font-size:11.5px}
+.fbadge{width:22px;height:22px;border-radius:6px;display:grid;place-items:center;flex:none;
+  background:rgba(110,140,168,.18);border:1px solid rgba(110,140,168,.38);
+  color:#9DB0C4;font-size:9px;font-weight:700;letter-spacing:.02em}
 .phgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(92px,1fr));gap:10px}
 .phgrid i{aspect-ratio:1;border-radius:var(--r-md);display:block}
 .pm{display:flex;flex-direction:column;align-items:center;gap:16px;padding:10px}
 .pm .art{width:150px;height:150px;border-radius:var(--r-xl);box-shadow:var(--el3);
-  background:linear-gradient(135deg,var(--accent),var(--accent-2))}
+  background:var(--accent)}
 .pbar{width:100%;height:4px;border-radius:2px;background:var(--stroke-strong);overflow:hidden}
 .pbar i{display:block;height:100%;width:38%;background:var(--accent);animation:play 9s linear infinite}
 @keyframes play{from{width:8%}to{width:100%}}
@@ -390,7 +382,7 @@ textarea{width:100%;height:100%;min-height:220px;background:none;border:none;out
 
 <!-- ============ WALLPAPER ============ -->
 <div id="wallpaper">
-  <div class="wp wp-aurora" id="wpLayer"></div>
+  <div class="wp wp-charcoal" id="wpLayer"></div>
   <div class="grain"></div>
 </div>
 
@@ -506,14 +498,14 @@ const ic = (n,cls='icon') => `<svg class="${cls}" viewBox="0 0 24 24">${P[n]||P.
 
 /* ---------- Katalog aplikasi ---------- */
 const APPS = {
-  files:   {name:'Files',        icon:'folder',   color:'linear-gradient(135deg,#7C5CFF,#5B8CFF)', render:renderFiles},
-  notes:   {name:'Notes',        icon:'note',     color:'linear-gradient(135deg,#FFB44C,#FF7AB6)', render:renderNotes},
-  calc:    {name:'Calculator',   icon:'calc',     color:'linear-gradient(135deg,#35D0BA,#5B9DFF)', render:renderCalc},
-  browser: {name:'Browser',      icon:'globe',    color:'linear-gradient(135deg,#5B9DFF,#35D0BA)', render:renderBrowser},
-  photos:  {name:'Photos',       icon:'image',    color:'linear-gradient(135deg,#FF7AB6,#7C5CFF)', render:renderPhotos},
-  music:   {name:'Music',        icon:'music',    color:'linear-gradient(135deg,#7C5CFF,#35D0BA)', render:renderMusic},
-  task:    {name:'Task Manager', icon:'activity', color:'linear-gradient(135deg,#3FD08A,#35D0BA)', render:renderTask},
-  settings:{name:'Settings',     icon:'window',   color:'linear-gradient(135deg,#4A5468,#242A38)', render:renderSettings}
+  files:   {name:'Files',        icon:'folder',   color:'linear-gradient(160deg,#7D8A99,#5F6B78)', render:renderFiles},
+  notes:   {name:'Notes',        icon:'note',     color:'linear-gradient(160deg,#A8998A,#7E7265)', render:renderNotes},
+  calc:    {name:'Calculator',   icon:'calc',     color:'linear-gradient(160deg,#7B9E8C,#5D7C6C)', render:renderCalc},
+  browser: {name:'Browser',      icon:'globe',    color:'linear-gradient(160deg,#7E93AC,#5C6E83)', render:renderBrowser},
+  photos:  {name:'Photos',       icon:'image',    color:'linear-gradient(160deg,#9E8AA0,#7A6A7C)', render:renderPhotos},
+  music:   {name:'Music',        icon:'music',    color:'linear-gradient(160deg,#8C9E7B,#6B7A5E)', render:renderMusic},
+  task:    {name:'Task Manager', icon:'activity', color:'linear-gradient(160deg,#A08A7B,#7C6A5E)', render:renderTask},
+  settings:{name:'Settings',     icon:'window',   color:'linear-gradient(160deg,#6F757C,#4C5157)', render:renderSettings}
 };
 const DESKTOP_ICONS = ['files','notes','browser','calc','photos','music','task','settings'];
 
@@ -531,7 +523,7 @@ window.addEventListener('resize',()=>{ measure(); layoutIcons(); windows_.forEac
 function toast(title,body,icon='info'){
   const t=document.createElement('div');
   t.className='toast';
-  t.innerHTML=`<span class="glyph" style="background:linear-gradient(135deg,var(--accent),var(--accent-2))">${ic(icon,'icon'==='' ? '' : 'icon')}</span>
+  t.innerHTML=`<span class="glyph" style="background:var(--accent)">${ic(icon,'icon'==='' ? '' : 'icon')}</span>
     <div><b>${title}</b><p>${body}</p></div>`;
   t.querySelector('svg').style.cssText='width:16px;height:16px;stroke:#fff;fill:none;stroke-width:1.75';
   $('#toasts').appendChild(t);
@@ -780,7 +772,7 @@ function resizeHandle(w,h,dir){
 
 /* ============================ TASKBAR ============================ */
 function renderTaskbar(){
-  $('#startBtn').innerHTML = `<span class="glyph" style="background:linear-gradient(135deg,var(--accent),var(--accent-2))">${ic('grid')}</span>`;
+  $('#startBtn').innerHTML = `<span class="glyph" style="background:var(--accent)">${ic('grid')}</span>`;
   $('#tvBtn').innerHTML = `<span class="glyph" style="background:var(--stroke-subtle)">${ic('window')}</span>`;
   const box=$('#tbApps'); box.innerHTML='';
   // pinned + running
@@ -901,7 +893,7 @@ $('#brightness').addEventListener('input',e=>{
 });
 $('#volume').addEventListener('input',e=>{
   e.target.style.setProperty('--p',e.target.value+'%');
-  document.documentElement.style.setProperty('--accent-2',e.target.value>50?'#35D0BA':'#5B9DFF');
+  document.documentElement.style.setProperty('--accent-2',e.target.value>50?'#7B9E8C':'#7E93AC');
 });
 
 /* ============================ TASK VIEW ============================ */
@@ -1011,23 +1003,23 @@ function taskbarMenu(e,id,running){
 function bindAppEvents(w){ const f=APPS[w.app].bind; if(f) f(w); }
 
 function renderFiles(){
-  const files=[['📁','Dokumen','12 item','—'],['📁','Gambar','248 item','—'],['📁','Musik','64 item','—'],
-    ['📄','Proposal SukiOS.pdf','2,4 MB','Hari ini'],['📊','Roadmap.xlsx','840 KB','Kemarin'],
-    ['🖼️','wallpaper-aurora.png','5,1 MB','Kemarin'],['🗒️','catatan-ide.txt','4 KB','3 hari lalu'],
-    ['🎬','demo-launcher.mp4','88 MB','Minggu lalu']];
+  const files=[['DR','Dokumen','12 item','—'],['GB','Gambar','248 item','—'],['MU','Musik','64 item','—'],
+    ['PD','Proposal SukiOS.pdf','2,4 MB','Hari ini'],['XL','Roadmap.xlsx','840 KB','Kemarin'],
+    ['PN','wallpaper-desktop.png','5,1 MB','Kemarin'],['TX','catatan-ide.txt','4 KB','3 hari lalu'],
+    ['MP','demo-launcher.mp4','88 MB','Minggu lalu']];
   return `<div class="flist">
     <div class="fside">
-      <button class="on">🏠 Beranda</button><button>📄 Dokumen</button><button>⬇️ Unduhan</button>
-      <button>🖼️ Gambar</button><button>🎵 Musik</button><button>🎬 Video</button>
+      <button class="on">Beranda</button><button>Dokumen</button><button>Unduhan</button>
+      <button>Gambar</button><button>Musik</button><button>Video</button>
       <div style="height:8px"></div>
-      <button>💾 Internal</button><button>💳 Kartu SD</button><button>🔌 USB OTG</button>
+      <button>Internal</button><button>Kartu SD</button><button>USB OTG</button>
     </div>
     <div class="fmain">
       <div class="row" style="margin-bottom:12px">
         <b style="font-size:15px">Beranda</b>
         <span class="muted" style="margin-left:auto">Mode: List</span>
       </div>
-      ${files.map(f=>`<div class="fitem"><span style="font-size:17px">${f[0]}</span>
+      ${files.map(f=>`<div class="fitem"><span class="fbadge">${f[0]}</span>
         <span>${f[1]}</span><small>${f[2]} · ${f[3]}</small></div>`).join('')}
     </div></div>`;
 }
@@ -1061,9 +1053,9 @@ function renderCalc(){
 
 function renderBrowser(){
   return `<div class="browser">
-    <div class="urlbar">${ic('lock','icon')}<span style="width:14px;height:14px">🔒</span>suki.os/beranda</div>
+    <div class="urlbar">${ic('lock','icon')}<span>suki.os/beranda</span></div>
     <div class="page">
-      <div style="width:46%;height:26px;border-radius:8px;background:var(--accent);opacity:.85;margin-bottom:18px"></div>
+      <div style="width:46%;height:26px;border-radius:8px;background:var(--accent);opacity:.8;margin-bottom:18px"></div>
       <div class="bar" style="width:88%"></div><div class="bar" style="width:74%"></div>
       <div class="bar" style="width:92%"></div><div class="bar" style="width:60%"></div>
       <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin:22px 0">
@@ -1074,12 +1066,12 @@ function renderBrowser(){
 }
 
 function renderPhotos(){
-  const g=['linear-gradient(135deg,#7C5CFF,#35D0BA)','linear-gradient(135deg,#FF7AB6,#7C5CFF)',
-    'linear-gradient(135deg,#FFB44C,#FF7AB6)','linear-gradient(135deg,#5B9DFF,#35D0BA)',
-    'linear-gradient(135deg,#3FD08A,#5B9DFF)','linear-gradient(135deg,#242A38,#7C5CFF)',
-    'linear-gradient(135deg,#35D0BA,#0B0D12)','linear-gradient(135deg,#FF5F56,#FFB44C)',
-    'linear-gradient(135deg,#7C5CFF,#242A38)','linear-gradient(135deg,#5B9DFF,#7C5CFF)',
-    'linear-gradient(135deg,#FFB44C,#3FD08A)','linear-gradient(135deg,#FF7AB6,#0B0D12)'];
+  const g=['linear-gradient(160deg,#7D8A99,#5F6B78)','linear-gradient(160deg,#9E8AA0,#7A6A7C)',
+    'linear-gradient(160deg,#A8998A,#7E7265)','linear-gradient(160deg,#7E93AC,#5C6E83)',
+    'linear-gradient(160deg,#7FA98A,#5E7F6A)','linear-gradient(160deg,#6F757C,#43484D)',
+    'linear-gradient(160deg,#7B9E8C,#59705F)','linear-gradient(160deg,#B4675F,#8A4E48)',
+    'linear-gradient(160deg,#8A93A0,#626A75)','linear-gradient(160deg,#A08F76,#7A6C58)',
+    'linear-gradient(160deg,#C0A06A,#8F774E)','linear-gradient(160deg,#8C9E7B,#66744F)'];
   return `<div class="row" style="margin-bottom:14px"><b style="font-size:15px">Galeri</b>
     <span class="muted" style="margin-left:auto">248 foto · 12 album</span></div>
     <div class="phgrid">${g.map(s=>`<i style="background:${s}"></i>`).join('')}</div>`;
@@ -1115,11 +1107,11 @@ function renderTask(){
 }
 
 function renderSettings(){
-  const accents=['#7C5CFF','#35D0BA','#5B9DFF','#FF7AB6','#FFB44C','#3FD08A','#FF5F56','#8B5CF6','#0EA5E9','#F97316','#14B8A6','#64748B'];
+  const accents=['#6E8CA8','#7B9E8C','#7E93AC','#9E8AA0','#C0A06A','#7FA98A','#B4675F','#8A93A0','#A08F76','#8C9E7B','#6F757C','#5C6E83'];
   return `<div style="display:flex;gap:18px;height:100%">
     <div class="fside" style="width:170px">
-      <button class="on">🎨 Personalisasi</button><button>🪟 Taskbar</button><button>🧩 Jendela</button>
-      <button>⚡ Performa</button><button>🔒 Privasi</button><button>ℹ️ Tentang</button>
+      <button class="on">Personalisasi</button><button>Taskbar</button><button>Jendela</button>
+      <button>Performa</button><button>Privasi</button><button>Tentang</button>
     </div>
     <div style="flex:1;overflow:auto">
       <div class="h1">Personalisasi</div>
@@ -1137,9 +1129,9 @@ function renderSettings(){
         <b style="font-size:13px">Wallpaper</b>
         <div class="muted">4 preset bawaan SukiOS.</div>
         <div class="wpgrid" id="wpSw">
-          ${['aurora','ember','mint','noir'].map((n,i)=>{
-            const bg={aurora:'linear-gradient(135deg,#7C5CFF,#35D0BA)',ember:'linear-gradient(135deg,#FFB44C,#FF5F56)',
-              mint:'linear-gradient(135deg,#35D0BA,#5B9DFF)',noir:'linear-gradient(135deg,#242A38,#08090C)'}[n];
+          ${['charcoal','slate','moss','sand'].map((n,i)=>{
+            const bg={charcoal:'linear-gradient(170deg,#16191D,#0E1013)',slate:'linear-gradient(170deg,#151A20,#0F1317)',
+              moss:'linear-gradient(170deg,#141A17,#0E1310)',sand:'linear-gradient(170deg,#1A1714,#131110)'}[n];
             return `<div class="wpcard ${i===0?'on':''}" data-wp="${n}" style="background:${bg}"><i style="background:${bg}"></i></div>`;}).join('')}
         </div>
       </div>
@@ -1156,7 +1148,8 @@ function renderSettings(){
         <div class="row"><b style="font-size:13px">SukiOS</b>
           <span class="muted" style="margin-left:auto">v0.9 mockup</span></div>
         <div class="muted" style="margin-top:8px">Versi Android minimum: 10 (API 29) · Target: Android 16 (API 36)<br>
-        Suki Glass Design System v1.0 · Dibuat dari nol, tanpa merek pihak lain.</div>
+        Suki Glass v1.1 (matte) · Dibuat dari nol, tanpa merek pihak lain.<br>
+Mode perangkat: kunci landscape + desktop penuh + dukungan Shizuku ada di app PoC.</div>
       </div>
     </div></div>`;
 }
@@ -1259,7 +1252,7 @@ function tick(){
 setInterval(tick,1000); tick();
 
 /* Notifikasi sambutan */
-setTimeout(()=>toast('Selamat datang di SukiOS 👋','Mockup interaktif. Coba geser jendela ke tepi layar untuk snap, atau tekan Ctrl+Space untuk Start Menu.','grid'),1800);
+setTimeout(()=>toast('Selamat datang di SukiOS','Mockup interaktif. Coba geser jendela ke tepi layar untuk snap, atau tekan Ctrl+Space untuk Start Menu.','grid'),1800);
 
 /* Tombol Super (Meta) membuka Start — seperti OS desktop */
 window.addEventListener('keyup',e=>{ if(e.key==='Meta'&&!e.ctrlKey&&!e.metaKey){} });

@@ -1,5 +1,5 @@
 # SukiOS — Design System & Konsep Visual
-## "Suki Glass" v1.0
+## "Suki Glass" v1.1 — matte (tanpa neon/cyber)
 
 | | |
 |---|---|
@@ -27,6 +27,26 @@ SukiOS adalah **meja kerja**, bukan **layar HP yang diperbesar**.
 - Start menu = rak penyimpanan semua alat.
 - Jendela = lembar kerja yang bisa ditumpuk, digeser, dan disimpan.
 
+### 1.3 Aturan Visual Wajib — Tenang, Matte, Tanpa Neon
+
+Ini batasan yang tidak bisa ditawar (permintaan kall, 2026-10-02). Berlaku untuk semua permukaan produk: shell, app bawaan, ikon, wallpaper, splash, dan materi pemasaran.
+
+**DILARANG:**
+- Garis/tepi menyala (neon stroke), bloom, glow berwarna, atau `box-shadow` berwarna aksen.
+- Grid siber, garis scanline, efek holografik, chrome/kilau logam, partikel bercahaya.
+- Gradien saturasi tinggi atau lebih dari dua warna dalam satu gradien.
+- Warna aksen sebagai dekorasi: aksen hanya untuk elemen aktif, tombol utama, dan status fokus.
+- Emoji sebagai ikon antarmuka (pakai badge huruf atau ikon vektor).
+- Animasi berkilau/berdenyut yang tidak menyampaikan informasi.
+
+**DIWAJIBKAN:**
+- Warna diturunkan saturasinya (lihat §4.1); bayangan selalu netral hitam dengan opasitas rendah.
+- Pemisahan antar bidang memakai garis tipis 1 dp dan perbedaan nada, bukan efek cahaya.
+- Wallpaper: gradien dua nada gelap, tanpa sorotan radial menyala.
+- Getaran gerak minimal: durasi mengikuti §8.1, tidak ada animasi dekoratif.
+
+**Uji cepat:** ubah screenshot menjadi grayscale. Kalau tampilannya masih terbaca jelas dan terasa nyaman, desainnya sehat. Kalau justru kehilangan seluruh hierarki, berarti warna/glow-nya yang jadi penopang — dan itu yang harus dihindari.
+
 ---
 
 ## 2. Identitas Brand
@@ -41,11 +61,11 @@ Tagline kandidat:
 
 ### 2.2 Logo (konsep)
 
-**Mark:** Sebuah *squircle* (kotak membulat ekstrem) dengan gradien Aurora, di dalamnya ada huruf **S** yang dibentuk dari dua kurva dengan ujung membulat dan satu potongan diagonal — terasa seperti gerakan, seperti jendela yang sedang terbuka.
+**Mark:** Sebuah *squircle* (kotak membulat ekstrem) berwarna aksen solid, di dalamnya ada huruf **S** yang dibentuk dari dua kurva dengan ujung membulat — terasa seperti gerakan, seperti jendela yang sedang terbuka. Tanpa gradien, tanpa kilau.
 
 ```
 Bentuk dasar:  squircle 1024×1024, radius = 34% (≈348)
-Gradien:       linear 135°, #7C5CFF → #35D0BA
+Warna:         aksen solid #6E8CA8 (versi lama memakai gradien; diganti karena terbaca neon)
 Huruf:         path kustom "S" berujung bulat (stroke 96, round cap)
 Bayangan:      inner highlight 8% putih di atas (kesan kaca)
 Clear space:   minimal 12% dari sisi mark di semua sisi
@@ -55,10 +75,10 @@ Ukuran min:    24 px (favicon) — jika di bawah 32 px gunakan versi tanpa gradi
 **Versi logo:**
 | Varian | Penggunaan |
 |---|---|
-| Full color (gradien) | Default, splash screen, store listing |
+| Full color (solid matte) | Default, splash screen, store listing |
 | Mono putih | Di atas foto/warna terang, di dalam taskbar |
 | Mono hitam | Dokumen, print |
-| App icon adaptif | Foreground = mark S, Background = gradien Aurora |
+| App icon adaptif | Foreground = mark S, Background = warna aksen solid |
 
 > File SVG: `assets/logo.svg`
 
@@ -88,45 +108,45 @@ Ukuran min:    24 px (favicon) — jika di bawah 32 px gunakan versi tanpa gradi
 
 ### 4.1 Palet Inti
 
-**Aurora (brand gradient)**
+**Aksen (matte — bukan gradien menyala):**
 ```
-Aurora Violet   #7C5CFF   ← warna brand utama
-Aurora Teal     #35D0BA   ← warna brand sekunder
-Aurora Dawn     #FF7AB6   ← aksen pihak ketiga (highlight, notifikasi)
-Aurora Sun      #FFB44C   ← peringatan, sorotan
-Gradient        linear-gradient(135deg, #7C5CFF 0%, #35D0BA 100%)
+Suki Steel      #6E8CA8   ← aksen utama (tombol, elemen aktif, fokus)
+Suki Sage       #7B9E8C   ← aksen sekunder (status, kategori)
+Suki Clay       #A08F76   ← kategori ketiga (akses lanjutan)
 ```
+Catatan revisi: gradien Aurora ungu-teal v1.0 dihapus karena terbaca sebagai "neon".
+Nilai lama tidak dipakai lagi di kode, mockup, maupun aset.
 
 **Netral (Dark — tema default)**
 | Token | Hex | Penggunaan |
 |---|---|---|
-| `bg/base` | `#0B0D12` | Latar desktop paling belakang |
-| `bg/surface` | `#12151D` | Panel, taskbar solid |
-| `bg/elevated` | `#1A1F2B` | Kartu, menu, jendela |
-| `bg/overlay` | `#242A38` | Tooltip, popover |
+| `bg/base` | `#0F1113` | Latar desktop paling belakang |
+| `bg/surface` | `#17191C` | Panel, taskbar solid |
+| `bg/elevated` | `#1E2124` | Kartu, menu, jendela |
+| `bg/overlay` | `#262A2E` | Tooltip, popover, title bar |
 | `stroke/subtle` | `rgba(255,255,255,0.06)` | Garis pemisah halus |
-| `stroke/strong` | `rgba(255,255,255,0.14)` | Border jendela tidak aktif |
-| `text/primary` | `#F2F4F8` | Judul, isi utama |
-| `text/secondary` | `#A8B0C0` | Deskripsi, metadata |
-| `text/disabled` | `#5A6274` | Elemen non-aktif |
+| `stroke/strong` | `rgba(255,255,255,0.10)` | Border jendela tidak aktif |
+| `text/primary` | `#E7E8EA` | Judul, isi utama |
+| `text/secondary` | `#A0A4A9` | Deskripsi, metadata |
+| `text/disabled` | `#6B7076` | Elemen non-aktif |
 
 **Netral (Light)**
 | Token | Hex |
 |---|---|
-| `bg/base` | `#EEF1F7` |
-| `bg/surface` | `#F8FAFD` |
+| `bg/base` | `#EDEEEF` |
+| `bg/surface` | `#F6F7F8` |
 | `bg/elevated` | `#FFFFFF` |
 | `stroke/subtle` | `rgba(10,15,30,0.07)` |
-| `text/primary` | `#0E1320` |
-| `text/secondary` | `#4A5468` |
+| `text/primary` | `#14161A` |
+| `text/secondary` | `#4E5359` |
 
 **Semantik**
 | Peran | Dark | Light |
 |---|---|---|
-| Success | `#3FD08A` | `#12A15E` |
-| Warning | `#FFB44C` | `#C97A00` |
-| Danger (close) | `#FF5F56` | `#E5484D` |
-| Info | `#5B9DFF` | `#2C6FDB` |
+| Success | `#7FA98A` | `#3F7A55` |
+| Warning | `#C0A06A` | `#8A6A21` |
+| Danger (close) | `#B4675F` | `#A44A44` |
+| Info | `#7E93AC` | `#4A6684` |
 
 ### 4.2 Accent Color
 User bisa memilih aksen. Setiap aksen punya 4 turunan otomatis:
@@ -139,14 +159,16 @@ accent/subtle     12% opacity  → latar chip, state terpilih
 accent/on-accent  otomatis putih/hitam berdasarkan kontras WCAG
 ```
 
-**12 preset:** Violet Aurora (default) · Teal · Sky · Indigo · Magenta · Rose · Amber · Lime · Emerald · Cyan · Slate · Graphite.
+**12 preset (semua saturasi rendah):** Steel (default) · Sage · Slate · Mauve · Sand · Moss · Clay · Graphite · Dust · Olive · Ash · Denim.
+
+Aturan: aksen tidak boleh dipakai sebagai latar besar atau gradien dekoratif. Maksimal 8% area layar.
 
 ### 4.3 Material & Efek
 | Nama | Implementasi | Penggunaan |
 |---|---|---|
 | **Suki Mica** | `surface` + 62% opasitas + blur 28 dp + noise 2% | Latar taskbar, start menu, panel besar |
 | **Suki Acrylic** | `elevated` + 72% opasitas + blur 20 dp + border 1px putih 8% | Jendela, kartu |
-| **Suki Glow** | shadow berwarna accent, blur 32, opacity 18% | Jendela aktif, tombol utama |
+| **Suki Shadow** | shadow netral hitam, blur 24-40, opacity 22-30% | Jendela aktif, menu, dialog (tanpa warna) |
 | **Fallback (API < 31 / mode ringan)** | warna solid + border 1px, tanpa blur | Semua di atas saat blur dimatikan |
 
 > **Aturan blur:** maksimal **3 layer blur** di satu layar. Blur di-nested hanya jika elemen di atasnya opaque.
@@ -484,7 +506,7 @@ SukiToast, SukiCard, SukiButton, SukiToggle, SukiSlider
 SukiContextMenu, SukiIconButton, SukiTooltip
 
 // Efek
-Modifier.sukiMica(), Modifier.sukiAcrylic(), Modifier.sukiGlow()
+Modifier.sukiMica(), Modifier.sukiAcrylic(), Modifier.sukiShadow()
 Modifier.sukiDragResize(...)   // untuk window engine
 ```
 
@@ -507,15 +529,15 @@ Modifier.sukiDragResize(...)   // untuk window engine
 ## 17. Referensi Cepat (Cheat Sheet)
 
 ```
-WARNA BRAND      #7C5CFF  →  #35D0BA
-DARK BG          #0B0D12
-LIGHT BG         #EEF1F7
+WARNA AKSEN      #6E8CA8 (steel)  ·  #7B9E8C (sage)
+DARK BG          #0F1113
+LIGHT BG         #EDEEEF
 FONT             Inter (fallback system-ui)
 RADIUS JENDELA   16 dp      TASKBAR  48 dp
 ICON DESKTOP     48 dp      IKON TASKBAR 32 dp
 START MENU       640 × 640 dp
 ANIMASI CEPAT    150 ms     ANIMASI NORMAL 220 ms
-MAX BLUR LAYER   3
+MAX BLUR LAYER   3        ATURAN  tanpa neon, tanpa glow, tanpa emoji ikon
 ```
 
 ---

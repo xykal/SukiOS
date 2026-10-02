@@ -44,6 +44,26 @@ Buka app **SukiOS PoC** di HP. Kamu akan lihat "desktop" dengan ikon di kiri, ta
 | **3** | **Split screen** — 2 app berdampingan | Multitasking paling andal di HP biasa |
 | **4** | **Embed via ActivityView** — app lain di dalam jendela SukiOS | Jalur paling ambisius; riset kami bilang **kemungkinan besar ditolak platform** |
 | **5** | **Overlay taskbar** — taskbar SukiOS mengapung di atas app fullscreen | Jalur fallback yang selalu bisa dipakai |
+| **6** | **Akses Lanjutan (Shizuku)** — force-resizable, appops, launch ke display | Membuka pintu yang diblokir untuk app biasa, terutama di Android Go |
+
+### Yang baru di v0.2.0-poc
+
+1. **Mode Desktop** — dua tombol di taskbar kanan:
+   - **Landscape**: orientasi dikunci mendatar (`SENSOR_LANDSCAPE`) supaya terasa seperti komputer.
+   - **Desktop**: status bar + navigation bar disembunyikan (`WindowInsetsController`); geser dari tepi untuk memunculkannya.
+   Keduanya aktif secara default di build ini.
+2. **LANE 6 — Akses Lanjutan (Shizuku)**: membuka pintu yang diblokir untuk app biasa — force-resizable app pihak ketiga, izin overlay otomatis, dan peluncuran app ke display tertentu. Butuh app Shizuku terpasang & diizinkan.
+3. **Mode Go**: perangkat dengan `isLowRamDevice` otomatis dibatasi 3 jendela dan efek dekoratif dimatikan.
+4. **Tampilan matte** — gradien menyala dihapus; tidak ada neon, glow, atau emoji sebagai ikon (badge huruf untuk berkas).
+
+### Cara mengaktifkan Shizuku (opsional, untuk LANE 6)
+
+1. Pasang app **Shizuku** (Play Store atau GitHub RikkaApps).
+2. Aktifkan servisnya: lewat ADB (`adb shell sh /storage/emulated/0/Android/data/moe.shizuku.privileged.api/start.sh`) atau wireless debugging di Android 11+.
+3. Buka SukiOS PoC lalu **Akses Lanjutan** lalu **Minta izin** lalu konfirmasi dialog dari Shizuku.
+4. Setelah status jadi "Siap: izin diberikan, uid shell = 2000", tombol aksi bisa dipakai.
+
+Tanpa Shizuku, seluruh fitur lain tetap berjalan normal.
 
 ### Urutan pengujian yang gue sarankan
 
@@ -116,11 +136,13 @@ app/src/main/java/app/sukios/poc/
 
 ## 5. Batasan PoC (Jujur di Awal)
 
-- Ini **bukan** SukiOS versi cantik. Ini alat ukur. Belum ada blur kaca, animasi halus, atau widget.
+- Ini **bukan** SukiOS versi cantik. Ini alat ukur. Belum ada blur, animasi halus, atau widget.
 - Jendela **tidak menyimpan posisi** setelah app ditutup.
 - File Explorer masih data contoh (belum menyentuh penyimpanan asli — itu butuh SAF).
 - Belum jadi launcher default (belum `CATEGORY_HOME`) — itu Fase 1 PRD.
 - FPS di taskbar mengukur frame Compose, bukan performa app pihak ketiga di dalam jendela.
+- LANE 6 butuh app Shizuku terpasang & diaktifkan pengguna. Di perangkat tanpa Shizuku, panel itu menampilkan status "belum terpasang" dan tidak melakukan apa pun.
+- Shizuku dipin ke API 12.2.0 karena `newProcess` sudah dihapus dari API 13.x. Migrasi ke UserService adalah pekerjaan terpisah (PRD §16.6).
 
 ---
 

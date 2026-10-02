@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
@@ -21,36 +22,40 @@ import androidx.compose.ui.unit.sp
 
 // ============================================================================
 // Suki Glass — token desain (port dari DESIGN.md §4, §5, §7)
-// Semua warna di sini nanti pindah ke :core:designsystem saat project dipecah.
+//
+// PALET MATTE (revisi 2026-10-02): tanpa neon, tanpa glow, tanpa gradien
+// menyala. Semua aksen diturunkan saturasinya; bayangan selalu netral hitam.
+// Lihat DESIGN.md §1.3 untuk aturan visual wajib.
 // ============================================================================
 
-val SukiBg = Color(0xFF0B0D12)
-val SukiSurface = Color(0xFF12151D)
-val SukiElevated = Color(0xFF1A1F2B)
-val SukiOverlay = Color(0xFF242A38)
-val SukiChrome = Color(0xFF1F2532)
+val SukiBg = Color(0xFF0F1113)
+val SukiSurface = Color(0xFF17191C)
+val SukiElevated = Color(0xFF1E2124)
+val SukiOverlay = Color(0xFF262A2E)
+val SukiChrome = Color(0xFF1B1E21)
 
-val SukiStroke = Color(0x1FFFFFFF)       // putih 12%
-val SukiStrokeSoft = Color(0x12FFFFFF)   // putih 7%
+val SukiStroke = Color(0x1AFFFFFF)       // putih 10%
+val SukiStrokeSoft = Color(0x0FFFFFFF)   // putih 6%
 
-val SukiText = Color(0xFFF2F4F8)
-val SukiTextDim = Color(0xFFA8B0C0)
-val SukiTextDisabled = Color(0xFF5A6274)
+val SukiText = Color(0xFFE7E8EA)
+val SukiTextDim = Color(0xFFA0A4A9)
+val SukiTextDisabled = Color(0xFF6B7076)
 
-val SukiAccent = Color(0xFF7C5CFF)       // Aurora Violet
-val SukiAccent2 = Color(0xFF35D0BA)      // Aurora Teal
-val SukiDanger = Color(0xFFFF5F56)
-val SukiSuccess = Color(0xFF3FD08A)
-val SukiWarning = Color(0xFFFFB44C)
-val SukiInfo = Color(0xFF5B9DFF)
+val SukiAccent = Color(0xFF6E8CA8)       // steel blue (matte)
+val SukiAccent2 = Color(0xFF7B9E8C)      // sage (matte)
+val SukiDanger = Color(0xFFB4675F)
+val SukiSuccess = Color(0xFF7FA98A)
+val SukiWarning = Color(0xFFC0A06A)
+val SukiInfo = Color(0xFF7E93AC)
 
 fun accentFor(k: WinKind): Color = when (k) {
     WinKind.TESTS -> SukiAccent
     WinKind.PICKER -> SukiAccent2
     WinKind.MONITOR -> SukiInfo
+    WinKind.ACCESS -> Color(0xFFA08F76)   // clay
     WinKind.EMBED -> SukiWarning
-    WinKind.FILES -> Color(0xFFFFB44C)
-    WinKind.NOTES -> Color(0xFFFF7AB6)
+    WinKind.FILES -> Color(0xFF8A93A0)    // graphite
+    WinKind.NOTES -> Color(0xFF9E8AA0)    // mauve
 }
 
 /** coerceIn yang tidak meledak kalau max < min. */
@@ -59,7 +64,7 @@ fun ci(v: Int, lo: Int, hi: Int): Int = v.coerceIn(lo, maxOf(lo, hi))
 /**
  * Geometri zona snap: [x, y, w, h] dalam px.
  * Satu-satunya sumber kebenaran untuk snap — dipakai oleh SukiState.snap()
- * DAN oleh pratinjau visual, supaya tidak pernah beda.
+ * dan oleh pratinjau visual, supaya tidak pernah berbeda.
  */
 fun zoneRect(zone: String, deskW: Int, deskH: Int): IntArray {
     val hw = deskW / 2
@@ -112,7 +117,7 @@ fun Btn(
             .clickable(enabled = enabled) { onClick() }
             .padding(horizontal = 12.dp, vertical = 8.dp)
     ) {
-        Txt(label, 12, if (enabled) Color.White else SukiTextDisabled, FontWeight.SemiBold)
+        Txt(label, 12, if (enabled) Color(0xFF11161B) else SukiTextDisabled, FontWeight.SemiBold)
     }
 }
 
@@ -133,6 +138,25 @@ fun BtnGhost(
     }
 }
 
+/** Tombol kecil untuk status on/off di taskbar (Matte, tanpa efek menyala). */
+@Composable
+fun ToggleChip(
+    label: String,
+    active: Boolean,
+    onClick: () -> Unit
+) {
+    Box(
+        Modifier
+            .clip(RoundedCornerShape(7.dp))
+            .background(if (active) SukiAccent.copy(alpha = 0.22f) else Color.Transparent)
+            .border(1.dp, if (active) SukiAccent.copy(alpha = 0.55f) else SukiStrokeSoft, RoundedCornerShape(7.dp))
+            .clickable { onClick() }
+            .padding(horizontal = 9.dp, vertical = 6.dp)
+    ) {
+        Txt(label, 10.5f.toInt(), if (active) SukiText else SukiTextDim, FontWeight.SemiBold, maxLines = 1)
+    }
+}
+
 @Composable
 fun Chip(
     label: String,
@@ -143,14 +167,14 @@ fun Chip(
     Box(
         Modifier
             .clip(RoundedCornerShape(999.dp))
-            .background(if (selected) color.copy(alpha = 0.28f) else SukiStrokeSoft)
-            .border(1.dp, if (selected) color else SukiStrokeSoft, RoundedCornerShape(999.dp))
+            .background(if (selected) color.copy(alpha = 0.24f) else SukiStrokeSoft)
+            .border(1.dp, if (selected) color.copy(alpha = 0.6f) else SukiStrokeSoft, RoundedCornerShape(999.dp))
             .clickable { onClick() }
             .padding(horizontal = 10.dp, vertical = 6.dp)
     ) {
         Txt(
             label, 11,
-            if (selected) color else SukiTextDim,
+            if (selected) SukiText else SukiTextDim,
             if (selected) FontWeight.Bold else FontWeight.Medium,
             maxLines = 1
         )
@@ -189,4 +213,19 @@ fun KV(key: String, value: String, ok: Boolean? = null) {
 @Composable
 fun Dot(color: Color, size: Int = 12) {
     Box(Modifier.size(size.dp).clip(RoundedCornerShape(4.dp)).background(color))
+}
+
+/** Badge huruf untuk daftar berkas (menggantikan emoji, sesuai aturan desain). */
+@Composable
+fun FileBadge(text: String, tint: Color) {
+    Box(
+        Modifier
+            .size(22.dp)
+            .clip(RoundedCornerShape(6.dp))
+            .background(tint.copy(alpha = 0.22f))
+            .border(1.dp, tint.copy(alpha = 0.45f), RoundedCornerShape(6.dp)),
+        contentAlignment = Alignment.Center
+    ) {
+        Txt(text, 9, tint, FontWeight.Bold, maxLines = 1)
+    }
 }

@@ -18,6 +18,7 @@ enum class WinKind(val title: String) {
     TESTS("Panduan Uji"),
     PICKER("Daftar Aplikasi"),
     MONITOR("Monitor Perangkat"),
+    ACCESS("Akses Lanjutan"),
     EMBED("Uji Embed"),
     FILES("Files"),
     NOTES("Notes")
@@ -71,9 +72,27 @@ class SukiState {
     var startOpen by mutableStateOf(false)
     var appsLoaded by mutableStateOf(false)
     var snapHint by mutableStateOf<String?>(null)
-    var overlayRunning by mutableStateOf(false)
 
-    /** Activity host — dipakai probe (mis. isInMultiWindowMode). Di-set dari SukiRoot. */
+    // --- mode tampilan -----------------------------------------------------
+    /** Kunci orientasi ke landscape (mode desktop). */
+    var lockLandscape by mutableStateOf(true)
+
+    /** Sembunyikan status bar + navigation bar (desktop penuh / imersif). */
+    var fullDesktop by mutableStateOf(true)
+
+    /** Perangkat kelas Go / RAM rendah: platform membatasi multi-window. */
+    var goMode by mutableStateOf(false)
+
+    /** Batas jendela: 3 di mode Go, 8 di perangkat normal (NFR RAM, PRD §10). */
+    var maxWindows by mutableStateOf(8)
+
+    // --- Shizuku -----------------------------------------------------------
+    var shizukuInstalled by mutableStateOf(false)
+    var shizukuReady by mutableStateOf(false)
+    var shizukuVersion by mutableStateOf(-1)
+    var shizukuUid by mutableStateOf(-1)
+
+    /** Activity host — dipakai efek orientasi/immersive dan probe. */
     var act: Activity? by mutableStateOf(null)
 
     // ---------------------------------------------------------------- logging
@@ -83,11 +102,18 @@ class SukiState {
     }
 
     // ---------------------------------------------------------------- windows
-    fun open(kind: WinKind, deskW: Int, deskH: Int): WinState {
+    /** @return jendela baru, atau null bila batas jendela perangkat tercapai. */
+    fun open(kind: WinKind, deskW: Int, deskH: Int): WinState? {
         windows.firstOrNull { it.kind == kind }?.let { w ->
             w.minimized = false
             focus(w)
             return w
+        }
+
+        if (windows.size >= maxWindows) {
+            log("shell", "Batas $maxWindows jendela tercapai (mode ${if (goMode) "Go" else "normal"}); " +
+                "${kind.title} tidak dibuka.")
+            return null
         }
 
         val w0 = ci((deskW * 0.62f).toInt(), 320, maxOf(320, deskW - 16))

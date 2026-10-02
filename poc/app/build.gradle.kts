@@ -37,8 +37,8 @@ android {
         applicationId = "app.sukios.poc"
         minSdk = 29          // Android 10 — sama dengan target minimum SukiOS (PRD §8)
         targetSdk = 35
-        versionCode = 1
-        versionName = "0.1.0-poc"
+        versionCode = 2
+        versionName = "0.2.0-poc"
         resourceConfigurations += listOf("in", "en")
     }
 
@@ -90,4 +90,11 @@ dependencies {
     implementation("androidx.compose.ui:ui")
     implementation("androidx.compose.foundation:foundation")
     implementation("androidx.compose.runtime:runtime")
+
+    // Shizuku — engine akses lanjutan (identitas shell/uid 2000).
+    // Versi dipin ke 12.2.0 secara SENGAJA: API 13.x sudah menghapus newProcess
+    // (penggantinya UserService). Keputusan ini didasarkan pada pemeriksaan
+    // bytecode AAR, bukan asumsi. Lihat ShizukuEngine.kt untuk catatan lengkap.
+    implementation("dev.rikka.shizuku:api:12.2.0")
+    implementation("dev.rikka.shizuku:provider:12.2.0")
 }

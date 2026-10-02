@@ -55,6 +55,33 @@ Catatan:
 - draft release `v0.1.0-poc` + APK (~14 MB): **utuh** (release bukan objek cleanup)
 - tag `v0.1.0-poc`: ada
 
+### 2026-10-02 (Hari 2) — mode desktop, engine Shizuku, aturan visual matte
+
+Permintaan kall: kunci landscape + desktop penuh, engine pembuka izin untuk Android Go, dan memastikan tidak ada nuansa neon/cyber.
+
+**Kode PoC v0.2.0-poc**
+- Mode tampilan: `lockLandscape` (SENSOR_LANDSCAPE) dan `fullDesktop` (WindowInsetsController), aktif default, bisa diubah dari taskbar dan Monitor.
+- `ShizukuEngine.kt` baru: status, izin, eksekusi shell (uid 2000) dengan jalur cadangan reflection.
+- Jendela **Akses Lanjutan** (LANE 6): uji identitas shell, force-resizable, izin overlay via appops, peluncuran app ke display, diagnostik display.
+- Mode Go: `isLowRamDevice` lalu batas 3 jendela + efek dekoratif dimatikan.
+- Palet diturunkan saturasinya; emoji dihapus dari antarmuka; batas jendela dihormati di `SukiState.open()`.
+
+**Keputusan versi terbukti dari bytecode (bukan asumsi)**
+- `dev.rikka.shizuku:api:13.1.5` — `newProcess` **tidak ada** (javap pada AAR).
+- `dev.rikka.shizuku:api:12.2.0` — `newProcess` ada, bersama API izin modern lalu dipakai.
+- Provider wajib: `rikka.shizuku.ShizukuProvider` + authority `${applicationId}.shizuku`.
+
+**Dokumen & aset**
+- `DESIGN.md` v1.1: §1.3 aturan wajib anti-neon, palet matte, "Suki Glow" diganti "Suki Shadow", preset aksen baru.
+- `PRD.md` v1.2: F-14 (mode desktop), F-15 (akses lanjutan), F-16 (mode Go), 3 baris baru di tabel §8, addendum §16.6.
+- `mockup.html`: palet matte, wallpaper rata, emoji diganti badge huruf. Uji jsdom: 8 jendela, 8 badge, 0 error.
+- `assets/logo.svg`: gradien dihapus, aksen solid.
+
+**Verifikasi**
+- Uji statis Kotlin: saldo kurung, import API baru, cakupan `WinKind`, arity pemanggilan, referensi usang — bersih.
+- Uji mockup (jsdom): semua interaksi inti jalan, tanpa error.
+- Kompilasi di CI: menunggu run berikutnya (dicatat setelah selesai).
+
 ### Langkah berikutnya
 1. Uji 5 lane di perangkat nyata, kirim laporan lewat tombol "Salin laporan" di app.
 2. Set 4 secrets keystore supaya rilis berikutnya benar-benar signed (lihat `docs/RELEASE-SIGNING.md`).

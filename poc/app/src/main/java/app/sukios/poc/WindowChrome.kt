@@ -1,5 +1,6 @@
 package app.sukios.poc
 
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -23,6 +24,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalDensity
@@ -103,15 +108,22 @@ private fun TitleBar(st: SukiState, w: WinState, deskW: Int, deskH: Int) {
             w.kind.title, 13, SukiText, FontWeight.SemiBold,
             maxLines = 1, modifier = Modifier.weight(1f)
         )
-        WinBtn("—") { st.toggleMinimize(w) }
-        WinBtn(if (w.maximized) "❐" else "▢") { st.toggleMax(w, deskW, deskH) }
-        WinBtn("✕", danger = true) { st.close(w) }
+        WinBtn(Glyph.MIN) { st.toggleMinimize(w) }
+        WinBtn(if (w.maximized) Glyph.RESTORE else Glyph.MAX) { st.toggleMax(w, deskW, deskH) }
+        WinBtn(Glyph.CLOSE, danger = true) { st.close(w) }
         Spacer(Modifier.width(6.dp))
     }
 }
 
+private enum class Glyph { MIN, MAX, RESTORE, CLOSE }
+
+/**
+ * Tombol jendela. Ikon digambar sebagai vektor (bukan karakter/emoji) supaya
+ * konsisten dengan aturan visual DESIGN.md 1.3: tanpa glyph dekoratif.
+ */
 @Composable
-private fun WinBtn(label: String, danger: Boolean = false, onClick: () -> Unit) {
+private fun WinBtn(glyph: Glyph, danger: Boolean = false, onClick: () -> Unit) {
+    val tone = if (danger) SukiDanger else SukiTextDim
     Box(
         Modifier
             .padding(end = 4.dp)
@@ -120,7 +132,41 @@ private fun WinBtn(label: String, danger: Boolean = false, onClick: () -> Unit) 
             .clickable { onClick() },
         contentAlignment = Alignment.Center
     ) {
-        Txt(label, 12, if (danger) SukiDanger else SukiTextDim, FontWeight.Bold)
+        Canvas(Modifier.size(12.dp)) {
+            val w = size.width
+            val h = size.height
+            val sw = 1.5.dp.toPx()
+            when (glyph) {
+                Glyph.MIN -> drawLine(
+                    Offset(w * 0.14f, h * 0.50f), Offset(w * 0.86f, h * 0.50f),
+                    tone, strokeWidth = sw, cap = StrokeCap.Round
+                )
+                Glyph.MAX -> drawRect(
+                    color = tone, topLeft = Offset(w * 0.16f, h * 0.20f),
+                    size = Size(w * 0.68f, h * 0.60f), style = Stroke(width = sw)
+                )
+                Glyph.RESTORE -> {
+                    drawRect(
+                        color = tone, topLeft = Offset(w * 0.34f, h * 0.14f),
+                        size = Size(w * 0.52f, h * 0.48f), style = Stroke(width = sw)
+                    )
+                    drawRect(
+                        color = tone, topLeft = Offset(w * 0.14f, h * 0.38f),
+                        size = Size(w * 0.52f, h * 0.48f), style = Stroke(width = sw)
+                    )
+                }
+                Glyph.CLOSE -> {
+                    drawLine(
+                        Offset(w * 0.22f, h * 0.22f), Offset(w * 0.78f, h * 0.78f),
+                        tone, strokeWidth = sw, cap = StrokeCap.Round
+                    )
+                    drawLine(
+                        Offset(w * 0.78f, h * 0.22f), Offset(w * 0.22f, h * 0.78f),
+                        tone, strokeWidth = sw, cap = StrokeCap.Round
+                    )
+                }
+            }
+        }
     }
 }
 

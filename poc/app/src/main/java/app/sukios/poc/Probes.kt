@@ -48,6 +48,14 @@ fun loadApps(ctx: Context): List<AppEntry> {
     }.distinctBy { it.pkg }.sortedBy { it.label.lowercase(Locale.US) }
 }
 
+/** Menyegarkan status Shizuku ke state (dipanggil saat boot, setelah izin, dan manual). */
+fun refreshShizuku(ctx: Context, st: SukiState) {
+    st.shizukuInstalled = ShizukuEngine.installed(ctx)
+    st.shizukuReady = ShizukuEngine.granted()
+    st.shizukuVersion = ShizukuEngine.version()
+    st.shizukuUid = ShizukuEngine.uid()
+}
+
 // ------------------------------------------------------------ probe perangkat
 fun runProbe(ctx: Context, act: Activity?, st: SukiState) {
     st.probes.clear()
@@ -113,6 +121,24 @@ fun runProbe(ctx: Context, act: Activity?, st: SukiState) {
         "App terlihat oleh launcher",
         "$count app",
         count > 5
+    )
+
+    // --- mode tampilan & perangkat Go ---
+    add(
+        "Kelas perangkat",
+        if (lowRam) "Android Go / RAM rendah — multi-window dibatasi platform (mode Go: 3 jendela)"
+        else "normal (batas 8 jendela)",
+        !lowRam
+    )
+
+    // --- Shizuku (akses lanjutan) ---
+    add("Shizuku terpasang", if (ShizukuEngine.installed(ctx)) "ya" else "tidak")
+    add("Shizuku binder", if (ShizukuEngine.binderAlive()) "aktif" else "tidak aktif", ShizukuEngine.binderAlive())
+    add("Shizuku versi API", ShizukuEngine.version().toString(), ShizukuEngine.version() >= 11)
+    add(
+        "Shizuku izin",
+        if (ShizukuEngine.granted()) "diberikan (uid ${ShizukuEngine.uid()})" else "belum diberikan",
+        ShizukuEngine.granted()
     )
 
     // --- bisakah ActivityView diakses? (reflection, bukan API publik) ---

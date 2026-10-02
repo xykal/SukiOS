@@ -376,6 +376,40 @@ Legenda prioritas: **P0** = wajib MVP · **P1** = wajib V1 · **P2** = nice-to-h
 
 ---
 
+### 7.14 Mode Desktop: Kunci Landscape & Desktop Penuh — `F-14`
+
+**User Story:** Sebagai pengguna, aku ingin layar terkunci mendatar dan bar sistem disembunyikan, supaya rasanya benar-benar memakai komputer, bukan HP yang diputar.
+
+**Acceptance Criteria:**
+- [ ] Mode **Kunci Landscape**: orientasi dikunci ke mendatar (dua arah, tidak pernah portrait) lewat `SCREEN_ORIENTATION_SENSOR_LANDSCAPE`.
+- [ ] Mode **Desktop Penuh**: status bar dan navigation bar disembunyikan; muncul sementara dengan geser dari tepi (`BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE`).
+- [ ] Kedua mode bisa diubah dari taskbar dan dari Settings; status tersimpan setelah restart.
+- [ ] Desktop penuh tidak mengganggu keamanan: lock screen dan izin sistem tetap berfungsi normal.
+- [ ] Di perangkat lipat/tablet, mode landscape otomatis memakai layout lebar (PRD §11.4).
+
+### 7.15 Engine Akses Lanjutan (Shizuku) — `F-15`
+
+**User Story:** Sebagai pengguna tingkat lanjut, aku ingin membuka izin yang biasanya diblokir sistem, supaya desktop ini bisa melakukan hal yang tidak bisa dilakukan launcher biasa.
+
+**Acceptance Criteria:**
+- [ ] Integrasi **Shizuku** (opsional): bila app Shizuku terpasang dan diizinkan, SukiOS mendapat identitas shell (uid 2000).
+- [ ] Aksi yang didukung: **force-resizable** app pihak ketiga (`settings put global force_resizable_activities`), **izin overlay otomatis** (appops `SYSTEM_ALERT_WINDOW`), **peluncuran app ke display tertentu** (`am start --display`), dan pembacaan diagnostik (`dumpsys display`, `wm size`).
+- [ ] Setiap aksi menampilkan hasil apa adanya (kode keluar + keluaran/kesalahan), tanpa menyembunyikan kegagalan.
+- [ ] **Tanpa Shizuku, seluruh fitur inti tetap berjalan.** Akses lanjutan tidak pernah menjadi syarat.
+- [ ] Tidak ada penyimpanan kredensial; tidak ada perintah shell yang berasal dari input pengguna bebas (hanya perintah tetap + parameter yang divalidasi: id display numerik, nama paket dari PackageManager).
+- [ ] Status Shizuku (terpasang/binder/versi/uid/izin) ditampilkan jelas di UI dan di laporan diagnostik.
+
+### 7.16 Mode Android Go (Perangkat RAM Rendah) — `F-16`
+
+**User Story:** Sebagai pengguna HP murah/Android Go, aku ingin SukiOS tetap jalan lancar walaupun sistem membatasi multitasking.
+
+**Acceptance Criteria:**
+- [ ] Mendeteksi `ActivityManager.isLowRamDevice` saat boot dan menandai perangkat sebagai **Mode Go**.
+- [ ] Mode Go: batas **3 jendela** (dari 8), efek dekoratif dimatikan (wallpaper rata, tanpa lapisan tambahan).
+- [ ] Mode Go menampilkan jalur alternatif yang konkret: split screen, overlay taskbar, dan (bila tersedia) Shizuku untuk force-resizable.
+- [ ] Tidak ada fitur yang disembunyikan; hanya dibatasi dengan penjelasan yang terlihat pengguna.
+- [ ] Platform Android tetap bisa memblokir multi-window di perangkat Go — SukiOS **tidak** menjanjikan hal yang tidak bisa dilakukan sistem.
+
 ## 8. Batasan Platform Android (Realitas Teknis)
 
 Bagian ini penting supaya ekspektasi realistis. SukiOS **bukan** ROM — ia berjalan di atas Android sebagai aplikasi biasa (non-root).
@@ -397,6 +431,9 @@ Bagian ini penting supaya ekspektasi realistis. SukiOS **bukan** ROM — ia berj
 | 13 | Shortcut ke app | `ShortcutManager` (static + dynamic) | — | Bisa pin shortcut ke desktop |
 | 14 | Wallpaper hidup / video | `WallpaperService` | `SET_WALLPAPER` | Berat di baterai → opsional |
 | 15 | Baca status sistem (baterai, sinyal) | `BatteryManager`, `ConnectivityManager`, `TelephonyManager` | Beberapa perlu `READ_PHONE_STATE` | Batasi agar tidak minta permission berlebihan |
+| 16 | Kunci landscape + desktop penuh | `Activity.setRequestedOrientation()`, `WindowInsetsControllerCompat` | Tidak ada | Aman; bar sistem muncul sementara lewat geser tepi |
+| 17 | Akses lanjutan (Shizuku) | `Shizuku.requestPermission()` + eksekusi shell (uid 2000) | Izin dari app Shizuku (user grant) | Opsional. Upstream menyiapkan penghapusan `newProcess` (ganti: UserService) — lihat §16.6 |
+| 18 | Mode Go (RAM rendah) | `ActivityManager.isLowRamDevice` | Tidak ada | Platform Android **memblokir** multi-window di perangkat Go; SukiOS hanya menyediakan jalur alternatif |
 
 ### 8.1 Keputusan Arsitektur Kunci
 > **Strategi dua lapis (Dual-Mode Windowing):**
@@ -637,6 +674,39 @@ Dari dokumentasi API: *"Setting launch display id will be ignored on devices tha
 
 PoC berisi 5 lane uji + capability probe yang menghasilkan laporan teks dari perangkat nyata (lihat `poc/README.md` §3 untuk tabel keputusan). **Setelah laporan masuk, §8.1 dikunci** dan baru setelah itu implementasi shell dimulai.
 
+### 16.6 Addendum v1.2 — Engine Akses Lanjutan (Shizuku) dan Mode Desktop
+
+**Tanggal:** 2 Oktober 2026 · **Status:** terpasang di PoC v0.2.0 · **Verifikasi:** kompilasi CI (uji perangkat menyusul)
+
+Kall meminta tiga hal: mode landscape/desktop penuh, engine pembuka izin untuk perangkat Android Go, dan penegasan aturan visual anti-neon. Dua yang pertama mengubah sebagian kalkulasi §16.2.
+
+**a. Yang berubah dengan Shizuku (F-15)**
+
+Dengan identitas shell (uid 2000), beberapa pintu yang tertutup untuk app biasa menjadi terbuka:
+
+| Kemampuan | Untuk app biasa | Dengan Shizuku (uid 2000) |
+|---|---|---|
+| `settings put global force_resizable_activities` | Ditolak (butuh `WRITE_SECURE_SETTINGS`) | **Berhasil** — app pihak ketiga jadi boleh di-resize |
+| `appops set <pkg> SYSTEM_ALERT_WINDOW allow` | Hanya lewat UI pengaturan | **Berhasil** — overlay tanpa navigasi manual |
+| `am start --display N` | Dibatasi (app harus `allowEmbedded`) | **Perlu diuji** — ini yang diukur LANE 6 di PoC |
+| `dumpsys display`, `wm size` | Ditolak | **Berhasil** — diagnostik lengkap |
+
+Artinya, **Lapis C (embed app pihak ketiga)** di §16.2 naik statusnya dari "eksperimen" menjadi **"mungkin, pada perangkat yang mengaktifkan Shizuku"**. Namun tetap bukan tulang punggung produk, karena:
+
+1. Shizuku adalah app pihak ketiga yang harus dipasang dan diaktifkan pengguna (butuh ADB atau wireless debugging). Bukan jalur untuk pengguna umum.
+2. Upstream Shizuku **menyiapkan penghapusan `newProcess`**; penggantinya UserService (kode sendiri berjalan di proses shell). Migrasi ini pekerjaan nyata, bukan sekadar naik versi.
+3. Di perangkat yang belum diaktifkan Shizuku, semua tetap kembali ke Lapis A/B.
+
+**Posisi produk:** Akses Lanjutan = **mode opsional untuk pengguna tingkat lanjut**, bukan fitur inti. Semua fitur inti tetap berjalan tanpa Shizuku. Ini juga aman dari sisi kebijakan Play Store: aplikasi tidak mewajibkan Shizuku dan tidak meminta izin berlebih untuk dirinya sendiri.
+
+**b. Mode Go (F-16)**
+
+Android Go / perangkat RAM rendah diblokir platform dari multi-window. SukiOS tidak bisa (dan tidak boleh) menjanjikan yang sebaliknya. Yang dilakukan: mendeteksi kelas perangkat, menurunkan batas jendela ke 3, mematikan efek dekoratif, dan menampilkan jalur alternatif yang benar-benar bisa dipakai (split screen, overlay, force-resizable via Shizuku).
+
+**c. Aturan visual: matte, tanpa neon (DESIGN.md §1.3)**
+
+Gradien Aurora v1.0 (ungu-teal) dihapus dari kode, mockup, aset logo, dan dokumen. Penggantinya: palet turun-saturasi (steel `#6E8CA8`, sage `#7B9E8C`, clay `#A08F76`) dengan bayangan netral. Emoji tidak lagi dipakai sebagai ikon antarmuka (diganti badge huruf di File Explorer).
+
 ---
 
-*Dokumen ini hidup — akan diperbarui setiap ada keputusan baru. Versioning: 1.0 → 1.1 (addendum temuan riset window engine) → 1.2 (setelah hasil PoC masuk).*
+*Dokumen ini hidup — akan diperbarui setiap ada keputusan baru. Versioning: 1.0 → 1.1 (temuan riset window engine) → 1.2 (Shizuku + mode desktop) → 1.3 (setelah hasil uji perangkat masuk).*
