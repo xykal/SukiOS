@@ -145,7 +145,7 @@ Legenda prioritas: **P0** = wajib MVP · **P1** = wajib V1 · **P2** = nice-to-h
 
 ### 6.1 MVP (Fase 1) — "Bisa jadi launcher beneran"
 
-> **Status 2 Okt 2026:** v0.3.0-alpha sudah berbentuk launcher (kategori HOME aktif) dengan taskbar, start menu, jendela, snap, dan mesin akses lanjutan sendiri. Kompilasi terverifikasi di CI; uji perangkat belum ada, jadi belum ada klaim "berfungsi".
+> **Status 2 Okt 2026:** v0.3.0-alpha sudah berbentuk launcher (kategori HOME aktif) dengan taskbar, start menu, jendela, snap, dan mesin akses lanjutan sendiri. Kompilasi terverifikasi di CI; uji perangkat belum ada, jadi belum ada klaim "berfungsi". v0.3.1-alpha (2 Okt 2026, audit `docs/AUDIT-2026-10-02.md`) memperbaiki cacat yang membuat UI tidak menggambar ulang dan menambah 44 uji unit; uji perangkat tetap belum ada.
 | # | Fitur | Prioritas |
 |---|---|---|
 | 1 | Home screen pengganti (bisa diset sebagai launcher default) | P0 |

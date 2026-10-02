@@ -1,11 +1,12 @@
 # PROGRESS — SukiOS
 
+Start: 2026-10-01
 Zona waktu: **UTC**. Hari 1 = **2026-10-01**.
 Log ini hanya mencatat pekerjaan yang benar-benar selesai. Label verifikasi mengikuti aturan di `AGENTS.md`.
 
 ---
 
-## 2026-10-01 (Hari 1)
+## 2026-10-01 — hari kerja ke-1
 
 ### Fase 0 — Discovery & Design: selesai
 - `PRD.md` v1.1 — 27 fitur berprioritas, user story + acceptance criteria, peta permission Android, roadmap 3 fase, analisis risiko. Termasuk **Addendum §16** berisi temuan riset window engine (pembatasan platform untuk embed app pihak ketiga).
@@ -33,6 +34,8 @@ Catatan penting:
 - APK pada rilis ini **debug-signed** karena 4 secrets keystore rilis belum diset. Bukan untuk distribusi publik. Lihat `docs/RELEASE-SIGNING.md`.
 - Artifact build tidak disimpan (workflow build tidak mengunggah artifact) — jalur distribusi APK adalah lewat draft release.
 - Cache Gradle **tidak** dihapus (sesuai kebijakan) agar build berikutnya tetap cepat.
+
+## 2026-10-02 — hari kerja ke-2
 
 ### 2026-10-02 — kebijakan cleanup diperluas ke cache
 
@@ -140,7 +143,52 @@ Permintaan kall: UI/UX yang lebih bagus dipakai apa adanya, jadikan launcher OS 
 **Belum diverifikasi**
 - Perilaku di perangkat: launcher, jendela, taskbar melayang, SukiShell, force-resizable. Semua menunggu laporan uji.
 
+### 2026-10-02 (Hari 2, sesi audit) — audit CONTINUE, perbaikan CRIT/HIGH, v0.3.1-alpha
+
+Permintaan kall: lanjutkan proyek. Mode CONTINUE: audit dulu (`docs/AUDIT-2026-10-02.md`: 3 CRIT, 9 HIGH, 11 MED, 4 LOW), lalu CRIT, lalu HIGH.
+MED dan LOW tetap usulan di berkas audit sampai kall bilang "gas".
+
+**Akar masalah.** v0.3.0 lulus kompilasi tetapi UI tidak bisa menggambar ulang: `Win` berisi field biasa di `mutableStateListOf`, `StateFlow.value` dibaca
+tanpa `collectAsState` (0 pemakaian), dan perintah SukiShell (binder + proses) jalan di thread utama tanpa batas waktu. Tidak ketahuan karena belum pernah diuji di perangkat.
+
+**Done**
+- Win jadi state Compose; `collectAsState` di semua composable; `SukiShell.io` (IO) untuk semua pemanggil; `ShellExec` (tanpa shell parsing, timeout 15 dtk, batas 64 KiB per aliran); `ShellArgs` (allowlist).
+- Mesin jendela: tak lagi crash saat area kerja < minimum, snap mengingat ukuran bebas, taskbar memakai kepadatan sebenarnya, ukuran minimum dalam dp, `resizeEdge`.
+- Laporan diagnostik jujur: RAM total, UTC sungguhan, fitur freeform dari PackageManager.
+- About: lisensi Shizuku-API yang benar (MIT, bukan Apache-2.0) + atribusi `Brand.kt`; layar persiapan tidak lagi menyapa pengguna akhir "kall".
+- 44 uji unit JVM (WinEngine 19, ShellExec 12, ShellArgs 5, PureHelpers 4, SourceHygiene 4) menjadi gerbang `Build APK` dan `Release APK`.
+- Workflow: 7 action dipin SHA, tag rilis divalidasi lewat `env:` + regex, `tools/check_workflows.py` (W1-W4 + `--self-test`).
+- Dokumen baru: `SECURITY.md`, `THIRD_PARTY_NOTICES.md` (DRAFT), `IDEAS.md`, README dua bahasa, `docs/release-notes/v0.3.1-alpha.md`. Typo `xyikal` -> `xykal` di panduan signing.
+- Private vulnerability reporting dinyalakan lewat API (`PUT` = 204, `GET` = `enabled: true`).
+
+**Rekaman CI**
+
+| Objek | ID / commit | Hasil |
+|---|---|---|
+| Build APK #1 | run 37031748026 · `bc1c5ab` | **success**: workflow-check lulus, uji unit **44 dijalankan, 0 gagal, 0 error, 0 dilewati**, build debug + release. Bukti diambil dari log sebelum run dihapus pembersih |
+| Build APK #2 | run 37032705523 · `ff247b9` | **success** (semua langkah, termasuk uji unit). Jumlah uji tidak terekam: pembersih menghapus run sebelum log sempat dibaca |
+| Release APK | run 37033191915 · tag `v0.3.1-alpha` | **success**: tag tervalidasi, uji unit, build release, draft release dibuat |
+| Pembersihan | 37032409746, 37033108222, 37033316673 | sukses; yang terakhir `purge_mode=all`: **14 entri / 1086,0 MB -> 0**, run rilis dihapus (GET = 404) |
+
+URL run: `https://github.com/xykal/SukiOS/actions/runs/<ID>`; ketiganya sudah dihapus pembersih sesuai kebijakan, jadi tidak bisa dibuka lagi.
+Jalur purge-saat-rilis kini **terbukti end-to-end lewat tag** (sebelumnya baru sampai tahap wiring).
+
+**Artefak:** draft release `SukiOS v0.3.1-alpha`, `SukiOS-v0.3.1-alpha.apk` 1.872.719 byte, debug-signed (0 secrets keystore).
+
+**Belum diverifikasi**
+- Perilaku di perangkat nyata. Uji unit membuktikan logika di JVM dan bahwa tiap properti jendela tercatat sebagai state Compose; bukan tampilan di layar.
+- Dua perbaikan yang hanya bisa dibuktikan di perangkat: titik indikator Shizuku berubah warna saat status berubah, dan `SukiShell.io` tidak menahan layar pada perintah lambat.
+
+**Pelajaran**
+- SHA action harus dari `GET /repos/<owner>/<repo>/commits/<tag>`. `git/ref/tags/<tag>` mengembalikan SHA tag-object untuk tag beranotasi: `gradle/actions@v4` terbaca `48b5f213...`, padahal commit-nya `ed408507...`. Hampir terpin salah.
+- `actions/cache/usage` tertinggal sekitar 5 menit; pakai `actions/caches` untuk keadaan sebenarnya (usage menunjukkan 8 entri / 664 MB padahal daftar nyata 0).
+- Jendela pengambilan bukti sebelum pembersih menghapus run itu sekitar setengah menit: satu perintah yang polling tiap 3 detik, bukan beberapa panggilan terpisah.
+- `Float.coerceIn(min, max)` melempar saat min > max. Uji acak 4000 langkah dengan benih tetap kini menjaga seluruh mesin jendela dari kelas cacat ini.
+
 ### Langkah berikutnya
-1. Uji 5 lane di perangkat nyata, kirim laporan lewat tombol "Salin laporan" di app.
-2. Set 4 secrets keystore supaya rilis berikutnya benar-benar signed (lihat `docs/RELEASE-SIGNING.md`).
-3. Setelah hasil uji masuk: kunci arsitektur window (PRD §16.2) lalu mulai Fase 1.
+1. **Uji di perangkat (kall):** pasang draft `v0.3.1-alpha`, jalankan 5 pemeriksaan di catatan rilis, kirim hasil "Salin laporan diagnostik".
+2. **Keputusan kall:** lisensi (usul Apache-2.0 + Pro modul terpisah, atau EULA proprietari); `gradle/actions` v6 (komponen cache proprietari) boleh/tidak.
+3. **Set 4 secrets keystore** agar rilis berikutnya benar-benar signed (`docs/RELEASE-SIGNING.md`; perintahnya kini menunjuk repo yang benar). Atau minta pembuat keystore sekali pakai (`IDEAS.md` #13).
+4. **Cabut atau ganti token GitHub** (scope terlalu lebar, lihat audit "Risiko proses").
+5. Setelah laporan perangkat masuk: kunci arsitektur window (PRD 16.2), lalu Fase 1 M6 (Task View + polish).
+6. MED/LOW di `docs/AUDIT-2026-10-02.md` menunggu "gas".
