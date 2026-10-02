@@ -20,7 +20,7 @@ on:
         required: true
         type: string
       purge_caches:
-        description: 'Hapus juga cache yang bisa diatribusikan ke run ini'
+        description: 'Paksa hapus semua entri cache repo setelah pembersihan ini'
         required: false
         type: boolean
         default: false
@@ -58,6 +58,7 @@ jobs:
         env:
           EVENT: ${{ github.event_name }}
           WR_ID: ${{ github.event.workflow_run.id }}
+          WR_NAME: ${{ github.event.workflow_run.name }}
           WR_CONCLUSION: ${{ github.event.workflow_run.conclusion }}
           IN_RUN_ID: ${{ inputs.run_id }}
           IN_PURGE: ${{ inputs.purge_caches }}
@@ -67,10 +68,17 @@ jobs:
           set -euo pipefail
           if [ "$EVENT" = "workflow_run" ]; then
             RID="$WR_ID"; CONC="$WR_CONCLUSION"
-            PURGE="false"; KEEP="false"; INC_FAILED="false"
+            KEEP="false"; INC_FAILED="false"
+            # Cache: dibersihkan setelah RILIS (riwayat build+release jadi nol jejak),
+            # dibiarkan setelah build biasa supaya build berikutnya tetap cepat.
+            case "$WR_NAME" in
+              "Release APK (signed, draft)") PURGE="all" ;;
+              *)                             PURGE="none" ;;
+            esac
           else
-            RID="$IN_RUN_ID"; CONC="manual"
+            RID="$IN_RUN_ID"; CONC="manual"; WR_NAME="(manual)"
             PURGE="${IN_PURGE:-false}"; KEEP="${IN_KEEP:-false}"; INC_FAILED="${IN_FAILED:-false}"
+            [ "$PURGE" = "true" ] && PURGE="all" || PURGE="none"
           fi
           if ! printf '%s' "$RID" | grep -Eq '^[0-9]+$'; then
             echo "::error::run_id tidak valid: '$RID'"
@@ -78,11 +86,11 @@ jobs:
           fi
           {
             echo "run_id=$RID"
-            echo "purge_caches=$PURGE"
+            echo "purge_mode=$PURGE"
             echo "keep_run=$KEEP"
             echo "include_failed=$INC_FAILED"
           } >> "$GITHUB_OUTPUT"
-          echo "Target: run $RID (pemicu: $EVENT, status: $CONC, purge_caches=$PURGE, keep_run=$KEEP, include_failed=$INC_FAILED)"
+          echo "Target: run $RID | pemicu: $EVENT | workflow: $WR_NAME | status: $CONC | purge_mode=$PURGE | keep_run=$KEEP | include_failed=$INC_FAILED"
 
       - name: Jalankan pembersih
         env:
@@ -90,7 +98,7 @@ jobs:
           REPO: ${{ github.repository }}
           RUN_ID: ${{ steps.t.outputs.run_id }}
           CURRENT_RUN_ID: ${{ github.run_id }}
-          PURGE_CACHES: ${{ steps.t.outputs.purge_caches }}
+          PURGE_MODE: ${{ steps.t.outputs.purge_mode }}
           KEEP_RUN: ${{ steps.t.outputs.keep_run }}
           INCLUDE_FAILED: ${{ steps.t.outputs.include_failed }}
         run: python3 tools/cleanup_ci.py

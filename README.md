@@ -51,8 +51,10 @@ Panduan: `docs/RELEASE-SIGNING.md`.
 ## Kebijakan Repo
 
 1. **Rahasia tidak pernah masuk repo.** Kredensial disimpan di luar repo; di CI memakai GitHub Secrets. `.gitignore` menutup pola umum, tetapi tetap periksa `git status` sebelum commit.
-2. **Cleanup CI.** Setelah setiap build/release selesai, riwayat run + artifact task itu dihapus. Yang **tidak** dihapus: draft release, APK di dalamnya, tag, dan run yang gagal (log error dibiarkan untuk diagnosis).
-3. **Cache Gradle tidak dihapus** secara default karena dipakai bersama antar-run; hapus hanya dengan `purge_caches: true` saat dispatch manual.
+2. **Cleanup CI.** Setelah setiap build/release selesai, riwayat run + artifact task itu dihapus.
+   - Setelah **rilis**: jejak dibersihkan **termasuk cache** (Gradle cache ikut dihapus).
+   - Setelah **build biasa**: cache dibiarkan agar build berikutnya tetap cepat; bisa dipaksa dengan `purge_caches: true` saat dispatch manual.
+   - Yang **tidak** dihapus: draft release + APK di dalamnya, tag, dan run yang gagal (log error dibiarkan untuk diagnosis).
 4. **Label verifikasi** yang dipakai di repo ini: `LOCAL-VERIFIED`, `CI-VERIFIED <run ID>`, `UNVERIFIED`, `BLOCKED <alasan>`.
 
 ---

@@ -65,11 +65,13 @@ Workflow tetap jalan, tetapi APK ditandatangani dengan **debug key** dan catatan
 
 ## Yang dilakukan cleanup (dan yang tidak)
 
-| Objek | Tindakan |
-|---|---|
-| Riwayat run Actions buatan task itu | **dihapus** setelah hasil dicatat |
-| Artifact buatan task itu | **dihapus** |
-| Cache Gradle bersama | **tidak dihapus** (dipakai bersama antar-run; menghapusnya memperlambat build berikutnya) — kecuali `purge_caches: true` |
-| Draft release + APK | **tidak dihapus** (deliverable) |
-| Tag | **tidak dihapus** |
-| Run yang gagal | **tidak dihapus** secara default, agar log error bisa didiagnosis |
+| Objek | Setelah rilis | Setelah build biasa |
+|---|---|---|
+| Riwayat run Actions buatan task itu | **dihapus** | **dihapus** |
+| Artifact buatan task itu | **dihapus** | **dihapus** |
+| Cache Gradle | **dihapus** (`purge_mode=all`) — jejak rilis jadi nol | **dibiarkan** agar build berikutnya cepat |
+| Draft release + APK | **tidak dihapus** (deliverable) | tidak berlaku |
+| Tag | **tidak dihapus** | tidak berlaku |
+| Run yang gagal | **tidak dihapus** (log error dibiarkan untuk diagnosis) | sama |
+
+Catatan: menghapus cache memperlambat build berikutnya (unduh ulang Gradle + dependensi, sekitar 5-8 menit pada repo ini). Karena itu cache hanya dipurge setelah rilis, bukan setiap build.

@@ -21,7 +21,10 @@ PRD.md · DESIGN.md · mockup.html · PROGRESS.md
 
 1. **Rahasia tidak pernah masuk repo.** Kredensial disimpan di luar repo (folder `uploads/` pada workspace); di CI memakai GitHub Secrets. Periksa `git status` sebelum commit; `.gitignore` sudah menutup pola umum.
 2. **Signing rilis** memakai 4 secrets: `SUKIOS_KEYSTORE_BASE64`, `SUKIOS_KEYSTORE_PASSWORD`, `SUKIOS_KEY_ALIAS`, `SUKIOS_KEY_PASSWORD`. Tanpa itu, workflow rilis jatuh ke debug key dan menandainya sebagai peringatan di catatan rilis.
-3. **Kebijakan cleanup (milik kall):** setelah setiap build/release selesai, workflow `Cleanup CI traces` menghapus riwayat run + artifact yang dibuat oleh task itu. **Release/deliverable tidak dihapus.** Cache tidak dihapus kecuali diminta eksplisit (`purge_caches: true`) karena cache Gradle dipakai bersama antar-run.
+3. **Kebijakan cleanup (milik kall):** setelah setiap build/release selesai, workflow `Cleanup CI traces` menghapus riwayat run + artifact yang dibuat task itu.
+   - Setelah **rilis** (`Release APK`): jejak dibersihkan **termasuk cache** (`purge_mode=all`).
+   - Setelah **build biasa** (`Build APK`): cache **dibiarkan** agar build berikutnya cepat. Mode bisa dipaksa manual lewat `purge_caches: true` saat dispatch.
+   - **Release/deliverable tidak dihapus**, tag tidak dihapus, run yang gagal tidak dihapus (log error dibiarkan untuk diagnosis).
 4. **Jangan hapus** release, tag, branch, atau riwayat run milik orang lain. **Jangan** bersih-bersih untuk menyembunyikan aktivitas.
 5. **Gagal build tidak dibersihkan otomatis** — log error dibiarkan agar bisa didiagnosis dulu (naikkan `include_failed: true` bila memang ingin dibersihkan).
 

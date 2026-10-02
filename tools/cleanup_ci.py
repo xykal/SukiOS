@@ -4,7 +4,7 @@
 Menghapus, setelah hasil run dicatat:
   1. artifact milik run yang ditargetkan
   2. riwayat/log run itu sendiri
-  3. opsional (purge_caches=true): entri cache yang bisa diatribusikan ke run itu
+  3. entri cache di repo ini (mode 'all' — dipakai setelah rilis; build biasa memakai 'none')
 
 TIDAK pernah menghapus: release, tag, branch, run milik workflow lain,
 riwayat run orang lain, atau run yang gagal (kecuali diminta eksplisit) —
@@ -19,7 +19,7 @@ Variabel lingkungan:
     REPO              owner/repo (wajib)
     RUN_ID            id run yang dibersihkan (wajib)
     CURRENT_RUN_ID    id run pembersih ini (untuk prune riwayatnya sendiri)
-    PURGE_CACHES      "true" untuk menghapus cache yang bisa diatribusikan (default false)
+    PURGE_MODE        "none" (default, cache dibiarkan) atau "all" (hapus semua entri cache repo)
     KEEP_RUN          "true" untuk hanya menghapus artifact (default false)
     INCLUDE_FAILED    "true" untuk tetap membersihkan run yang gagal (default false)
     KEEP_CLEANUP_RUNS jumlah riwayat run pembersih yang disimpan (default 2)
@@ -31,7 +31,7 @@ import os
 import sys
 import urllib.error
 import urllib.request
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timezone
 
 API = "https://api.github.com"
 CLEANUP_WORKFLOW_FILE = "cleanup.yml"
@@ -40,18 +40,18 @@ TOKEN = os.environ.get("GH_TOKEN") or os.environ.get("GITHUB_TOKEN") or ""
 REPO = os.environ.get("REPO") or os.environ.get("GITHUB_REPOSITORY") or ""
 RUN_ID = (os.environ.get("RUN_ID") or "").strip()
 CURRENT_RUN_ID = (os.environ.get("CURRENT_RUN_ID") or "").strip()
-PURGE_CACHES = (os.environ.get("PURGE_CACHES", "false").strip().lower() == "true")
+_purge_raw = (os.environ.get("PURGE_MODE") or os.environ.get("PURGE_CACHES") or "none").strip().lower()
+# none : cache dibiarkan — dipakai bersama antar-run agar build berikutnya cepat (default build)
+# all  : semua entri cache di repo ini dihapus — dipakai setelah rilis, sesuai permintaan kall
+#        (aman karena repo ini hanya punya workflow milik kita sendiri)
+PURGE_MODE = "all" if _purge_raw in ("all", "true", "1", "yes") else "none"
+PURGE_CACHES = PURGE_MODE == "all"  # nama lama, dipertahankan untuk kompatibilitas
 KEEP_RUN = (os.environ.get("KEEP_RUN", "false").strip().lower() == "true")
 INCLUDE_FAILED = (os.environ.get("INCLUDE_FAILED", "false").strip().lower() == "true")
 try:
     KEEP_CLEANUP_RUNS = max(0, int(os.environ.get("KEEP_CLEANUP_RUNS", "2")))
 except ValueError:
     KEEP_CLEANUP_RUNS = 2
-
-# Cache dianggap milik run ini bila ref-nya sama dan dibuat dalam rentang ini
-# di sekitar waktu berjalannya run.
-CACHE_WINDOW_BEFORE = timedelta(minutes=5)
-CACHE_WINDOW_AFTER = timedelta(minutes=10)
 
 log_lines: list[str] = []
 
@@ -78,12 +78,6 @@ def api(method: str, path: str, ok=(200, 201, 204)):
         return error.code, None
     except urllib.error.URLError as error:
         raise RuntimeError(f"{method} {url} gagal: {error.reason}") from error
-
-
-def parse_time(value: str | None) -> datetime | None:
-    if not value:
-        return None
-    return datetime.fromisoformat(value.replace("Z", "+00:00")).astimezone(timezone.utc)
 
 
 def write_summary(lines: list[str]) -> None:
@@ -113,8 +107,6 @@ def main() -> int:
     sha = (run.get("head_sha") or "")[:7]
     branch = run.get("head_branch")
     run_status = run.get("status")
-    created = parse_time(run.get("created_at"))
-    updated = parse_time(run.get("updated_at")) or created
 
     log("Rekaman sebelum pembersihan:")
     log(f"  run id     : {RUN_ID} (#{run.get('run_number')})")
@@ -156,33 +148,32 @@ def main() -> int:
     else:
         log(f"  tidak ada artifact terbaca (HTTP {status})")
 
-    # --- 2. cache (opsional, hanya yang bisa diatribusikan) ---
-    if PURGE_CACHES:
+    # --- 2. cache ---
+    if PURGE_MODE == "all":
         status, data = api("GET", f"/repos/{REPO}/actions/caches?per_page=100")
         if status == 200 and data:
-            for cache in data.get("actions_caches", []):
-                cache_ref = cache.get("ref") or ""
-                cache_created = parse_time(cache.get("created_at"))
-                belongs = (
-                    created is not None
-                    and cache_created is not None
-                    and branch is not None
-                    and cache_ref == f"refs/heads/{branch}"
-                    and created - CACHE_WINDOW_BEFORE <= cache_created <= updated + CACHE_WINDOW_AFTER
-                )
-                if not belongs:
-                    continue
+            entries = data.get("actions_caches", [])
+            total_bytes = sum(c.get("size_in_bytes", 0) for c in entries)
+            log(f"  cache mode=all: {len(entries)} entri, total {total_bytes / 1048576:.1f} MB")
+            for cache in entries:
                 cache_id = cache.get("id")
                 dstatus, _ = api("DELETE", f"/repos/{REPO}/actions/caches/{cache_id}")
                 if dstatus == 204:
                     deleted_caches.append(cache.get("key"))
-                    log(f"  cache dihapus: {cache.get('key')} ({cache.get('size_in_bytes', 0)} byte)")
+                    log(f"  cache dihapus: {cache.get('key')} ({cache.get('size_in_bytes', 0)} byte, ref {cache.get('ref')})")
                 else:
                     log(f"  GAGAL menghapus cache {cache.get('key')} (HTTP {dstatus})")
+            # verifikasi
+            vstatus, vdata = api("GET", f"/repos/{REPO}/actions/caches?per_page=100")
+            remaining = len((vdata or {}).get("actions_caches", [])) if vstatus == 200 else -1
+            log(f"  verifikasi: sisa entri cache = {remaining}")
+            if remaining > 0:
+                log("  PERINGATAN: masih ada entri cache yang tersisa")
         else:
             log(f"  daftar cache tidak terbaca (HTTP {status})")
     else:
-        log("  cache dilewati (purge_caches=false) — cache Gradle dipakai bersama antar-run.")
+        log("  cache mode=none — dibiarkan agar build berikutnya cepat "
+            "(mode 'all' dipakai setelah rilis).")
 
     # --- 3. riwayat run ---
     run_deleted = False
@@ -226,8 +217,8 @@ def main() -> int:
         f"- commit `{sha}` di `{branch}` — kesimpulan **{conclusion}**",
         f"- artifact dihapus: {len(deleted_artifacts)}"
         + (f" ({', '.join(deleted_artifacts)})" if deleted_artifacts else ""),
-        f"- cache dihapus: {len(deleted_caches)}"
-        + (f" ({', '.join(str(c) for c in deleted_caches)})" if deleted_caches else " (purge_caches=false)"),
+        f"- cache: mode `{PURGE_MODE}`, entri dihapus: {len(deleted_caches)}"
+        + (f" ({', '.join(str(c) for c in deleted_caches)})" if deleted_caches else ""),
         f"- riwayat run dihapus: {'ya' if run_deleted else 'tidak'}",
         f"- riwayat pembersih lama dipangkas: {len(pruned)}",
         "",
