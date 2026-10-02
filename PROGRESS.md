@@ -216,7 +216,20 @@ tidak pernah melewati CI sama sekali.
 | 2026-10-02 20:40 | `Build APK` run **37061983778** (commit `c1ef801`, dokumen saja) — **success** | `CI-VERIFIED 37061983778`; log di `ci-evidence/run37061983778.log`: `uji unit: 91 dijalankan, 0 gagal`; `3 workflow bersih (W1-W4)` setelah nama langkah uji diubah; debug + release BUILD SUCCESSFUL |
 | 2026-10-02 17:39 | run 37042179977 (`ef1a648`) — **failure**, 91 uji / 2 gagal | Run gagal tidak dihapus otomatis; log lengkap tersimpan di `ci-evidence/run37042179977-unit.log` |
 
-**Artefak baru**
+**Rilis**
+
+| Waktu (UTC) | Hasil | Bukti |
+|---|---|---|
+| 2026-10-02 20:44 | `Release APK (signed, draft)` run **37062363916** (tag `v0.4.0-alpha` -> commit `e91f695`) — **success** | `CI-VERIFIED 37062363916`; log di `ci-evidence/rel37062363916.log`: 11 langkah success termasuk "Uji unit sebelum rilis" dan "Buat draft release"; peringatan workflow `Secrets keystore belum ada; APK akan memakai debug key` |
+
+**Artefak:** draft release `SukiOS v0.4.0-alpha`, `SukiOS-v0.4.0-alpha.apk` **2.279.003 byte**,
+debug-signed (0 secrets keystore), catatan rilis diambil dari `docs/release-notes/v0.4.0-alpha.md`
++ kaki otomatis (commit `e91f695`, versionName `0.4.0`, peringatan debug key, atribusi merek).
+
+Perbaikan kecil ikut di commit ini: judul `# SukiOS v0.4.0-alpha` dihapus dari berkas catatan rilis
+karena workflow sudah menulis `## SukiOS <tag>` sendiri (rilis kali ini punya dua judul).
+
+**Artefak baru
 - `docs/release-notes/v0.4.0-alpha.md` — ditulis dari kode yang benar-benar ada di `main`, bukan dari rencana:
   Aurora v2 (6 aksen dengan turunan `fill`/`on`/`text`, 6 wallpaper, font OFL, ikon hasil generator),
   jendela mutlak (satu jalur `am start --windowingMode 5`, koreksi kotak hanya bila tidak masuk akal,
@@ -251,8 +264,10 @@ Belum disinkronkan (dicatat supaya tidak dianggap selesai): `mockup.html` masih 
 angka target yang belum cocok dengan kode.
 
 ### Langkah berikutnya
-1. **Uji di perangkat (kall):** build `main` hijau; tag `v0.4.0-alpha` menunggu "gas" supaya ada draft APK.
-   Lalu jalankan 6 pemeriksaan di `docs/release-notes/v0.4.0-alpha.md` dan kirim laporan diagnostik.
+1. **Uji di perangkat (kall):** pasang draft `v0.4.0-alpha` (2.279.003 byte, debug key), jalankan
+   6 pemeriksaan di `docs/release-notes/v0.4.0-alpha.md`, kirim hasil "Salin laporan diagnostik".
+   Yang paling menentukan: apakah aplikasi pihak ketiga benar-benar jadi jendela di perangkat itu,
+   dan apa bunyi `OutcomeKind`-nya bila tidak.
 2. **Keputusan kall:** lisensi; `gradle/actions` v6 (komponen cache proprietari) boleh/tidak;
    4 secrets keystore; pencabutan token GitHub (scope terlalu lebar, lihat audit "Risiko proses").
 3. **[MED] Geometri snap.** Jendela internal bawaan 66% area kerja menyisakan ruang geser ~30 dp per sisi
