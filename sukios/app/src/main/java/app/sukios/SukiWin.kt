@@ -1,22 +1,31 @@
 package app.sukios
 
+import androidx.compose.runtime.Stable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 
+/** Ukuran minimum jendela, jarak tepi, dan bagian bilah judul yang harus tetap terjangkau. Satuan dp. */
+const val WIN_MIN_W_DP = 320
+const val WIN_MIN_H_DP = 220
+const val WIN_MARGIN_DP = 8
+const val WIN_GRAB_DP = 28
+
 /**
  * WinEngine — mesin jendela SukiOS.
  *
- * Ini murni geometri + tumpukan fokus. Tidak ada ketergantungan Android di
- * dalamnya, jadi perilakunya bisa dinalar dan diuji tanpa perangkat.
+ * Murni geometri + tumpukan fokus; tidak memakai kelas Android, jadi perilakunya
+ * dibuktikan lewat uji unit di CI (WinEngineTest), bukan ditebak.
  *
- * Aturan yang dijaga mesin ini:
- *  - Tidak ada jendela di bawah taskbar (area kerja dikurangi tinggi taskbar).
- *  - Jendela tidak pernah lebih kecil dari WIN_MIN_W x WIN_MIN_H.
- *  - Snap mengisi setengah / seperempat area kerja, maximize mengisi penuh.
- *  - Fokus selalu di atas: setiap operasi menyentuh jendela akan menaikkan
- *    nilainya di tumpukan.
+ * Aturan yang dijaga:
+ *  - Tidak ada jendela di bawah taskbar (area kerja = layar - taskbar - margin).
+ *  - Ukuran minimum dihormati, tetapi tidak pernah melebihi area kerja: pada layar
+ *    sangat kecil minimum mengalah, tidak melempar exception.
+ *  - Snap dan maximize mengingat geometri bebas terakhir; menggeser jendela yang
+ *    sedang snap mengembalikan ukuran aslinya.
+ *  - Setiap properti yang dibaca UI adalah state Compose (lihat Win). Tanpa itu
+ *    jendela berubah di memori tetapi layar tidak pernah digambar ulang.
  */
 enum class WinKind(val title: String, val internalWin: Boolean) {
     SETTINGS("Setelan", true),
@@ -30,29 +39,51 @@ enum class WinKind(val title: String, val internalWin: Boolean) {
 
 enum class SnapZone { LEFT, RIGHT, TOP, BOTTOM, TL, TR, BL, BR, MAX }
 
-data class Win(
+data class Bounds(val x: Float, val y: Float, val w: Float, val h: Float)
+
+/**
+ * Satu jendela. Semua properti yang dibaca composable memakai mutableStateOf:
+ * mutableStateListOf pada WinEngine hanya memberi tahu perubahan isi daftar,
+ * bukan perubahan field di dalam elemennya.
+ */
+@Stable
+class Win(
     val id: Int,
     val kind: WinKind,
-    var title: String,
-    var x: Float,
-    var y: Float,
-    var w: Float,
-    var h: Float,
-    var minimized: Boolean = false,
-    var maximized: Boolean = false,
-    var z: Int = 1,
+    title: String,
+    x: Float,
+    y: Float,
+    w: Float,
+    h: Float,
+    z: Int,
     val pkg: String? = null,
-    var savedX: Float = 0f,
-    var savedY: Float = 0f,
-    var savedW: Float = 0f,
-    var savedH: Float = 0f,
-    var scroll: Int = 0,
-)
+) {
+    var title by mutableStateOf(title)
+    var x by mutableStateOf(x)
+    var y by mutableStateOf(y)
+    var w by mutableStateOf(w)
+    var h by mutableStateOf(h)
+    var z by mutableStateOf(z)
+    var minimized by mutableStateOf(false)
+    var maximized by mutableStateOf(false)
+
+    /** Zona snap setengah/seperempat layar; null saat bebas atau maximize penuh. */
+    var snap by mutableStateOf<SnapZone?>(null)
+
+    /** Geometri bebas terakhir, dipulihkan saat jendela dilepas dari snap/maximize. Tidak dibaca UI. */
+    var free: Bounds? = null
+}
 
 class WinEngine {
 
     /** Batas jendela diatur Beranda saat mulai (mode Go = 3, normal = 8). */
     var maxWindows: Int = 8
+
+    /** Piksel per dp, diisi UI. Semua batas dp di mesin ini dikonversi lewat nilai ini. */
+    var density: Float = 1f
+        set(value) {
+            field = if (value >= MIN_DENSITY) value else MIN_DENSITY
+        }
 
     val list = mutableStateListOf<Win>()
     var focusedId by mutableStateOf(-1)
@@ -65,10 +96,26 @@ class WinEngine {
     val count: Int get() = list.size
     val canOpenMore: Boolean get() = list.size < maxWindows
 
+    private val margin: Float get() = WIN_MARGIN_DP * density
+    private val minW: Float get() = WIN_MIN_W_DP * density
+    private val minH: Float get() = WIN_MIN_H_DP * density
+    private val grab: Float get() = WIN_GRAB_DP * density
+
+    private fun find(id: Int): Win? = list.firstOrNull { it.id == id }
+
+    /** coerceIn melempar bila batas bawah > batas atas; di sini batas atas yang mengalah. */
+    private fun clamp(v: Float, lo: Float, hi: Float): Float = v.coerceIn(lo, if (hi < lo) lo else hi)
+
+    /** Ukuran yang muat di area kerja; minimum mengalah bila area kerja lebih kecil dari minimum. */
+    private fun fit(v: Float, min: Float, max: Float): Float {
+        val hi = if (max < 1f) 1f else max
+        return v.coerceIn(if (min > hi) hi else min, hi)
+    }
+
     fun open(kind: WinKind, title: String, sw: Float, sh: Float, pkg: String? = null): Win? {
         if (!kind.internalWin) return null
         list.firstOrNull { it.kind == kind }?.let { existing ->
-            if (existing.minimized) existing.minimized = false
+            existing.minimized = false
             focus(existing.id)
             return existing
         }
@@ -77,18 +124,19 @@ class WinEngine {
             return null
         }
         val work = workArea(sw, sh)
-        val w = (work.width * 0.62f).coerceAtLeast(WIN_MIN_W.toFloat())
-        val h = (work.height * 0.68f).coerceAtLeast(WIN_MIN_H.toFloat())
-        val offset = (list.size % 5) * 26f
+        val w = fit(work.width * 0.62f, minW, work.width)
+        val h = fit(work.height * 0.68f, minH, work.height)
+        val cascade = (list.size % 5) * 26f * density
         val win = Win(
             id = nextId++,
             kind = kind,
             title = title,
-            x = (work.left + work.width * 0.18f + offset).coerceAtMost(work.right - w - 8f),
-            y = (work.top + work.height * 0.14f + offset).coerceAtMost(work.bottom - h - 8f),
+            x = clamp(work.left + work.width * 0.18f + cascade, work.left, work.right - w - margin),
+            y = clamp(work.top + work.height * 0.14f + cascade, work.top, work.bottom - h - margin),
             w = w,
             h = h,
             z = nextZ++,
+            pkg = pkg,
         )
         list.add(win)
         focusedId = win.id
@@ -108,13 +156,13 @@ class WinEngine {
     }
 
     fun focus(id: Int) {
-        val win = list.firstOrNull { it.id == id } ?: return
+        val win = find(id) ?: return
         win.z = nextZ++
         focusedId = id
     }
 
     fun toggleMinimize(id: Int) {
-        val win = list.firstOrNull { it.id == id } ?: return
+        val win = find(id) ?: return
         win.minimized = !win.minimized
         if (!win.minimized) focus(id) else focusedId = topMostId()
     }
@@ -125,74 +173,92 @@ class WinEngine {
     }
 
     fun toggleMax(id: Int, sw: Float, sh: Float) {
-        val win = list.firstOrNull { it.id == id } ?: return
-        val work = workArea(sw, sh)
-        if (!win.maximized) {
-            win.savedX = win.x; win.savedY = win.y; win.savedW = win.w; win.savedH = win.h
-            win.x = work.left; win.y = work.top; win.w = work.width; win.h = work.height
-            win.maximized = true
-        } else {
-            win.x = win.savedX; win.y = win.savedY; win.w = win.savedW; win.h = win.savedH
-            win.maximized = false
-        }
+        val win = find(id) ?: return
+        if (win.maximized) restoreFree(win, workArea(sw, sh)) else snap(id, SnapZone.MAX, sw, sh)
         focus(id)
     }
 
     fun moveTo(id: Int, x: Float, y: Float, sw: Float, sh: Float) {
-        val win = list.firstOrNull { it.id == id } ?: return
+        val win = find(id) ?: return
         val work = workArea(sw, sh)
-        if (win.maximized) {
-            // Keluar dari maximize kalau digeser: jendela menempel ke kursor.
-            win.maximized = false
-            win.w = win.savedW.coerceAtLeast(WIN_MIN_W.toFloat())
-            win.h = win.savedH.coerceAtLeast(WIN_MIN_H.toFloat())
-        }
-        win.x = x.coerceIn(work.left - win.w * 0.5f, work.right - win.w * 0.5f)
-        win.y = y.coerceIn(work.top - 8f, work.bottom - 40f)
+        if (win.maximized || win.snap != null) releaseSize(win, work)
+        win.x = clamp(x, work.left - win.w * 0.5f, work.right - win.w * 0.5f)
+        win.y = clamp(y, work.top, work.bottom - grab)
     }
 
     fun moveBy(id: Int, dx: Float, dy: Float, sw: Float, sh: Float) {
-        val win = list.firstOrNull { it.id == id } ?: return
+        val win = find(id) ?: return
         moveTo(id, win.x + dx, win.y + dy, sw, sh)
     }
 
-    fun resizeBy(id: Int, dw: Float, dh: Float, sw: Float, sh: Float) {
-        val win = list.firstOrNull { it.id == id } ?: return
-        resize(id, win.w + dw, win.h + dh, sw, sh)
+    /**
+     * Ubah ukuran dari satu tepi atau sudut. dirX/dirY: -1 tepi kiri/atas, 0 tidak ikut,
+     * 1 tepi kanan/bawah. Sisi yang berlawanan tetap diam, termasuk saat ukuran sudah
+     * mentok minimum (memanggil moveBy lalu resize membuat jendela ikut meluncur).
+     */
+    fun resizeEdge(id: Int, dx: Float, dy: Float, dirX: Int, dirY: Int, sw: Float, sh: Float) {
+        val win = find(id) ?: return
+        val work = workArea(sw, sh)
+        val right = win.x + win.w
+        val bottom = win.y + win.h
+        val newW = if (dirX == 0) win.w else fit(win.w + dx * dirX, minW, work.width)
+        val newH = if (dirY == 0) win.h else fit(win.h + dy * dirY, minH, work.height)
+        if (focusedId != id) focus(id)
+        win.maximized = false
+        win.snap = null
+        win.w = newW
+        win.h = newH
+        if (dirX < 0) win.x = right - newW
+        if (dirY < 0) {
+            val top = (bottom - newH).coerceAtLeast(work.top)
+            win.y = top
+            win.h = (bottom - top).coerceAtLeast(1f)
+        }
     }
 
     fun resize(id: Int, w: Float, h: Float, sw: Float, sh: Float) {
-        val win = list.firstOrNull { it.id == id } ?: return
+        val win = find(id) ?: return
         val work = workArea(sw, sh)
         win.maximized = false
-        win.w = w.coerceIn(WIN_MIN_W.toFloat(), work.width)
-        win.h = h.coerceIn(WIN_MIN_H.toFloat(), work.height)
-        win.x = win.x.coerceAtMost(work.right - 40f)
-        win.y = win.y.coerceAtMost(work.bottom - 32f)
+        win.snap = null
+        win.w = fit(w, minW, work.width)
+        win.h = fit(h, minH, work.height)
+        win.x = clamp(win.x, work.left - win.w * 0.5f, work.right - grab)
+        win.y = clamp(win.y, work.top, work.bottom - grab)
     }
 
     fun snap(id: Int, zone: SnapZone, sw: Float, sh: Float) {
-        val win = list.firstOrNull { it.id == id } ?: return
+        val win = find(id) ?: return
         val work = workArea(sw, sh)
+        rememberFree(win)
         val halfW = work.width / 2f
         val halfH = work.height / 2f
-        when (zone) {
-            SnapZone.MAX -> { win.x = work.left; win.y = work.top; win.w = work.width; win.h = work.height; win.maximized = true }
-            SnapZone.LEFT -> { win.x = work.left; win.y = work.top; win.w = halfW; win.h = work.height; win.maximized = false }
-            SnapZone.RIGHT -> { win.x = work.left + halfW; win.y = work.top; win.w = halfW; win.h = work.height; win.maximized = false }
-            SnapZone.TOP -> { win.x = work.left; win.y = work.top; win.w = work.width; win.h = halfH; win.maximized = false }
-            SnapZone.BOTTOM -> { win.x = work.left; win.y = work.top + halfH; win.w = work.width; win.h = halfH; win.maximized = false }
-            SnapZone.TL -> { win.x = work.left; win.y = work.top; win.w = halfW; win.h = halfH; win.maximized = false }
-            SnapZone.TR -> { win.x = work.left + halfW; win.y = work.top; win.w = halfW; win.h = halfH; win.maximized = false }
-            SnapZone.BL -> { win.x = work.left; win.y = work.top + halfH; win.w = halfW; win.h = halfH; win.maximized = false }
-            SnapZone.BR -> { win.x = work.left + halfW; win.y = work.top + halfH; win.w = halfW; win.h = halfH; win.maximized = false }
+        val midX = work.left + halfW
+        val midY = work.top + halfH
+        val b = when (zone) {
+            SnapZone.MAX -> Bounds(work.left, work.top, work.width, work.height)
+            SnapZone.LEFT -> Bounds(work.left, work.top, halfW, work.height)
+            SnapZone.RIGHT -> Bounds(midX, work.top, halfW, work.height)
+            SnapZone.TOP -> Bounds(work.left, work.top, work.width, halfH)
+            SnapZone.BOTTOM -> Bounds(work.left, midY, work.width, halfH)
+            SnapZone.TL -> Bounds(work.left, work.top, halfW, halfH)
+            SnapZone.TR -> Bounds(midX, work.top, halfW, halfH)
+            SnapZone.BL -> Bounds(work.left, midY, halfW, halfH)
+            SnapZone.BR -> Bounds(midX, midY, halfW, halfH)
         }
+        win.x = b.x
+        win.y = b.y
+        win.w = b.w
+        win.h = b.h
+        win.maximized = zone == SnapZone.MAX
+        win.snap = if (zone == SnapZone.MAX) null else zone
+        win.minimized = false
         focus(id)
     }
 
-    /** Snap berdasarkan posisi jendela: dipakai saat pengguna melepas geseran. */
-    fun snapFromPosition(id: Int, sw: Float, sh: Float, density: Float) {
-        val win = list.firstOrNull { it.id == id } ?: return
+    /** Snap berdasarkan posisi jendela: dipakai saat pengguna melepas geseran bilah judul. */
+    fun snapFromPosition(id: Int, sw: Float, sh: Float, density: Float = this.density) {
+        val win = find(id) ?: return
         val edge = 96f * density
         val topEdge = 40f * density
         val work = workArea(sw, sh)
@@ -203,21 +269,47 @@ class WinEngine {
         }
     }
 
-    /** Pindah fokus ke jendela berikutnya (Alt+Tab sederhana). */
+    /** Pindah fokus ke jendela yang paling lama tidak dipakai (Alt+Tab sederhana). */
     fun cycle() {
         val visible = list.filter { !it.minimized }.sortedBy { it.z }
         if (visible.isEmpty()) return
         val current = visible.indexOfFirst { it.id == focusedId }
-        val next = visible[(current + 1) % visible.size]
-        focus(next.id)
+        focus(visible[(current + 1) % visible.size].id)
     }
 
     fun topMostId(): Int = list.filter { !it.minimized }.maxByOrNull { it.z }?.id ?: -1
 
-    /** Area kerja = layar dikurangi taskbar. Dipakai semua perhitungan geometri. */
+    /** Area kerja = layar dikurangi taskbar dan margin. Dipakai semua perhitungan geometri. */
     fun workArea(sw: Float, sh: Float): WorkRect {
-        val bar = TASKBAR_DP * (sh / 400f).coerceIn(1.4f, 3.0f) // perkiraan kepadatan yang stabil
-        return WorkRect(8f, 8f, sw - 8f, sh - bar - 8f)
+        val m = margin
+        return WorkRect(m, m, sw - m, sh - TASKBAR_DP * density - m)
+    }
+
+    /** Simpan geometri bebas hanya saat jendela memang bebas, supaya snap berantai tidak menimpanya. */
+    private fun rememberFree(win: Win) {
+        if (!win.maximized && win.snap == null) win.free = Bounds(win.x, win.y, win.w, win.h)
+    }
+
+    private fun releaseSize(win: Win, work: WorkRect) {
+        win.maximized = false
+        win.snap = null
+        val b = win.free ?: return
+        win.w = fit(b.w, minW, work.width)
+        win.h = fit(b.h, minH, work.height)
+    }
+
+    private fun restoreFree(win: Win, work: WorkRect) {
+        win.maximized = false
+        win.snap = null
+        val b = win.free ?: return
+        win.w = fit(b.w, minW, work.width)
+        win.h = fit(b.h, minH, work.height)
+        win.x = clamp(b.x, work.left - win.w * 0.5f, work.right - win.w * 0.5f)
+        win.y = clamp(b.y, work.top, work.bottom - grab)
+    }
+
+    private companion object {
+        const val MIN_DENSITY = 0.5f
     }
 }
 

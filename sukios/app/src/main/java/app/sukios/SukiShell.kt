@@ -7,9 +7,10 @@ import android.content.ServiceConnection
 import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.IBinder
-import android.util.Base64
 import app.sukios.shell.ISukiShell
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.withContext
 import rikka.shizuku.Shizuku
 
 /**
@@ -65,7 +66,7 @@ object SukiShell {
     val state = MutableStateFlow(SukiShellState())
 
     private var app: Context? = null
-    private var binder: ISukiShell? = null
+    @Volatile private var binder: ISukiShell? = null
     private var args: Shizuku.UserServiceArgs? = null
     private var binding = false
 
@@ -196,14 +197,22 @@ object SukiShell {
         state.value = state.value.copy(serviceBound = false)
     }
 
-    /** Jalankan satu perintah. Tidak pernah melempar. */
+    /**
+     * Jalankan perintah di thread IO. SELALU dipakai dari UI: eksekusi memanggil binder dan
+     * membuat proses, yang di thread utama bisa menahan layar (ANR) bila perintahnya lambat.
+     */
+    suspend fun <T> io(block: SukiShell.() -> T): T = withContext(Dispatchers.IO) { block(this@SukiShell) }
+
+    /** Jalankan satu perintah (memblokir). Tidak pernah melempar; panggil lewat [io] dari UI. */
     fun run(vararg argv: String): SukiResult {
         val b = binder
         if (b == null) {
-            return SukiResult(127, "", notReadyReason())
+            return SukiResult(ShellExec.CODE_NOT_RUNNABLE, "", notReadyReason())
         }
-        return runCatching { parse(b.exec(argv.toList())) }
-            .getOrElse { SukiResult(127, "", "Gagal memanggil SukiShell: ${it.message}") }
+        return runCatching {
+            val reply = ShellExec.parse(b.exec(argv.toList()))
+            SukiResult(reply.code, reply.out, reply.err)
+        }.getOrElse { SukiResult(ShellExec.CODE_NOT_RUNNABLE, "", "Gagal memanggil SukiShell: ${it.message}") }
     }
 
     private fun notReadyReason(): String = when {
@@ -213,18 +222,6 @@ object SukiShell {
         else -> "SukiShell belum tersambung."
     }
 
-    private fun parse(raw: String?): SukiResult {
-        if (raw == null) return SukiResult(127, "", "Balasan kosong dari SukiShell")
-        val parts = raw.split("\n")
-        if (parts.size < 3) return SukiResult(127, "", "Balasan tidak dikenal: ${raw.take(120)}")
-        val code = parts[0].trim().toIntOrNull() ?: 127
-        return SukiResult(code, decode(parts[1]), decode(parts[2]))
-    }
-
-    private fun decode(b64: String): String = runCatching {
-        String(Base64.decode(b64, Base64.NO_WRAP), Charsets.UTF_8)
-    }.getOrDefault("")
-
     // ------------------------------------------------------------------
     // Perintah tetap. Argumen divalidasi di sini agar tidak pernah ada
     // string bebas yang masuk ke sisi shell.
@@ -233,9 +230,9 @@ object SukiShell {
     fun identity(): SukiResult = run("id")
 
     fun deviceSummary(): SukiResult {
-        val b = binder ?: return SukiResult(127, "", notReadyReason())
+        val b = binder ?: return SukiResult(ShellExec.CODE_NOT_RUNNABLE, "", notReadyReason())
         return runCatching { SukiResult(0, b.deviceSummary(), "") }
-            .getOrElse { SukiResult(127, "", "deviceSummary gagal: ${it.message}") }
+            .getOrElse { SukiResult(ShellExec.CODE_NOT_RUNNABLE, "", "deviceSummary gagal: ${it.message}") }
     }
 
     fun forceResizable(on: Boolean): SukiResult =
@@ -245,7 +242,7 @@ object SukiShell {
         run("settings", "get", "global", "force_resizable_activities")
 
     fun allowOverlay(pkg: String): SukiResult {
-        if (!pkg.matches(Regex("[A-Za-z0-9_.]+"))) return SukiResult(126, "", "Nama paket tidak valid")
+        if (!ShellArgs.isPackage(pkg)) return SukiResult(ShellExec.CODE_BAD_ARGS, "", "Nama paket tidak valid")
         return run("appops", "set", pkg, "SYSTEM_ALERT_WINDOW", "allow")
     }
 
@@ -254,15 +251,15 @@ object SukiShell {
     fun windowSize(): SukiResult = run("wm", "size")
 
     fun forceStop(pkg: String): SukiResult {
-        if (!pkg.matches(Regex("[A-Za-z0-9_.]+"))) return SukiResult(126, "", "Nama paket tidak valid")
+        if (!ShellArgs.isPackage(pkg)) return SukiResult(ShellExec.CODE_BAD_ARGS, "", "Nama paket tidak valid")
         return run("am", "force-stop", pkg)
     }
 
     fun launchOnDisplay(component: String, displayId: Int): SukiResult {
-        if (!component.matches(Regex("[A-Za-z0-9_.]+/[A-Za-z0-9_.$]+"))) {
-            return SukiResult(126, "", "Komponen tidak valid")
+        if (!ShellArgs.isComponent(component)) {
+            return SukiResult(ShellExec.CODE_BAD_ARGS, "", "Komponen tidak valid")
         }
-        if (displayId < 0) return SukiResult(126, "", "Id display tidak valid")
+        if (!ShellArgs.isDisplayId(displayId)) return SukiResult(ShellExec.CODE_BAD_ARGS, "", "Id display tidak valid")
         return run("am", "start", "--display", displayId.toString(), "-n", component)
     }
 
@@ -272,7 +269,7 @@ object SukiShell {
     fun globalHome(): SukiResult = run("input", "keyevent", "3")
 
     fun systemProperty(key: String): SukiResult {
-        if (!key.matches(Regex("[A-Za-z0-9_.\\-]+"))) return SukiResult(126, "", "Nama properti tidak valid")
+        if (!ShellArgs.isProperty(key)) return SukiResult(ShellExec.CODE_BAD_ARGS, "", "Nama properti tidak valid")
         return run("getprop", key)
     }
 

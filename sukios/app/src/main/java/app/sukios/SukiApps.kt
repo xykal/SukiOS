@@ -26,9 +26,11 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
@@ -38,10 +40,14 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 /**
  * Isi jendela SukiOS.
@@ -54,7 +60,9 @@ import kotlinx.coroutines.launch
 fun SettingsContent(app: SukiApp) {
     val ctx = LocalContext.current
     val prefs = app.prefs
-    val shell = SukiShell.state.value
+    val shell by SukiShell.state.collectAsState()
+    val lockLandscape by prefs.lockLandscape.collectAsState()
+    val fullDesktop by prefs.fullDesktop.collectAsState()
 
     WinPanel("Setelan SukiOS", "tampilan, desktop, jendela, akses lanjutan") {
         ScrollArea {
@@ -79,8 +87,8 @@ fun SettingsContent(app: SukiApp) {
 
             ColSpacer(14)
             Label("Desktop")
-            ToggleRow("Kunci mendatar (landscape)", prefs.lockLandscape.value) { prefs.setLockLandscape(it) }
-            ToggleRow("Desktop penuh (status bar disembunyikan)", prefs.fullDesktop.value) { prefs.setFullDesktop(it) }
+            ToggleRow("Kunci mendatar (landscape)", lockLandscape) { prefs.setLockLandscape(it) }
+            ToggleRow("Desktop penuh (status bar disembunyikan)", fullDesktop) { prefs.setFullDesktop(it) }
             ToggleRow("Taskbar melayang di atas aplikasi lain", SukiRuntime.overlayBarOn) {
                 toggleOverlayBar(app, ctx, it)
             }
@@ -135,14 +143,28 @@ fun SettingsContent(app: SukiApp) {
 @Composable
 fun LabContent(app: SukiApp) {
     val ctx = LocalContext.current
+    val scope = rememberCoroutineScope()
+    val shell by SukiShell.state.collectAsState()
+    val recentCsv by app.prefs.recent.collectAsState()
+    val allApps by app.index.apps.collectAsState()
     var output by remember { mutableStateOf("") }
-    val recents = app.prefs.recent.value.split(",").filter { it.isNotBlank() }
-        .mapNotNull { app.index.byPkg(it) }.take(4)
+    val facts = remember(SukiRuntime.isDefaultLauncher, SukiRuntime.deviceClass) { app.diag.deviceFacts() }
+    val recents = remember(recentCsv, allApps) {
+        recentCsv.split(",").filter { it.isNotBlank() }
+            .mapNotNull { pkg -> allApps.firstOrNull { it.pkg == pkg } }.take(4)
+    }
+
+    // Perintah shell memanggil binder dan membuat proses: dijalankan di thread IO supaya
+    // layar tidak menunggu perintah yang lambat.
+    fun runShell(limit: Int = 6000, block: SukiShell.() -> SukiResult) {
+        output = "menjalankan..."
+        scope.launch { output = SukiShell.io(block).full().take(limit) }
+    }
 
     WinPanel("Laboratorium", "uji nyata di perangkat ini, hasil apa adanya") {
         ScrollArea {
             Label("Perangkat")
-            app.diag.deviceFacts().forEach { KeyValue(it.key, it.value) }
+            facts.forEach { KeyValue(it.key, it.value) }
 
             ColSpacer(14)
             Label("Uji jendela aplikasi pihak ketiga")
@@ -174,28 +196,28 @@ fun LabContent(app: SukiApp) {
 
             ColSpacer(14)
             Label("Perintah SukiShell")
-            if (!SukiShell.state.value.ready) {
+            if (!shell.ready) {
                 Txt(
-                    "SukiShell belum siap: ${SukiShell.state.value.note}. " +
+                    "SukiShell belum siap: ${shell.note}. " +
                         "Perintah di bawah akan melaporkan kegagalan tanpa menyembunyikannya.",
                     10, SWarning, maxLines = 3
                 )
                 ColSpacer(6)
             }
             Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                BtnGhost("Identitas") { output = SukiShell.identity().full() }
-                BtnGhost("Baca force-resizable") { output = SukiShell.readForceResizable().full() }
+                BtnGhost("Identitas") { runShell { identity() } }
+                BtnGhost("Baca force-resizable") { runShell { readForceResizable() } }
             }
             ColSpacer(6)
             Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                BtnGhost("Nyalakan force-resizable") { output = SukiShell.forceResizable(true).full() }
-                BtnGhost("Matikan") { output = SukiShell.forceResizable(false).full() }
+                BtnGhost("Nyalakan force-resizable") { runShell { forceResizable(true) } }
+                BtnGhost("Matikan") { runShell { forceResizable(false) } }
             }
             ColSpacer(6)
             Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                BtnGhost("Daftar display") { output = SukiShell.displays().full().take(4000) }
-                BtnGhost("Ukuran jendela") { output = SukiShell.windowSize().full() }
-                BtnGhost("Ringkas perangkat") { output = SukiShell.deviceSummary().full() }
+                BtnGhost("Daftar display") { runShell(limit = 4000) { displays() } }
+                BtnGhost("Ukuran jendela") { runShell { windowSize() } }
+                BtnGhost("Ringkas perangkat") { runShell { deviceSummary() } }
             }
             ColSpacer(10)
             ResultBox(output, tone = if (output.startsWith("kode=0")) SSuccess else SDim, maxHeight = 240)
@@ -206,10 +228,14 @@ fun LabContent(app: SukiApp) {
                     output = "SukiShell diputus. Binder akan diikat ulang saat dibutuhkan."
                 }
                 BtnGhost("Salin laporan diagnostik") {
-                    copyText(ctx, app.diag.buildReport())
-                    SukiRuntime.say("Laporan diagnostik disalin.")
+                    scope.launch {
+                        copyText(ctx, withContext(Dispatchers.IO) { app.diag.buildReport() })
+                        SukiRuntime.say("Laporan diagnostik disalin.")
+                    }
                 }
-                BtnGhost("Bagikan") { shareText(ctx, app.diag.buildReport()) }
+                BtnGhost("Bagikan") {
+                    scope.launch { shareText(ctx, withContext(Dispatchers.IO) { app.diag.buildReport() }) }
+                }
             }
         }
     }
@@ -218,8 +244,9 @@ fun LabContent(app: SukiApp) {
 @Composable
 fun TerminalContent(app: SukiApp) {
     val log = remember { mutableStateListOf<String>() }
+    val scope = rememberCoroutineScope()
     var input by remember { mutableStateOf("") }
-    val shell = SukiShell.state.value
+    val shell by SukiShell.state.collectAsState()
 
     WinPanel("Terminal", if (shell.ready) "identitas: ${if (shell.uid == 0) "root" else "shell"} (uid ${shell.uid})" else "SukiShell belum siap") {
         Column(Modifier.fillMaxWidth().padding(12.dp)) {
@@ -232,7 +259,7 @@ fun TerminalContent(app: SukiApp) {
                     "getprop ro.product.model",
                 ).forEach { cmd ->
                     Chip(cmd, active = false) {
-                        runCommand(app, cmd.split(" ").toTypedArray(), log)
+                        runCommand(scope, cmd.split(" ").toTypedArray(), log)
                     }
                 }
             }
@@ -268,7 +295,7 @@ fun TerminalContent(app: SukiApp) {
                 }
                 Btn("Jalankan") {
                     if (input.isNotBlank()) {
-                        runCommand(app, input.trim().split(Regex("\\s+")).toTypedArray(), log)
+                        runCommand(scope, input.trim().split(Regex("\\s+")).toTypedArray(), log)
                         input = ""
                     }
                 }
@@ -295,22 +322,27 @@ fun TerminalContent(app: SukiApp) {
     }
 }
 
-private fun runCommand(app: SukiApp, argv: Array<String>, log: MutableList<String>) {
-    val r = SukiShell.run(*argv)
-    val stamp = java.text.SimpleDateFormat("HH:mm:ss", java.util.Locale.US)
-        .format(java.util.Date())
-    log.add(0, "[$stamp] $ ${argv.joinToString(" ")}\n${r.full().take(2000)}")
-    while (log.size > 30) log.removeAt(log.size - 1)
+private fun runCommand(scope: CoroutineScope, argv: Array<String>, log: MutableList<String>) {
+    scope.launch {
+        val r = SukiShell.io { this.run(*argv) }
+        val stamp = java.text.SimpleDateFormat("HH:mm:ss", java.util.Locale.US)
+            .format(java.util.Date())
+        log.add(0, "[$stamp] $ ${argv.joinToString(" ")}\n${r.full().take(2000)}")
+        while (log.size > 30) log.removeAt(log.size - 1)
+    }
 }
 
 @Composable
 fun AppsContent(app: SukiApp) {
     var q by remember { mutableStateOf("") }
-    val apps = app.index.search(q, 200)
-    val pinned = app.prefs.pinned.value.split(",").filter { it.isNotBlank() }
+    val allApps by app.index.apps.collectAsState()
+    val pinnedCsv by app.prefs.pinned.collectAsState()
+    val shell by SukiShell.state.collectAsState()
+    val apps = remember(allApps, q) { filterApps(allApps, q, 200) }
+    val pinned = remember(pinnedCsv) { pinnedCsv.split(",").filter { it.isNotBlank() } }
     val scope = rememberCoroutineScope()
 
-    WinPanel("Aplikasi", "${app.index.apps.value.size} aplikasi terpasang") {
+    WinPanel("Aplikasi", "${allApps.size} aplikasi terpasang") {
         Column(Modifier.fillMaxWidth().padding(12.dp)) {
             Box(
                 Modifier
@@ -341,10 +373,12 @@ fun AppsContent(app: SukiApp) {
             ColSpacer(8)
             Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                 BtnGhost("Muat ulang daftar") { scope.launch { app.index.load() }; SukiRuntime.say("Menyegarkan daftar aplikasi...") }
-                if (SukiShell.state.value.ready) {
+                if (shell.ready) {
                     BtnGhost("Nyalakan force-resizable") {
-                        val r = SukiShell.forceResizable(true)
-                        SukiRuntime.say(if (r.ok) "force_resizable_activities menyala" else "Gagal: ${r.err.take(80)}")
+                        scope.launch {
+                            val r = SukiShell.io { forceResizable(true) }
+                            SukiRuntime.say(if (r.ok) "force_resizable_activities menyala" else "Gagal: ${r.err.take(80)}")
+                        }
                     }
                 }
             }
@@ -439,11 +473,16 @@ fun AboutContent(app: SukiApp) {
             ColSpacer(14)
             Label("Catatan")
             Txt(
-                "Akses lanjutan memakai Shizuku milik pihak ketiga (lisensi Apache-2.0). " +
+                "Akses lanjutan memakai pustaka Shizuku-API milik pihak ketiga (lisensi MIT; " +
+                    "teks lengkap ada di THIRD_PARTY_NOTICES.md pada repo). " +
                     "SukiOS menyediakan mesin sendiri di atasnya; Shizuku hanya kurir binder. " +
                     "Semua kemampuan inti tetap berjalan tanpa Shizuku.",
-                11, SDim, maxLines = 5
+                11, SDim, maxLines = 6
             )
+            ColSpacer(14)
+            Label("Dibuat oleh")
+            Txt(stringResource(R.string.powered_by, Brand.COMPANY), 11, SText)
+            Txt(Brand.COPYRIGHT, 10, SFaint, maxLines = 2)
         }
     }
 }
@@ -451,7 +490,12 @@ fun AboutContent(app: SukiApp) {
 @Composable
 fun DiagContent(app: SukiApp) {
     val ctx = LocalContext.current
-    val report = remember { app.diag.buildReport() }
+    var tick by remember { mutableStateOf(0) }
+    // buildReport memanggil SukiShell (binder + proses): tidak boleh jalan di thread utama.
+    val report by produceState("Menyusun laporan...", tick) {
+        value = "Menyusun laporan..."
+        value = withContext(Dispatchers.IO) { app.diag.buildReport() }
+    }
     WinPanel("Diagnostik", "laporan mentah, siap dibagikan") {
         ScrollArea {
             ResultBox(report, tone = SDim, maxHeight = 420)
@@ -462,7 +506,10 @@ fun DiagContent(app: SukiApp) {
                     SukiRuntime.say("Laporan disalin.")
                 }
                 BtnGhost("Bagikan") { shareText(ctx, report) }
-                BtnGhost("Periksa ulang") { SukiShell.refresh() }
+                BtnGhost("Periksa ulang") {
+                    SukiShell.refresh()
+                    tick++
+                }
             }
         }
     }

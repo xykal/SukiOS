@@ -25,6 +25,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -53,8 +54,11 @@ import androidx.compose.ui.unit.sp
 @Composable
 fun StartMenu(app: SukiApp, size: IntSize) {
     var q by remember { mutableStateOf("") }
-    val apps = app.index.search(q, 60)
-    val pinned = app.prefs.pinned.value.split(",").filter { it.isNotBlank() }
+    val allApps by app.index.apps.collectAsState()
+    val loading by app.index.loading.collectAsState()
+    val pinnedCsv by app.prefs.pinned.collectAsState()
+    val apps = remember(allApps, q) { filterApps(allApps, q, 60) }
+    val pinned = remember(pinnedCsv) { pinnedCsv.split(",").filter { it.isNotBlank() } }
 
     Box(Modifier.fillMaxSize()) {
         Box(
@@ -95,11 +99,11 @@ fun StartMenu(app: SukiApp, size: IntSize) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Label(if (q.isBlank()) "Semua aplikasi" else "Hasil pencarian")
                     Spacer(Modifier.weight(1f))
-                    Txt("${app.index.apps.value.size} terpasang", 10, SFaint)
+                    Txt("${allApps.size} terpasang", 10, SFaint)
                 }
                 Spacer(Modifier.height(6.dp))
 
-                if (app.index.loading.value) {
+                if (loading) {
                     Txt("Memuat daftar aplikasi...", 11, SDim)
                 } else if (apps.isEmpty()) {
                     Txt("Tidak ada aplikasi yang cocok dengan \"$q\".", 11, SDim, maxLines = 2)
@@ -160,7 +164,9 @@ private fun AppRow(app: SukiApp, entry: AppEntry, isPinned: Boolean) {
 fun QuickPanel(app: SukiApp, size: IntSize) {
     val ctx = LocalContext.current
     val prefs = app.prefs
-    val shell = SukiShell.state.value
+    val shell by SukiShell.state.collectAsState()
+    val fullDesktop by prefs.fullDesktop.collectAsState()
+    val lockLandscape by prefs.lockLandscape.collectAsState()
 
     Box(Modifier.fillMaxSize()) {
         Box(
@@ -180,8 +186,8 @@ fun QuickPanel(app: SukiApp, size: IntSize) {
 
                     ColSpacer(12)
                     Label("Desktop")
-                    ToggleRow("Desktop penuh", prefs.fullDesktop.value) { prefs.setFullDesktop(it) }
-                    ToggleRow("Kunci mendatar", prefs.lockLandscape.value) { prefs.setLockLandscape(it) }
+                    ToggleRow("Desktop penuh", fullDesktop) { prefs.setFullDesktop(it) }
+                    ToggleRow("Kunci mendatar", lockLandscape) { prefs.setLockLandscape(it) }
                     ToggleRow("Taskbar melayang", SukiRuntime.overlayBarOn) { toggleOverlayBar(app, ctx, it) }
 
                     ColSpacer(12)

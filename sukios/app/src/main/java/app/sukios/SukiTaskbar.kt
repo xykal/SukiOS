@@ -21,6 +21,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
@@ -84,7 +85,7 @@ fun Taskbar(app: SukiApp, size: IntSize) {
             horizontalArrangement = Arrangement.spacedBy(6.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            wins.list.sortedBy { it.z }.forEach { w -> WinChip(app, w, size) }
+            wins.list.sortedBy { it.id }.forEach { w -> WinChip(app, w) }
         }
 
         TrayToggles(app)
@@ -96,7 +97,7 @@ fun Taskbar(app: SukiApp, size: IntSize) {
 }
 
 @Composable
-private fun WinChip(app: SukiApp, win: Win, size: IntSize) {
+private fun WinChip(app: SukiApp, win: Win) {
     val wins = app.wins
     val focused = wins.focusedId == win.id && !win.minimized
     val accent = accentById(SukiRuntime.accentId)
@@ -141,7 +142,9 @@ private fun glyphFor(kind: WinKind): GlyphKind = when (kind) {
 @Composable
 private fun TrayToggles(app: SukiApp) {
     val ctx = LocalContext.current
-    val shell = SukiShell.state.value
+    val shell by SukiShell.state.collectAsState()
+    val lockLandscape by app.prefs.lockLandscape.collectAsState()
+    val fullDesktop by app.prefs.fullDesktop.collectAsState()
     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
 
         // Indikator Shizuku: titik, bukan ikon ramai. Klik membuka panel pintasan.
@@ -170,15 +173,15 @@ private fun TrayToggles(app: SukiApp) {
 
         TrayIcon(
             GlyphKind.ROTATE,
-            active = app.prefs.lockLandscape.value,
+            active = lockLandscape,
             label = "Kunci mendatar",
-        ) { app.prefs.setLockLandscape(!app.prefs.lockLandscape.value) }
+        ) { app.prefs.setLockLandscape(!lockLandscape) }
 
         TrayIcon(
             GlyphKind.DESKTOP,
-            active = app.prefs.fullDesktop.value,
+            active = fullDesktop,
             label = "Desktop penuh",
-        ) { app.prefs.setFullDesktop(!app.prefs.fullDesktop.value) }
+        ) { app.prefs.setFullDesktop(!fullDesktop) }
 
         Box(
             Modifier

@@ -33,6 +33,19 @@ data class AppEntry(
     val component: String get() = "$pkg/$activity"
 }
 
+/**
+ * Penyaringan murni: cocokkan label atau nama paket tanpa membedakan huruf besar/kecil.
+ * Dipisah dari SukiIndex supaya composable memberi daftar yang sudah di-collect (dan
+ * ikut digambar ulang saat indeks selesai dimuat), serta supaya bisa diuji di JVM.
+ */
+fun filterApps(all: List<AppEntry>, query: String, limit: Int = 48): List<AppEntry> {
+    val key = query.trim().lowercase()
+    if (key.isEmpty()) return all.take(limit)
+    return all.filter {
+        it.label.lowercase().contains(key) || it.pkg.lowercase().contains(key)
+    }.take(limit)
+}
+
 class SukiIndex(private val ctx: Context) {
 
     val apps = MutableStateFlow<List<AppEntry>>(emptyList())
@@ -80,14 +93,6 @@ class SukiIndex(private val ctx: Context) {
     }
 
     fun byPkg(pkg: String): AppEntry? = apps.value.firstOrNull { it.pkg == pkg }
-
-    fun search(q: String, limit: Int = 48): List<AppEntry> {
-        val key = q.trim().lowercase()
-        if (key.isEmpty()) return apps.value.take(limit)
-        return apps.value.filter {
-            it.label.lowercase().contains(key) || it.pkg.lowercase().contains(key)
-        }.take(limit)
-    }
 
     private fun baseIntent(e: AppEntry): Intent =
         Intent(Intent.ACTION_MAIN)

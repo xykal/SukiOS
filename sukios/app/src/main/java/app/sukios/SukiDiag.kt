@@ -5,8 +5,7 @@ import android.content.Context
 import android.os.Build
 import android.os.Environment
 import android.os.StatFs
-import java.text.SimpleDateFormat
-import java.util.Date
+import android.provider.Settings
 import java.util.Locale
 
 /**
@@ -26,23 +25,39 @@ class SukiDiag(private val ctx: Context) {
     fun deviceFacts(): List<Fact> {
         val am = ctx.getSystemService(Context.ACTIVITY_SERVICE) as? ActivityManager
         val stat = runCatching { StatFs(Environment.getDataDirectory().path) }.getOrNull()
-        val ramKb = if (am != null) am.memoryClass * 1024 else -1
+        val mem = ActivityManager.MemoryInfo()
+        am?.getMemoryInfo(mem)
+        val totalMb = mem.totalMem / 1_048_576L
 
-        val facts = mutableListOf(
+        // Setiap baris di bawah dibaca dari sistem atau fitur resmi PackageManager; tidak ada
+        // yang disimpulkan dari tebakan. Hasil yang menentukan arah window engine datang dari
+        // uji buka jendela di Laboratorium, bukan dari baris-baris ini saja.
+        return listOf(
             Fact("Android", "${Build.VERSION.RELEASE} (SDK ${Build.VERSION.SDK_INT})"),
             Fact("Perangkat", "${Build.MANUFACTURER} ${Build.MODEL}"),
             Fact("ABI", Build.SUPPORTED_ABIS.joinToString(", ")),
-            Fact("Kelas memori", if (ramKb > 0) "$ramKb MB" else "tidak terbaca"),
+            Fact("RAM total", if (am != null && totalMb > 0) "$totalMb MB" else "tidak terbaca"),
+            Fact("Batas heap aplikasi", if (am != null) "${am.memoryClass} MB" else "tidak terbaca"),
             Fact("RAM rendah (sistem)", if (am?.isLowRamDevice == true) "YA" else "tidak"),
             Fact("Kelas perangkat", SukiRuntime.deviceClass),
             Fact("Display", displayFacts()),
-            Fact("Multi-window", multiWindowFacts(am)),
-            Fact("Freeform", freeformFacts()),
+            Fact("Fitur freeform", featureFact("android.software.freeform_window_management")),
+            Fact("Fitur layar sekunder", featureFact("android.software.activities_on_secondary_displays")),
+            Fact("Fitur picture-in-picture", featureFact("android.software.picture_in_picture")),
+            Fact("enable_freeform_support", globalSetting("enable_freeform_support")),
+            Fact("force_resizable_activities", globalSetting("force_resizable_activities")),
             Fact("Penyimpanan data", if (stat != null) "${freeGb(stat)} GB bebas dari ${totalGb(stat)} GB" else "tidak terbaca"),
             Fact("Launcher default", if (SukiRuntime.isDefaultLauncher) "SukiOS" else "aplikasi lain"),
         )
-        return facts
     }
+
+    private fun featureFact(name: String): String {
+        val has = runCatching { ctx.packageManager.hasSystemFeature(name) }.getOrDefault(false)
+        return if (has) "ada" else "tidak ada"
+    }
+
+    private fun globalSetting(key: String): String =
+        runCatching { Settings.Global.getString(ctx.contentResolver, key) }.getOrNull() ?: "(tidak diset)"
 
     private fun freeGb(s: StatFs) = String.format(Locale.US, "%.1f", s.availableBytes / 1073741824.0)
     private fun totalGb(s: StatFs) = String.format(Locale.US, "%.1f", s.totalBytes / 1073741824.0)
@@ -51,20 +66,6 @@ class SukiDiag(private val ctx: Context) {
         // Configuration dari resource aplikasi: sumber yang benar untuk dp.
         val c = ctx.resources.configuration
         return "kecil=${c.smallestScreenWidthDp}dp, layar=${c.screenWidthDp}x${c.screenHeightDp}dp, dpi=${c.densityDpi}"
-    }
-
-    private fun multiWindowFacts(am: ActivityManager?): String {
-        if (am == null) return "tidak terbaca"
-        return if (Build.VERSION.SDK_INT >= 24) {
-            val yes = am.isLowRamDevice == false
-            if (yes) "tersedia (mode sistem)" else "TIDAK — perangkat RAM rendah, sistem memblokir"
-        } else "tidak didukung (Android < 7)"
-    }
-
-    private fun freeformFacts(): String {
-        // Freeform tidak punya API publik yang bisa dibaca langsung dari app biasa.
-        // Karena itu tidak ditebak: hasilnya diukur lewat uji buka jendela.
-        return "diukur lewat uji buka jendela (lihat Laboratorium)"
     }
 
     fun shellFacts(): List<Fact> {
@@ -86,10 +87,10 @@ class SukiDiag(private val ctx: Context) {
 
     /** Laporan teks lengkap, siap dibagikan lewat menu bagikan Android. */
     fun buildReport(): String {
-        val stamp = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.US).format(Date())
         val sb = StringBuilder()
         sb.append("SukiOS — laporan diagnostik\n")
-        sb.append("waktu      : ").append(stamp).append(" UTC\n")
+        sb.append("dibuat oleh: ").append(Brand.CREDIT).append('\n')
+        sb.append("waktu      : ").append(Fmt.utcStamp(System.currentTimeMillis())).append(" UTC\n")
         sb.append("versi app  : ").append(appVersion()).append('\n')
         sb.append("kelas alat : ").append(SukiRuntime.deviceClass).append('\n')
         sb.append("\n== Perangkat ==\n")

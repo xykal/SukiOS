@@ -19,6 +19,8 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.SideEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
@@ -29,6 +31,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
@@ -53,6 +56,12 @@ fun SukiHome(
 ) {
     val prefs = app.prefs
     var size by remember { mutableStateOf(IntSize.Zero) }
+    val setupDone by prefs.setupDone.collectAsState()
+
+    // Mesin jendela bekerja dalam piksel; kepadatan layar yang benar datang dari sini
+    // (bukan perkiraan dari tinggi layar) dan ikut berubah saat density berubah.
+    val density = LocalDensity.current.density
+    SideEffect { app.wins.density = density }
 
     LaunchedEffect(Unit) {
         launch { prefs.fullDesktop.collect { onApplyDesktop(it) } }
@@ -88,20 +97,22 @@ fun SukiHome(
     }) {
         Wallpaper(SukiRuntime.wallpaperId, Modifier.fillMaxSize())
         DesktopLayer(app, size)
-        WindowLayer(app, size)
+        WindowLayer(app)
         Box(Modifier.fillMaxSize(), contentAlignment = Alignment.BottomCenter) { Taskbar(app, size) }
         if (SukiRuntime.startOpen) StartMenu(app, size)
         if (SukiRuntime.quickOpen) QuickPanel(app, size)
         Box(Modifier.fillMaxSize(), contentAlignment = Alignment.BottomCenter) { ToastLayer() }
-        if (!prefs.setupDone.value) SetupLayer(app)
+        if (!setupDone) SetupLayer(app)
     }
 }
 
 @Composable
 private fun DesktopLayer(app: SukiApp, size: IntSize) {
     val prefs = app.prefs
-    val apps = app.index.apps.value
-    val loading = app.index.loading.value
+    val apps by app.index.apps.collectAsState()
+    val loading by app.index.loading.collectAsState()
+    val pinnedCsv by prefs.pinned.collectAsState()
+    val recentCsv by prefs.recent.collectAsState()
 
     val tiles = listOf(
         Triple("Setelan", GlyphKind.SETTINGS, WinKind.SETTINGS),
@@ -110,9 +121,9 @@ private fun DesktopLayer(app: SukiApp, size: IntSize) {
         Triple("Aplikasi", GlyphKind.APPS, WinKind.APPS),
     )
 
-    val order = (prefs.pinned.value.split(",") + prefs.recent.value.split(","))
-        .filter { it.isNotBlank() }
-        .distinct()
+    val order = remember(pinnedCsv, recentCsv) {
+        (pinnedCsv.split(",") + recentCsv.split(",")).filter { it.isNotBlank() }.distinct()
+    }
     val desktopApps = remember(apps, order) {
         val byPkg = apps.associateBy { it.pkg }
         order.mapNotNull { byPkg[it] }.take(12)
@@ -195,11 +206,11 @@ private fun AppTile(app: SukiApp, entry: AppEntry) {
 }
 
 @Composable
-private fun WindowLayer(app: SukiApp, size: IntSize) {
+private fun WindowLayer(app: SukiApp) {
     Box(Modifier.fillMaxSize()) {
         app.wins.list.sortedBy { it.z }.forEach { w ->
             key(w.id) {
-                if (!w.minimized) WinFrame(app, w, size)
+                if (!w.minimized) WinFrame(app, w)
             }
         }
     }

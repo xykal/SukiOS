@@ -40,6 +40,7 @@ class SukiHomeActivity : ComponentActivity() {
             else -> "normal — 8 jendela"
         }
         app.wins.maxWindows = if (go) 3 else 8
+        app.wins.density = resources.displayMetrics.density
 
         SukiRuntime.accentId = prefs.accent.value
         SukiRuntime.wallpaperId = prefs.wallpaper.value

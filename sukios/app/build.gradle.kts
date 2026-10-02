@@ -84,6 +84,14 @@ android {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
         }
     }
+
+    testOptions {
+        unitTests {
+            // Kelas android.jar di JVM hanya stub; tanpa ini pemanggilan yang tidak diuji
+            // melempar "not mocked" alih-alih mengembalikan nilai bawaan.
+            isReturnDefaultValues = true
+        }
+    }
 }
 
 dependencies {
@@ -106,4 +114,7 @@ dependencies {
     // bindUserService + UserServiceArgs tersedia penuh.
     implementation("dev.rikka.shizuku:api:13.1.5")
     implementation("dev.rikka.shizuku:provider:13.1.5")
+
+    // Uji unit JVM (WinEngine, ShellExec, ShellArgs, Brand). Hanya untuk pengujian, tidak ikut APK.
+    testImplementation("junit:junit:4.13.2")
 }

@@ -3,4 +3,6 @@
     <string name="app_name">SukiOS</string>
     <string name="overlay_running">Taskbar melayang SukiOS aktif</string>
     <string name="overlay_stop">Hentikan</string>
+    <!-- Awalan boleh dilokalkan; nama perusahaan masuk lewat %1$s dari Brand.COMPANY dan tidak diterjemahkan. -->
+    <string name="powered_by">Powered by %1$s</string>
 </resources>

@@ -81,8 +81,6 @@ val SLineStrong = Color(0x22FFFFFF)
 // ---- Ukuran tetap ----
 const val TASKBAR_DP = 54
 const val ICON_DP = 44
-const val WIN_MIN_W = 320
-const val WIN_MIN_H = 220
 
 // ---- Aksen pilihan pengguna (semua saturasi rendah, sesuai aturan) ----
 data class SukiAccent(val id: String, val label: String, val color: Color)

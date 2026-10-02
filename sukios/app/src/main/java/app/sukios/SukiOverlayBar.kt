@@ -6,14 +6,21 @@ import android.content.Intent
 import android.graphics.Color
 import android.graphics.PixelFormat
 import android.graphics.drawable.GradientDrawable
+import android.os.Handler
 import android.os.IBinder
+import android.os.Looper
 import android.view.Gravity
 import android.view.View
 import android.view.WindowManager
 import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.launch
 
 /**
  * SukiOverlayBar — taskbar melayang di atas aplikasi lain.
@@ -31,6 +38,11 @@ class SukiOverlayBar : Service() {
     private lateinit var wm: WindowManager
     private var bar: View? = null
 
+    // Tombol Kembali memanggil SukiShell (binder + proses): di luar thread utama,
+    // hasilnya dikembalikan ke thread utama hanya untuk menampilkan pesan.
+    private val io = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+    private val ui = Handler(Looper.getMainLooper())
+
     override fun onBind(intent: Intent?): IBinder? = null
 
     override fun onCreate() {
@@ -47,6 +59,7 @@ class SukiOverlayBar : Service() {
 
     override fun onDestroy() {
         hide()
+        io.cancel()
         running.value = false
         super.onDestroy()
     }
@@ -76,8 +89,10 @@ class SukiOverlayBar : Service() {
         }
 
         strip.addView(button("Kembali") {
-            val r = SukiShell.globalBack()
-            if (r.code == 127) toast("Tombol kembali butuh Shizuku aktif.")
+            io.launch {
+                val r = SukiShell.globalBack()
+                if (r.code == ShellExec.CODE_NOT_RUNNABLE) ui.post { toast("Tombol kembali butuh Shizuku aktif.") }
+            }
         })
         strip.addView(button("Beranda") { openHome(null) })
         strip.addView(button("Menu") { openHome("start") })

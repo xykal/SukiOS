@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -36,7 +37,7 @@ import androidx.compose.ui.unit.dp
 @Composable
 fun SetupLayer(app: SukiApp) {
     val ctx = LocalContext.current
-    val shell = SukiShell.state.value
+    val shell by SukiShell.state.collectAsState()
     var step by remember { mutableStateOf(0) }
 
     Box(Modifier.fillMaxSize().background(Color(0xCC000000))) {
@@ -56,7 +57,7 @@ fun SetupLayer(app: SukiApp) {
                         Txt("1. Jadikan SukiOS launcher", 13, SText, FontWeight.SemiBold)
                         Spacer(Modifier.height(6.dp))
                         Txt(
-                            "Supaya tombol Beranda membawa kall ke SukiOS, bukan ke launcher bawaan. " +
+                            "Supaya tombol Beranda membawamu ke SukiOS, bukan ke launcher bawaan. " +
                                 "Android akan menanyakan konfirmasi.",
                             11, SDim, maxLines = 4
                         )
@@ -71,7 +72,7 @@ fun SetupLayer(app: SukiApp) {
                         Spacer(Modifier.height(6.dp))
                         Txt(
                             "Izin \"tampil di atas aplikasi lain\" membuat taskbar tetap terlihat " +
-                                "saat kall memakai aplikasi lain. Tanpa ini, semua fitur lain tetap jalan.",
+                                "saat kamu memakai aplikasi lain. Tanpa ini, semua fitur lain tetap jalan.",
                             11, SDim, maxLines = 4
                         )
                         Spacer(Modifier.height(10.dp))

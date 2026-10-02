@@ -26,7 +26,6 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.IntOffset
-import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import kotlin.math.roundToInt
 
@@ -45,9 +44,8 @@ import kotlin.math.roundToInt
  *    sisi yang berlawanan terasa diam di tempat.
  */
 @Composable
-fun WinFrame(app: SukiApp, w: Win, size: IntSize) {
+fun WinFrame(app: SukiApp, w: Win) {
     val wins = app.wins
-    val density = LocalDensity.current.density
     val focused = wins.focusedId == w.id
     val accent = accentById(SukiRuntime.accentId)
 
@@ -68,19 +66,17 @@ fun WinFrame(app: SukiApp, w: Win, size: IntSize) {
             .pointerInput(w.id) { detectTapGestures { wins.focus(w.id) } },
     ) {
         Column(Modifier.fillMaxSize()) {
-            TitleBar(app, w, size, density)
+            TitleBar(app, w)
             Box(Modifier.weight(1f).fillMaxWidth()) { WinContent(app, w) }
         }
-        ResizeHandles(app, w, size)
+        ResizeHandles(app, w)
     }
 }
 
 @Composable
-private fun TitleBar(app: SukiApp, w: Win, size: IntSize, density: Float) {
+private fun TitleBar(app: SukiApp, w: Win) {
     val wins = app.wins
     val accent = accentById(SukiRuntime.accentId)
-    val sw = size.width.toFloat()
-    val sh = size.height.toFloat()
 
     Row(
         Modifier
@@ -92,9 +88,11 @@ private fun TitleBar(app: SukiApp, w: Win, size: IntSize, density: Float) {
                     onDragStart = { wins.focus(w.id) },
                     onDrag = { change, delta ->
                         change.consume()
-                        wins.moveBy(w.id, delta.x, delta.y, sw, sh)
+                        wins.moveBy(w.id, delta.x, delta.y, SukiRuntime.screenW, SukiRuntime.screenH)
                     },
-                    onDragEnd = { wins.snapFromPosition(w.id, sw, sh, density) },
+                    onDragEnd = {
+                        wins.snapFromPosition(w.id, SukiRuntime.screenW, SukiRuntime.screenH)
+                    },
                 )
             },
         verticalAlignment = Alignment.CenterVertically,
@@ -107,7 +105,9 @@ private fun TitleBar(app: SukiApp, w: Win, size: IntSize, density: Float) {
             maxLines = 1, modifier = Modifier.weight(1f)
         )
         WinBtn(GlyphKind.MIN) { wins.toggleMinimize(w.id) }
-        WinBtn(if (w.maximized) GlyphKind.RESTORE else GlyphKind.MAX) { wins.toggleMax(w.id, sw, sh) }
+        WinBtn(if (w.maximized) GlyphKind.RESTORE else GlyphKind.MAX) {
+            wins.toggleMax(w.id, SukiRuntime.screenW, SukiRuntime.screenH)
+        }
         WinBtn(GlyphKind.CLOSE, danger = true) { wins.close(w.id) }
         Spacer(Modifier.width(7.dp))
     }
@@ -126,10 +126,8 @@ private fun WinBtn(glyph: GlyphKind, danger: Boolean = false, onClick: () -> Uni
 }
 
 @Composable
-private fun BoxScope.ResizeHandles(app: SukiApp, w: Win, size: IntSize) {
+private fun BoxScope.ResizeHandles(app: SukiApp, w: Win) {
     val wins = app.wins
-    val sw = size.width.toFloat()
-    val sh = size.height.toFloat()
 
     @Composable
     fun handle(modifier: Modifier, dirX: Int, dirY: Int) {
@@ -137,9 +135,10 @@ private fun BoxScope.ResizeHandles(app: SukiApp, w: Win, size: IntSize) {
             modifier.pointerInput(w.id, dirX, dirY) {
                 detectDragGestures { change, delta ->
                     change.consume()
-                    if (dirX < 0) wins.moveBy(w.id, delta.x, 0f, sw, sh)
-                    if (dirY < 0) wins.moveBy(w.id, 0f, delta.y, sw, sh)
-                    wins.resizeBy(w.id, delta.x * dirX, delta.y * dirY, sw, sh)
+                    wins.resizeEdge(
+                        w.id, delta.x, delta.y, dirX, dirY,
+                        SukiRuntime.screenW, SukiRuntime.screenH,
+                    )
                 }
             },
         )
