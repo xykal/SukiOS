@@ -1,11 +1,13 @@
 name: Release APK (signed, draft)
 
 # Alur rilis:
-#   1. push tag vX.Y.Z  ->  workflow ini membangun APK release
+#   1. push tag vX.Y.Z  ->  workflow ini memvalidasi tag, menjalankan uji unit, lalu membangun APK release
 #   2. APK ditandatangani dengan keystore dari GitHub Secrets (bila tersedia)
 #   3. APK dilampirkan ke DRAFT release — belum publik sampai dipublikasikan manual
 #   4. workflow "Cleanup CI traces" menghapus riwayat run + artifact task ini
 #      setelah selesai; draft release dan APK-nya TIDAK dihapus (deliverable).
+#
+# Catatan rilis diambil dari docs/release-notes/<tag>.md bila ada.
 
 on:
   push:
@@ -13,7 +15,7 @@ on:
   workflow_dispatch:
     inputs:
       tag:
-        description: 'Tag rilis (contoh: v0.3.0)'
+        description: 'Tag rilis (contoh: v0.3.1-alpha)'
         required: true
         type: string
       notes:
@@ -40,13 +42,27 @@ jobs:
     timeout-minutes: 35
 
     steps:
+      # Nama tag dan input dispatch dikendalikan pengirim; masuk lewat env, divalidasi, baru dipakai.
+      - name: Validasi tag rilis
+        id: tag
+        working-directory: .
+        env:
+          RAW_TAG: ${{ github.event.inputs.tag || github.ref_name }}
+        run: |
+          set -euo pipefail
+          if [[ ! "$RAW_TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.]+)?$ ]]; then
+            echo "::error::Tag rilis tidak valid. Format: vX.Y.Z atau vX.Y.Z-sufiks (huruf, angka, titik)."
+            exit 1
+          fi
+          echo "tag=${RAW_TAG}" >> "$GITHUB_OUTPUT"
+
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
-          fetch-depth: 0
+          persist-credentials: false
 
       - name: Set up JDK 17
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@cf277c60eb25467037889841efdb72551f06f6c3 # v4.9.1
         with:
           distribution: temurin
           java-version: '17'
@@ -62,9 +78,12 @@ jobs:
           fi
 
       - name: Set up Gradle 8.11.1
-        uses: gradle/actions/setup-gradle@v4
+        uses: gradle/actions/setup-gradle@ed408507eac070d1f99cc633dbcf757c94c7933a # v4.4.3
         with:
           gradle-version: '8.11.1'
+
+      - name: Uji unit sebelum rilis
+        run: gradle :app:testDebugUnitTest --no-daemon --stacktrace
 
       - name: Siapkan keystore dari secrets (bila ada)
         id: ks
@@ -91,9 +110,10 @@ jobs:
 
       - name: Siapkan berkas APK dan metadata
         id: meta
+        env:
+          TAG: ${{ steps.tag.outputs.tag }}
         run: |
           set -euo pipefail
-          TAG="${{ github.event.inputs.tag || github.ref_name }}"
           APK="$(find app/build/outputs/apk/release -name '*.apk' | head -1)"
           if [ -z "$APK" ]; then
             echo "::error::APK release tidak ditemukan."
@@ -115,6 +135,12 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           SIGNED: ${{ steps.ks.outputs.signed }}
           NOTES_EXTRA: ${{ github.event.inputs.notes }}
+          TAG: ${{ steps.meta.outputs.tag }}
+          APK: ${{ steps.meta.outputs.apk }}
+          SHA: ${{ steps.meta.outputs.sha }}
+          VERSION: ${{ steps.meta.outputs.version }}
+          EVENT: ${{ github.event_name }}
+          REF_NAME: ${{ github.ref_name }}
         run: |
           set -euo pipefail
           if [ "${SIGNED}" = "1" ]; then
@@ -123,34 +149,44 @@ jobs:
             SIGN_LINE="PERINGATAN: ditandatangani dengan debug key karena secrets keystore rilis belum diset. Jangan dipakai untuk distribusi publik."
           fi
 
+          # Merek dibaca dari satu sumber (Brand.kt), bukan diketik ulang di workflow.
+          COMPANY="$(sed -n 's/.*COMPANY = "\(.*\)".*/\1/p' app/src/main/java/app/sukios/Brand.kt)"
+          if [ -z "$COMPANY" ]; then
+            echo "::error::Brand.COMPANY tidak terbaca dari Brand.kt."
+            exit 1
+          fi
+
+          NOTES_FILE="../docs/release-notes/${TAG}.md"
           {
-            echo "## SukiOS ${{ steps.meta.outputs.tag }}"
+            echo "## SukiOS ${TAG}"
             echo
-            echo "APK SukiOS: launcher/desktop environment dengan taskbar, start menu, dan jendela mengambang."
+            if [ -f "$NOTES_FILE" ]; then
+              cat "$NOTES_FILE"
+            else
+              echo "Catatan rilis rinci belum ditulis untuk tag ini (docs/release-notes/${TAG}.md)."
+            fi
             echo
-            echo "Yang baru di 0.3.0: jadi launcher (tombol Home masuk SukiOS), mesin jendela sendiri,"
-            echo "mesin akses lanjutan SukiShell (AIDL + UserService sendiri di atas Shizuku),"
-            echo "start menu + panel pintasan, taskbar melayang, dan mode Go untuk perangkat RAM rendah."
-            echo
-            echo "- Commit: \`${{ steps.meta.outputs.sha }}\`"
-            echo "- versionName: \`${{ steps.meta.outputs.version }}\`"
+            echo "- Commit: \`${SHA}\`"
+            echo "- versionName: \`${VERSION}\`"
             echo "- ${SIGN_LINE}"
             echo "- Status: build ini belum diuji di perangkat sampai ada laporan balik."
             echo
             echo "${NOTES_EXTRA}"
             echo
             echo "Panduan pakai: \`sukios/README.md\`."
+            echo
+            echo "Built by xykal — ${COMPANY}"
           } > "${RUNNER_TEMP}/notes.md"
 
-          TARGET=""
-          if [ "${GITHUB_EVENT_NAME}" = "workflow_dispatch" ]; then
-            TARGET="--target ${GITHUB_REF_NAME}"
+          args=()
+          if [ "${EVENT}" = "workflow_dispatch" ]; then
+            args+=(--target "${REF_NAME}")
           fi
 
-          gh release create "${{ steps.meta.outputs.tag }}" "${{ steps.meta.outputs.apk }}" \
+          gh release create "${TAG}" "${APK}" \
             --draft \
-            --title "SukiOS PoC ${{ steps.meta.outputs.tag }}" \
+            --title "SukiOS ${TAG}" \
             --notes-file "${RUNNER_TEMP}/notes.md" \
-            ${TARGET}
+            "${args[@]}"
 
           echo "Draft release dibuat. Riwayat run ini akan dibersihkan oleh workflow Cleanup CI traces; draft release tetap ada."
