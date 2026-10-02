@@ -30,8 +30,7 @@ object ShellArgs {
     private val PACKAGE = Regex("[A-Za-z][A-Za-z0-9_]*(\\.[A-Za-z][A-Za-z0-9_]*)*")
     private val COMPONENT = Regex("[A-Za-z][A-Za-z0-9_]*(\\.[A-Za-z][A-Za-z0-9_]*)*/\\.?[A-Za-z_][A-Za-z0-9_.\$]*")
     private val PROPERTY = Regex("[A-Za-z0-9][A-Za-z0-9_.\\-]*")
-    private val INT = Regex("-?[0-9]{1,6}")
-    private val BOUNDS = Regex("-?[0-9]{1,5},-?[0-9]{1,5},-?[0-9]{1,5},-?[0-9]{1,5}")
+    private val INT = Regex("[0-9]{1,6}")
 
     fun isPackage(s: String): Boolean = PACKAGE.matches(s)
 
@@ -43,15 +42,13 @@ object ShellArgs {
 
     fun isTaskId(id: Int): Boolean = id in 1..MAX_TASK_ID
 
-    fun isCoord(v: Int): Boolean = v in -MAX_COORD..MAX_COORD
+    /** Koordinat layar untuk `am task resize`: Android menolak nilai negatif, jadi kita pun tidak mengirimnya. */
+    fun isCoord(v: Int): Boolean = v in 0..MAX_COORD
 
     fun isSettingKey(s: String): Boolean = s in SETTING_KEYS
 
     /** Teks bilangan bulat kecil, mis. nilai setelan 0/1 atau koordinat dalam argv. */
     fun isSmallInt(s: String): Boolean = INT.matches(s)
-
-    /** Satu argumen berbentuk "kiri,atas,kanan,bawah". */
-    fun isBoundsText(s: String): Boolean = BOUNDS.matches(s)
 }
 
 /**
@@ -95,17 +92,13 @@ object ShellPolicy {
         "start" -> a.size == 6 && a[2] == "--windowingMode" && a[3] == ShellArgs.MODE_FREEFORM.toString() &&
             a[4] == "-n" && ShellArgs.isComponent(a[5])
         "task" -> task(a)
-        "set-task-windowing-mode" -> a.size == 5 && a[2] == "--toTop" && isTaskArg(a[3]) &&
-            a[4] == ShellArgs.MODE_FREEFORM.toString()
         "force-stop" -> a.size == 3 && ShellArgs.isPackage(a[2])
         else -> false
     }
 
-    private fun task(a: List<String>): Boolean = when {
-        a.size == 8 && a[2] == "resize" -> isTaskArg(a[3]) && a.subList(4, 8).all { c -> coordArg(c) }
-        a.size == 5 && a[2] == "resize" -> isTaskArg(a[3]) && ShellArgs.isBoundsText(a[4])
-        else -> false
-    }
+    /** `am task resize <id> <kiri> <atas> <kanan> <bawah>`: empat argumen terpisah (diperiksa di sumber AOSP 10 sampai 15). */
+    private fun task(a: List<String>): Boolean =
+        a.size == 8 && a[2] == "resize" && isTaskArg(a[3]) && a.subList(4, 8).all { c -> coordArg(c) }
 
     private fun isTaskArg(s: String): Boolean =
         s.length in 1..7 && s.all { it in '0'..'9' } && ShellArgs.isTaskId(s.toInt())

@@ -28,13 +28,16 @@ data class TaskRow(
  * "mode=...", "mBounds=Rect(l, t - r, b)"), dan setiap bagian yang tidak ditemukan dibiarkan kosong,
  * bukan ditebak. Hasil kosong berarti "tidak bisa dipastikan", bukan "gagal".
  *
- * Fixture ujinya disusun dari bentuk dump yang dikenal; ketepatannya terhadap perangkat nyata
- * UNVERIFIED sampai laporan diagnostik dari perangkat masuk (Laboratorium menyimpan potongan mentahnya).
+ * Bentuk dump diperiksa terhadap SUMBER AOSP (ActivityStack.dump / Task.toFullString / RootWindowContainer
+ * .dumpActivities) untuk Android 10, 11 dan 14; fixture ujinya meniru bentuk itu. Yang belum terbukti adalah
+ * perilaku di ROM pabrikan kall: Laboratorium menyimpan potongan dump mentah supaya itu bisa diperiksa.
  */
 object FreeformParse {
 
     private val TASK_HEAD = Regex("""Task(?:Record)?\{[0-9a-fA-F]+\s+#(\d+)\b([^}]*)""")
     private val STACK_HEAD = Regex("""Stack\s+#(\d+):(.*)""")
+    private val TASK_ID_LINE = Regex("""^\s*Task id #(\d+)\s*$""")
+    private val ROOT_ID = Regex("""\brootTaskId=(\d+)""")
     private val ACTIVITY = Regex("""ActivityRecord\{[0-9a-fA-F]+\s+u\d+\s+([A-Za-z0-9_.]+)/([A-Za-z0-9_.${'$'}]+)\s+t(\d+)""")
     private val BOUNDS = Regex("""mBounds=Rect\((-?\d+),\s*(-?\d+)\s*-\s*(-?\d+),\s*(-?\d+)\)""")
     private val MODE = Regex("""\bmode=([A-Za-z-]+)""")
@@ -50,6 +53,7 @@ object FreeformParse {
         var type = ""
         var visible: Boolean? = null
         var bounds: PxRect? = null
+        var rootId: Int? = null
 
         fun build() = TaskRow(id, actPkg.ifEmpty { affinity }, activity, mode, type, visible, bounds)
     }
@@ -70,6 +74,13 @@ object FreeformParse {
                 current = null
                 continue
             }
+            // Android 10 menulis "Task id #N" dan mBounds SEBELUM kepala "* TaskRecord{...}".
+            val idLine = TASK_ID_LINE.find(line)
+            val idOnly = idLine?.groupValues?.get(1)?.toIntOrNull()
+            if (idOnly != null) {
+                current = builderFor(idOnly)
+                continue
+            }
             val head = TASK_HEAD.find(line)
             val headId = head?.groupValues?.get(1)?.toIntOrNull()
             if (head != null && headId != null) {
@@ -79,6 +90,7 @@ object FreeformParse {
                 b.mode = MODE.find(rest)?.groupValues?.get(1) ?: stackMode.ifEmpty { b.mode }
                 b.type = TYPE.find(rest)?.groupValues?.get(1) ?: stackType.ifEmpty { b.type }
                 b.visible = VISIBLE.find(rest)?.groupValues?.get(1)?.toBooleanStrictOrNull() ?: b.visible
+                b.rootId = ROOT_ID.find(rest)?.groupValues?.get(1)?.toIntOrNull() ?: b.rootId
                 current = b
                 continue
             }
@@ -96,7 +108,16 @@ object FreeformParse {
             val cur = current
             if (bm != null && cur != null && cur.bounds == null) {
                 val v = bm.groupValues.drop(1).map { it.toInt() }
-                cur.bounds = PxRect(v[0], v[1], v[2], v[3])
+                // Kotak kosong ("Rect(0, 0 - 0, 0)") berarti tugas tidak punya kotak sendiri (layar penuh).
+                if (v[2] > v[0] && v[3] > v[1]) cur.bounds = PxRect(v[0], v[1], v[2], v[3])
+            }
+        }
+        // Tugas bersarang (Android 12+) bisa melaporkan mode "undefined"; ia ikut mode tugas induknya.
+        for (b in rows) {
+            val root = b.rootId
+            if ((b.mode.isEmpty() || b.mode == "undefined") && root != null && root != b.id) {
+                val parentMode = rows.firstOrNull { it.id == root }?.mode.orEmpty()
+                if (parentMode.isNotEmpty() && parentMode != "undefined") b.mode = parentMode
             }
         }
         return rows.map { it.build() }

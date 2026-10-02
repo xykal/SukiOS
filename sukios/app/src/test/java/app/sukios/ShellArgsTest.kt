@@ -59,14 +59,12 @@ class ShellArgsTest {
     fun task_ids_and_coordinates_have_hard_limits() {
         listOf(1, 77, 9_999_999).forEach { assertTrue("$it", ShellArgs.isTaskId(it)) }
         listOf(0, -1, 10_000_000, Int.MAX_VALUE).forEach { assertFalse("$it", ShellArgs.isTaskId(it)) }
-        listOf(-20_000, 0, 2400, 20_000).forEach { assertTrue("$it", ShellArgs.isCoord(it)) }
-        listOf(-20_001, 20_001, Int.MIN_VALUE).forEach { assertFalse("$it", ShellArgs.isCoord(it)) }
-        listOf("0", "12", "-5", "999999").forEach { assertTrue(it, ShellArgs.isSmallInt(it)) }
-        listOf("", "1.5", "1e3", "0x10", "+5", "1 2", "1\n", "1234567", "--1").forEach {
+        // Android menolak koordinat negatif untuk `am task resize`, jadi hanya 0..20000 yang dikirim.
+        listOf(0, 22, 2400, 20_000).forEach { assertTrue("$it", ShellArgs.isCoord(it)) }
+        listOf(-1, -20_000, 20_001, Int.MIN_VALUE).forEach { assertFalse("$it", ShellArgs.isCoord(it)) }
+        listOf("0", "12", "999999").forEach { assertTrue(it, ShellArgs.isSmallInt(it)) }
+        listOf("", "1.5", "1e3", "0x10", "+5", "-5", "1 2", "1\n", "1234567", "--1").forEach {
             assertFalse("harus ditolak: [$it]", ShellArgs.isSmallInt(it))
         }
-        assertTrue(ShellArgs.isBoundsText("100,60,1500,900"))
-        listOf("100,60,1500", "100 60 1500 900", "a,b,c,d", "100,60,1500,900,1", "100,60,1500,900\n")
-            .forEach { assertFalse("harus ditolak: [$it]", ShellArgs.isBoundsText(it)) }
     }
 }

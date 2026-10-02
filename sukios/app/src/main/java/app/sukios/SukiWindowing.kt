@@ -5,7 +5,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 
-enum class OutcomeKind { WINDOWED, UNVERIFIED, FULLSCREEN, BLOCKED, FAILED }
+enum class OutcomeKind { WINDOWED, UNVERIFIED, FULLSCREEN, RUNNING_FULLSCREEN, BLOCKED, FAILED }
 
 /** Hasil satu upaya membuka aplikasi sebagai jendela. Pesannya jujur: tidak ada "berhasil" tanpa bukti. */
 data class Outcome(val kind: OutcomeKind, val message: String, val tone: Tone, val detail: String = "")
@@ -14,8 +14,10 @@ data class Outcome(val kind: OutcomeKind, val message: String, val tone: Tone, v
  * SukiWindowing — jalur tunggal membuka aplikasi pihak ketiga sebagai jendela mengambang.
  *
  * Perintahnya `am start --windowingMode 5` lewat SukiShell (Shizuku). Hasilnya diverifikasi dari dump tugas
- * sistem: mode tugas harus "freeform". Kalau aplikasi ternyata terbuka layar penuh, dicoba dipaksa ke mode
- * jendela; kalau tetap gagal, hasilnya dilaporkan apa adanya (FULLSCREEN), tidak dianggap berhasil.
+ * sistem: mode tugas harus "freeform". Kalau tidak, hasilnya dilaporkan apa adanya, tidak dianggap berhasil:
+ *  - RUNNING_FULLSCREEN: aplikasi SUDAH berjalan layar penuh sebelum diminta; Android tidak memindahkan tugas
+ *    yang sudah ada, jadi pengguna ditawari menghentikannya dulu (tidak pernah dimatikan diam-diam);
+ *  - FULLSCREEN: aplikasi baru, tetapi perangkat tetap membukanya layar penuh (ROM menolak jendela).
  * Kotak jendela hanya dikoreksi bila sistem menaruhnya di tempat yang tidak masuk akal (WindowBounds).
  */
 object SukiWindowing {
@@ -52,26 +54,30 @@ object SukiWindowing {
         val sh = SukiRuntime.screenH.toInt().takeIf { it > 0 } ?: app.resources.displayMetrics.heightPixels
         val work = WindowBounds.workArea(sw, sh, density)
 
+        // Sudah berjalan? Dicatat sebelum peluncuran supaya kegagalan bisa dibedakan dari penolakan ROM.
+        val before = taskNow(entry.pkg)
+
         val start = SukiShell.io { launchFreeform(entry.component) }
         val said = start.out + "\n" + start.err
         if (!start.ok || ERROR_TEXT.containsMatchIn(said)) {
             return Outcome(OutcomeKind.FAILED, "Gagal membuka ${entry.label}: ${start.short(140)}", Tone.ERR, said.trim())
         }
 
-        var task: TaskRow = waitForTask(entry) ?: return Outcome(
+        val task: TaskRow = waitForTask(entry) ?: return Outcome(
             OutcomeKind.UNVERIFIED,
             "Perintah jendela dikirim untuk ${entry.label}, tetapi belum bisa dipastikan. Lihat Setelan > Jendela.",
             Tone.WARN,
             "tugas tidak ditemukan di dump",
         )
         if (!task.isFreeform) {
-            // Aplikasi mungkin sudah terbuka layar penuh sebelumnya: paksa tugasnya ke mode jendela.
-            val id = task.taskId
-            SukiShell.io { setTaskFreeform(id) }
-            delay(RECHECK_MS)
-            task = waitForTask(entry, polls = 2) ?: task
-        }
-        if (!task.isFreeform) {
+            if (before != null && before.mode.isNotEmpty() && !before.isFreeform) {
+                return Outcome(
+                    OutcomeKind.RUNNING_FULLSCREEN,
+                    "${entry.label} sudah berjalan layar penuh; Android tidak memindahkannya ke jendela.",
+                    Tone.WARN,
+                    "mode=${before.mode}",
+                )
+            }
             return Outcome(
                 OutcomeKind.FULLSCREEN,
                 "${entry.label} terbuka layar penuh: perangkat ini menolak mode jendela. Lihat Setelan > Jendela.",
@@ -89,7 +95,17 @@ object SukiWindowing {
         return Outcome(OutcomeKind.WINDOWED, "${entry.label} dibuka sebagai jendela.", Tone.OK, "tugas #${task.taskId}")
     }
 
-    private suspend fun waitForTask(entry: AppEntry, polls: Int = 6): TaskRow? {
+    private suspend fun taskNow(pkg: String): TaskRow? {
+        val dump = SukiShell.io { dumpTasks() }
+        return if (dump.ok) FreeformParse.findTask(FreeformParse.parse(dump.out), pkg) else null
+    }
+
+    /**
+     * Tunggu tugas aplikasi tampil dalam mode jendela. Bila hanya terlihat tugas non-jendela (mungkin tugas lama
+     * yang belum digantikan), polling dilanjutkan sampai habis; hasil terakhir yang terbaca dikembalikan.
+     */
+    private suspend fun waitForTask(entry: AppEntry, polls: Int = 5): TaskRow? {
+        var seen: TaskRow? = null
         for (i in 0 until polls) {
             delay(if (i == 0) FIRST_WAIT_MS else NEXT_WAIT_MS)
             val dump = SukiShell.io { dumpTasks() }
@@ -97,10 +113,11 @@ object SukiWindowing {
             val row = FreeformParse.findTask(FreeformParse.parse(dump.out), entry.pkg)
             if (row != null && row.mode.isNotEmpty()) {
                 lastDump = SukiAuto.excerpt(dump.out, entry.pkg)
-                return row
+                seen = row
+                if (row.isFreeform) return row
             }
         }
-        return null
+        return seen
     }
 
     fun report(): String = buildString {
@@ -110,7 +127,6 @@ object SukiWindowing {
 
     private const val FIRST_WAIT_MS = 450L
     private const val NEXT_WAIT_MS = 350L
-    private const val RECHECK_MS = 450L
 }
 
 /**

@@ -21,6 +21,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 // ============================================================================
@@ -128,6 +129,45 @@ fun BlockedCard(app: SukiApp, e: AppEntry) {
                     app.index.launch(e)
                 }
                 BtnGhost("Batal", modifier = Modifier.weight(1f)) { SukiRuntime.blockedApp = null }
+            }
+        }
+    }
+}
+
+/**
+ * Aplikasi sudah berjalan layar penuh. Android tidak memindahkan tugas yang sudah ada ke mode jendela,
+ * jadi satu-satunya jalan adalah menghentikannya dulu. Tidak pernah dilakukan tanpa persetujuan.
+ */
+@Composable
+fun RestartCard(app: SukiApp, e: AppEntry) {
+    CenterSheet(onDismiss = { SukiRuntime.restartApp = null }, width = 440) {
+        Column(Modifier.padding(18.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                AppIcon(e, 44)
+                Spacer(Modifier.width(12.dp))
+                Column(Modifier.weight(1f)) {
+                    Txt("${e.label} sudah berjalan layar penuh", 15, SText, FontWeight.Bold, font = SukiBrand, maxLines = 2)
+                    Txt("Android tidak memindahkan aplikasi yang sudah terbuka ke jendela.", 12, SDim, maxLines = 3)
+                }
+            }
+            Spacer(Modifier.height(12.dp))
+            Txt("Hentikan dulu, lalu buka lagi sebagai jendela. Data yang belum disimpan di aplikasi itu bisa hilang.", 12, SWarning, maxLines = 3)
+            Spacer(Modifier.height(14.dp))
+            Btn("Hentikan lalu buka sebagai jendela", icon = GlyphKind.REFRESH, modifier = Modifier.fillMaxWidth()) {
+                SukiRuntime.restartApp = null
+                app.scope.launch {
+                    SukiShell.io { forceStop(e.pkg) }
+                    delay(700)
+                    launchApp(app, e)
+                }
+            }
+            Spacer(Modifier.height(8.dp))
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                BtnGhost("Bawa ke depan", modifier = Modifier.weight(1f)) {
+                    SukiRuntime.restartApp = null
+                    app.index.launch(e)
+                }
+                BtnGhost("Batal", modifier = Modifier.weight(1f)) { SukiRuntime.restartApp = null }
             }
         }
     }

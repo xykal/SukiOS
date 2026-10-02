@@ -69,10 +69,11 @@ fun StartMenu(app: SukiApp) {
                 .height(h)
                 .pointerInput(Unit) { detectTapGestures { } },
         ) {
-            Column(Modifier.fillMaxSize().padding(14.dp)) {
+            Column(Modifier.fillMaxSize().padding(12.dp)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     SearchField(q, { q = it }, "Cari aplikasi", Modifier.weight(1f))
-                    Spacer(Modifier.width(8.dp))
+                    Spacer(Modifier.width(6.dp))
+                    IconBtn(GlyphKind.SHIELD, "Persiapan jendela") { SukiRuntime.closePanels(); SukiRuntime.setupOpen = true }
                     IconBtn(GlyphKind.SETTINGS, "Setelan SukiOS") { openInternal(app, WinKind.SETTINGS) }
                 }
                 Spacer(Modifier.height(8.dp))
@@ -94,14 +95,6 @@ fun StartMenu(app: SukiApp) {
                         }
                         items(results, key = { "a:" + it.pkg + "/" + it.activity }) { e -> Cell(app, e) }
                     }
-                }
-                Spacer(Modifier.height(6.dp))
-                HLine()
-                Row(Modifier.fillMaxWidth().padding(top = 6.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Txt("SukiOS ${app.diag.appVersion()}", 11, SFaint, modifier = Modifier.weight(1f))
-                    IconBtn(GlyphKind.SHIELD, "Persiapan jendela", size = 36) { SukiRuntime.closePanels(); SukiRuntime.setupOpen = true }
-                    IconBtn(GlyphKind.CHART, "Diagnostik", size = 36) { openInternal(app, WinKind.DIAG) }
-                    IconBtn(GlyphKind.INFO, "Tentang SukiOS", size = 36) { openInternal(app, WinKind.ABOUT) }
                 }
             }
         }

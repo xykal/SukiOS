@@ -47,21 +47,11 @@ fun SukiShell.launchFreeform(component: String): SukiResult {
     return runChecked("am", "start", "--windowingMode", ShellArgs.MODE_FREEFORM.toString(), "-n", component)
 }
 
-/** Ubah kotak jendela. Coba empat argumen dulu (bentuk di kode sumber Android), lalu bentuk "k,a,n,b" dari teks bantuan. */
+/** Ubah kotak jendela: `am task resize <id> kiri atas kanan bawah` (Android menolak koordinat negatif atau kanan/bawah nol). */
 fun SukiShell.taskResize(taskId: Int, b: PxRect): SukiResult {
     if (!ShellArgs.isTaskId(taskId)) return bad("Id tugas tidak valid")
-    val vals = listOf(b.l, b.t, b.r, b.b)
-    if (!vals.all { ShellArgs.isCoord(it) }) return bad("Koordinat di luar batas")
-    val first = runChecked("am", "task", "resize", taskId.toString(), b.l.toString(), b.t.toString(), b.r.toString(), b.b.toString())
-    if (first.ok && first.err.isBlank()) return first
-    val second = runChecked("am", "task", "resize", taskId.toString(), "${b.l},${b.t},${b.r},${b.b}")
-    return if (second.ok && second.err.isBlank()) second else first
-}
-
-/** Paksa tugas ke mode jendela (untuk aplikasi yang sudah terbuka layar penuh). Android 11 ke atas. */
-fun SukiShell.setTaskFreeform(taskId: Int): SukiResult {
-    if (!ShellArgs.isTaskId(taskId)) return bad("Id tugas tidak valid")
-    return runChecked("am", "set-task-windowing-mode", "--toTop", taskId.toString(), ShellArgs.MODE_FREEFORM.toString())
+    if (!listOf(b.l, b.t, b.r, b.b).all { ShellArgs.isCoord(it) } || b.r <= 0 || b.b <= 0) return bad("Koordinat di luar batas")
+    return runChecked("am", "task", "resize", taskId.toString(), b.l.toString(), b.t.toString(), b.r.toString(), b.b.toString())
 }
 
 /** Daftar tugas dan aktivitas dari sudut pandang sistem; diurai oleh FreeformParse. */

@@ -36,6 +36,9 @@ object SukiRuntime {
     var menuApp by mutableStateOf<AppEntry?>(null)
     var blockedApp by mutableStateOf<AppEntry?>(null)
 
+    /** Aplikasi yang sudah berjalan layar penuh dan perlu dihentikan dulu agar bisa dibuka sebagai jendela. */
+    var restartApp by mutableStateOf<AppEntry?>(null)
+
     /** Pratinjau zona snap saat bilah judul digeser. */
     var snapPreview by mutableStateOf<Bounds?>(null)
 

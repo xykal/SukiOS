@@ -81,9 +81,10 @@ fun SukiHome(app: SukiApp, onApplyDesktop: (Boolean) -> Unit) {
     }
 
     val overlayOpen = SukiRuntime.startOpen || SukiRuntime.quickOpen || SukiRuntime.menuApp != null ||
-        SukiRuntime.blockedApp != null || SukiRuntime.setupOpen
+        SukiRuntime.blockedApp != null || SukiRuntime.restartApp != null || SukiRuntime.setupOpen
     BackHandler(enabled = overlayOpen || app.wins.count > 0) {
         when {
+            SukiRuntime.restartApp != null -> SukiRuntime.restartApp = null
             SukiRuntime.blockedApp != null -> SukiRuntime.blockedApp = null
             SukiRuntime.menuApp != null -> SukiRuntime.menuApp = null
             SukiRuntime.setupOpen -> SukiRuntime.setupOpen = false
@@ -109,6 +110,7 @@ fun SukiHome(app: SukiApp, onApplyDesktop: (Boolean) -> Unit) {
         Appear(visible = SukiRuntime.quickOpen) { QuickPanel(app) }
         SukiRuntime.menuApp?.let { AppMenu(app, it) }
         SukiRuntime.blockedApp?.let { BlockedCard(app, it) }
+        SukiRuntime.restartApp?.let { RestartCard(app, it) }
         Box(Modifier.fillMaxSize(), contentAlignment = Alignment.BottomCenter) { ToastLayer() }
         if (!setupDone || SukiRuntime.setupOpen) SetupLayer(app)
     }
@@ -209,10 +211,10 @@ fun launchApp(app: SukiApp, entry: AppEntry) {
             return@launch
         }
         val out = SukiWindowing.open(app, entry)
-        if (out.kind == OutcomeKind.BLOCKED) {
-            SukiRuntime.blockedApp = entry
-        } else {
-            SukiRuntime.say(out.message, out.tone)
+        when (out.kind) {
+            OutcomeKind.BLOCKED -> SukiRuntime.blockedApp = entry
+            OutcomeKind.RUNNING_FULLSCREEN -> SukiRuntime.restartApp = entry
+            else -> SukiRuntime.say(out.message, out.tone)
         }
     }
 }

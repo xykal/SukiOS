@@ -70,14 +70,14 @@ class WinEngine {
             return null
         }
         val work = workArea(sw, sh)
-        val w = fit(work.width * 0.62f, minW, work.width)
-        val h = fit(work.height * 0.68f, minH, work.height)
+        val w = fit(work.width * 0.66f, minW, work.width)
+        val h = fit(work.height * 0.84f, minH, work.height)
         val cascade = (list.size % 5) * 26f * density
         val win = Win(
             id = nextId++,
             kind = kind,
             title = title,
-            x = clamp(work.left + work.width * 0.18f + cascade, work.left, work.right - w - margin),
+            x = clamp(work.left + work.width * 0.12f + cascade, work.left, work.right - w - margin),
             y = clamp(work.top + work.height * 0.14f + cascade, work.top, work.bottom - h - margin),
             w = w,
             h = h,

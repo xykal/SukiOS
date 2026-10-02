@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -14,8 +15,10 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -47,9 +50,16 @@ private enum class SettingsTab(val label: String, val glyph: GlyphKind) {
 fun SettingsContent(app: SukiApp) {
     var tab by remember { mutableStateOf(SettingsTab.LOOK) }
     Row(Modifier.fillMaxSize().background(SSurface)) {
-        Column(Modifier.width(158.dp).fillMaxHeight().background(SBg.copy(alpha = 0.45f)).padding(8.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+        Column(
+            Modifier
+                .width(150.dp)
+                .fillMaxHeight()
+                .background(SBg.copy(alpha = 0.45f))
+                .verticalScroll(rememberScrollState())
+                .padding(8.dp),
+            verticalArrangement = Arrangement.spacedBy(2.dp),
+        ) {
             SettingsTab.values().forEach { t -> SideItem(t.glyph, t.label, tab == t) { tab = t } }
-            Spacer(Modifier.weight(1f))
             SideItem(GlyphKind.INFO, "Tentang", false) { openInternal(app, WinKind.ABOUT) }
         }
         Box(Modifier.width(1.dp).fillMaxHeight().background(SLineSoft))
@@ -71,38 +81,42 @@ private fun LookTab(app: SukiApp) {
     ScrollArea {
         Label("Aksen")
         ColSpacer(8)
-        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(2.dp)) {
             SukiAccents.forEach { a ->
                 val sel = a.id == SukiRuntime.accentId
                 Column(
-                    Modifier.tap(radius = RADIUS_MD, label = "Aksen ${a.label}") { prefs.setAccent(a.id) }.padding(4.dp),
+                    Modifier
+                        .weight(1f)
+                        .tap(radius = RADIUS_MD, label = "Aksen ${a.label}") { prefs.setAccent(a.id) }
+                        .padding(vertical = 4.dp),
                     horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
                     Box(
                         Modifier
-                            .size(34.dp)
+                            .size(30.dp)
                             .clip(CircleShape)
                             .background(Brush.linearGradient(listOf(a.main, a.second)))
                             .border(if (sel) 2.dp else 1.dp, if (sel) SText else SLine, CircleShape),
                         contentAlignment = Alignment.Center,
-                    ) { if (sel) Glyph(GlyphKind.CHECK, 16, a.on) }
+                    ) { if (sel) Glyph(GlyphKind.CHECK, 15, a.on) }
                     Spacer(Modifier.height(4.dp))
                     Txt(a.label, 11, if (sel) SText else SDim, FontWeight.Medium)
                 }
             }
         }
-        ColSpacer(16)
+        ColSpacer(14)
         Label("Wallpaper")
         ColSpacer(8)
         WALL_SPECS.chunked(3).forEach { row ->
-            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 row.forEach { w ->
                     val sel = w.id == SukiRuntime.wallpaperId
                     val shape = RoundedCornerShape(RADIUS_MD.dp)
-                    Column(Modifier.tap(radius = RADIUS_MD, label = "Wallpaper ${w.label}") { prefs.setWallpaper(w.id) }.padding(3.dp)) {
+                    Column(Modifier.weight(1f).tap(radius = RADIUS_MD, label = "Wallpaper ${w.label}") { prefs.setWallpaper(w.id) }) {
                         Box(
                             Modifier
-                                .size(width = 104.dp, height = 60.dp)
+                                .fillMaxWidth()
+                                .aspectRatio(1.75f)
                                 .clip(shape)
                                 .border(if (sel) 2.dp else 1.dp, if (sel) accentNow().main else SLine, shape),
                         ) { Wallpaper(w.id, Modifier.fillMaxSize(), motion = false) }
@@ -111,7 +125,7 @@ private fun LookTab(app: SukiApp) {
                     }
                 }
             }
-            Spacer(Modifier.height(4.dp))
+            Spacer(Modifier.height(8.dp))
         }
         ColSpacer(10)
         ToggleRow(

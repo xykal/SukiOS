@@ -55,17 +55,18 @@ class ShellPolicyTest {
     }
 
     @Test
-    fun task_resize_takes_integers_in_range_in_either_notation() {
+    fun task_resize_takes_four_separate_non_negative_integers() {
         ok("am", "task", "resize", "42", "100", "60", "1500", "900")
-        ok("am", "task", "resize", "42", "100,60,1500,900")
-        ok("am", "set-task-windowing-mode", "--toTop", "42", "5")
+        ok("am", "task", "resize", "42", "0", "0", "1", "1")
+        no("am", "task", "resize", "42", "100,60,1500,900")
         no("am", "task", "resize", "0", "100", "60", "1500", "900")
+        no("am", "task", "resize", "42", "-1", "60", "1500", "900")
         no("am", "task", "resize", "42", "100", "60", "1500", "x")
         no("am", "task", "resize", "42", "100", "60", "99999", "900")
         no("am", "task", "resize", "4 2", "100", "60", "1500", "900")
         no("am", "task", "resize", "+42", "100", "60", "1500", "900")
         no("am", "task", "lock", "42")
-        no("am", "set-task-windowing-mode", "--toTop", "42", "1")
+        no("am", "set-task-windowing-mode", "--toTop", "42", "5")
     }
 
     @Test

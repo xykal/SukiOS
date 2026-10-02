@@ -15,9 +15,12 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -62,9 +65,10 @@ fun QuickPanel(app: SukiApp) {
                 .align(Alignment.BottomEnd)
                 .padding(end = 10.dp, bottom = (TASKBAR_DP + 6).dp)
                 .width(minOf(372.dp, maxWidth - 20.dp))
+                .heightIn(max = maxHeight - (TASKBAR_DP + 14).dp)
                 .pointerInput(Unit) { detectTapGestures { } },
         ) {
-            Column(Modifier.padding(14.dp)) {
+            Column(Modifier.verticalScroll(rememberScrollState()).padding(14.dp)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Column(Modifier.weight(1f)) {
                         Txt(status.label, 14, SText, FontWeight.SemiBold)
@@ -72,7 +76,7 @@ fun QuickPanel(app: SukiApp) {
                     }
                     BatteryMeter(battery.first, battery.second)
                 }
-                Spacer(Modifier.height(12.dp))
+                Spacer(Modifier.height(10.dp))
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     QuickTile(GlyphKind.WIFI, "Wi-Fi", false, Modifier.weight(1f)) {
                         openSystem(ctx, Settings.Panel.ACTION_INTERNET_CONNECTIVITY)
@@ -124,7 +128,7 @@ private fun QuickTile(glyph: GlyphKind, label: String, active: Boolean, modifier
     Column(
         modifier
             .tap(radius = RADIUS_MD, label = label, onClick = onClick)
-            .height(64.dp)
+            .height(56.dp)
             .background(
                 if (active) Brush.linearGradient(listOf(ac.main.copy(alpha = 0.34f), ac.second.copy(alpha = 0.18f)))
                 else SolidColor(Color(0x12FFFFFF)),
