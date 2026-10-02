@@ -32,7 +32,6 @@ class SukiDiag(private val ctx: Context) {
             Fact("Android", "${Build.VERSION.RELEASE} (SDK ${Build.VERSION.SDK_INT})"),
             Fact("Perangkat", "${Build.MANUFACTURER} ${Build.MODEL}"),
             Fact("ABI", Build.SUPPORTED_ABIS.joinToString(", ")),
-            Fact("Karakteristik", Build.CHARACTERISTICS.joinToString(", ").ifBlank { "-" }),
             Fact("Kelas memori", if (ramKb > 0) "$ramKb MB" else "tidak terbaca"),
             Fact("RAM rendah (sistem)", if (am?.isLowRamDevice == true) "YA" else "tidak"),
             Fact("Kelas perangkat", SukiRuntime.deviceClass),
@@ -49,9 +48,9 @@ class SukiDiag(private val ctx: Context) {
     private fun totalGb(s: StatFs) = String.format(Locale.US, "%.1f", s.totalBytes / 1073741824.0)
 
     private fun displayFacts(): String {
-        val am = ctx.getSystemService(Context.ACTIVITY_SERVICE) as? ActivityManager ?: return "tidak terbaca"
-        val d = am.deviceConfigurationInfo
-        return "kecil=${d.smallestScreenWidthDp}dp, layar=${d.screenWidthDp}x${d.screenHeightDp}dp"
+        // Configuration dari resource aplikasi: sumber yang benar untuk dp.
+        val c = ctx.resources.configuration
+        return "kecil=${c.smallestScreenWidthDp}dp, layar=${c.screenWidthDp}x${c.screenHeightDp}dp, dpi=${c.densityDpi}"
     }
 
     private fun multiWindowFacts(am: ActivityManager?): String {

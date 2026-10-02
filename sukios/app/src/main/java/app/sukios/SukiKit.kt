@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
@@ -20,17 +21,19 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.BasicText
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.StrokeJoin
+import androidx.compose.ui.graphics.drawscope.Fill
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
@@ -46,6 +49,10 @@ import androidx.compose.ui.unit.sp
 // Bayangan selalu netral hitam; pemisahan bidang memakai garis tipis dan
 // perbedaan nada, bukan cahaya. Tidak ada emoji sebagai ikon antarmuka —
 // semua ikon digambar sebagai vektor di Glyph().
+//
+// Catatan teknis: teks memakai Text dari material3 (parameter sederhana:
+// color, fontSize, fontWeight, maxLines). Konstruktor TextStyle di Compose
+// 1.7 sudah diubah bentuknya, jadi jalur itu sengaja tidak dipakai.
 // ============================================================================
 
 // ---- Palet ----
@@ -70,7 +77,6 @@ val SInfo = Color(0xFF7E93AC)
 
 val SLine = Color(0x14FFFFFF)
 val SLineStrong = Color(0x22FFFFFF)
-val SShade = Color(0x66000000)
 
 // ---- Ukuran tetap ----
 const val TASKBAR_DP = 54
@@ -121,16 +127,14 @@ fun Txt(
     modifier: Modifier = Modifier,
     align: TextAlign? = null,
 ) {
-    BasicText(
+    Text(
         text = text,
         modifier = modifier,
-        style = TextStyle(
-            color = color,
-            fontSize = size.sp,
-            fontWeight = weight,
-            fontFamily = FontFamily.SansSerif,
-            textAlign = align,
-        ),
+        color = color,
+        fontSize = size.sp,
+        fontWeight = weight,
+        fontFamily = FontFamily.SansSerif,
+        textAlign = align,
         maxLines = maxLines,
     )
 }
@@ -139,6 +143,21 @@ fun Txt(
 fun Label(text: String) {
     Txt(text.uppercase(), 10, SFaint, FontWeight.SemiBold)
 }
+
+/**
+ * Gaya untuk kolom ketik (BasicTextField).
+ *
+ * Dibangun dari TextStyle.Default lewat copy() — bukan konstruktor TextStyle,
+ * karena konstruktor bergaya lama sudah disembunyikan di Compose 1.7.
+ * Sengaja dipusatkan di sini supaya hanya ada SATU tempat yang bergantung
+ * pada bentuk API itu.
+ */
+fun fieldStyle(size: Int = 12, mono: Boolean = false): TextStyle =
+    TextStyle.Default.copy(
+        color = SText,
+        fontSize = size.sp,
+        fontFamily = if (mono) FontFamily.Monospace else FontFamily.SansSerif,
+    )
 
 // ---- Wadah ----
 @Composable
@@ -167,9 +186,10 @@ fun Dot(color: Color, size: Int = 8, modifier: Modifier = Modifier) {
 // ---- Kendali ----
 @Composable
 fun Btn(label: String, primary: Boolean = true, enabled: Boolean = true, onClick: () -> Unit) {
+    val accent = accentById(SukiRuntime.accentId)
     val bg = when {
         !enabled -> SElevated
-        primary -> accentById(SukiRuntime.accentId)
+        primary -> accent
         else -> SOverlay
     }
     val fg = when {
@@ -206,8 +226,9 @@ fun BtnGhost(label: String, enabled: Boolean = true, onClick: () -> Unit) {
 
 @Composable
 fun Chip(label: String, active: Boolean = false, onClick: () -> Unit) {
-    val bg = if (active) accentById(SukiRuntime.accentId).copy(alpha = 0.22f) else SOverlay
-    val fg = if (active) accentById(SukiRuntime.accentId) else SDim
+    val accent = accentById(SukiRuntime.accentId)
+    val bg = if (active) accent.copy(alpha = 0.22f) else SOverlay
+    val fg = if (active) accent else SDim
     Box(
         Modifier
             .clip(RoundedCornerShape(8.dp))
@@ -229,20 +250,13 @@ fun KeyValue(key: String, value: String) {
 }
 
 @Composable
-fun RowSpacer() = Spacer(Modifier.width(8.dp))
-
-@Composable
 fun ColSpacer(h: Int = 8) = Spacer(Modifier.height(h.dp))
 
 // ---- Wallpaper ----
 @Composable
 fun Wallpaper(id: String, modifier: Modifier = Modifier) {
     val w = wallById(id)
-    Box(
-        modifier.background(
-            Brush.verticalGradient(listOf(w.top, w.bottom))
-        )
-    )
+    Box(modifier.background(Brush.verticalGradient(listOf(w.top, w.bottom))))
 }
 
 // ============================================================================
@@ -255,25 +269,41 @@ enum class GlyphKind {
 }
 
 @Composable
-fun Glyph(kind: GlyphKind, size: Int = 18, color: Color = SText) {
-    Canvas(Modifier.size(size.dp)) {
-        val w = size.width
-        val h = size.height
+fun Glyph(kind: GlyphKind, dim: Int = 18, color: Color = SText) {
+    Canvas(Modifier.size(dim.dp)) {
+        // Catatan penting: di dalam lambda ini, kata "size" milik DrawScope,
+        // bukan parameter fungsi. Karena itu lebarnya diambil dari this.size.
+        val w = this.size.width
+        val h = this.size.height
         val sw = (w * 0.095f).coerceAtLeast(1.15f)
         val st = Stroke(width = sw, cap = StrokeCap.Round, join = StrokeJoin.Round)
 
         fun line(x1: Float, y1: Float, x2: Float, y2: Float) =
-            drawLine(color, Offset(w * x1, h * y1), Offset(w * x2, h * y2), strokeWidth = sw, cap = StrokeCap.Round)
+            drawLine(
+                color = color,
+                start = Offset(w * x1, h * y1),
+                end = Offset(w * x2, h * y2),
+                strokeWidth = sw,
+                cap = StrokeCap.Round,
+            )
 
-        fun rect(x: Float, y: Float, ww: Float, hh: Float, fill: Boolean = false) =
+        fun rect(x: Float, y: Float, ww: Float, hh: Float, solid: Boolean = false) =
             drawRect(
                 color = color,
                 topLeft = Offset(w * x, h * y),
-                size = androidx.compose.ui.geometry.Size(w * ww, h * hh),
-                style = if (fill) androidx.compose.ui.graphics.drawscope.Fill else st,
+                size = Size(w * ww, h * hh),
+                style = if (solid) Fill else st,
             )
 
-        fun poly(vararg pts: Float, close: Boolean = false, fill: Boolean = false) {
+        fun font(x: Float, y: Float, radius: Float, solid: Boolean = false) =
+            drawCircle(
+                color = color,
+                radius = w * radius,
+                center = Offset(w * x, h * y),
+                style = if (solid) Fill else st,
+            )
+
+        fun poly(vararg pts: Float, close: Boolean = false, solid: Boolean = false) {
             val p = Path()
             p.moveTo(w * pts[0], h * pts[1])
             var i = 2
@@ -282,7 +312,7 @@ fun Glyph(kind: GlyphKind, size: Int = 18, color: Color = SText) {
                 i += 2
             }
             if (close) p.close()
-            drawPath(path = p, color = color, style = if (fill) androidx.compose.ui.graphics.drawscope.Fill else st)
+            drawPath(path = p, color = color, style = if (solid) Fill else st)
         }
 
         when (kind) {
@@ -291,24 +321,27 @@ fun Glyph(kind: GlyphKind, size: Int = 18, color: Color = SText) {
                 poly(0.22f, 0.48f, 0.22f, 0.88f, 0.78f, 0.88f, 0.78f, 0.48f)
             }
             GlyphKind.APPS -> {
-                rect(0.12f, 0.12f, 0.32f, 0.32f, fill = true)
-                rect(0.56f, 0.12f, 0.32f, 0.32f, fill = true)
-                rect(0.12f, 0.56f, 0.32f, 0.32f, fill = true)
-                rect(0.56f, 0.56f, 0.32f, 0.32f, fill = true)
+                rect(0.12f, 0.12f, 0.32f, 0.32f, solid = true)
+                rect(0.56f, 0.12f, 0.32f, 0.32f, solid = true)
+                rect(0.12f, 0.56f, 0.32f, 0.32f, solid = true)
+                rect(0.56f, 0.56f, 0.32f, 0.32f, solid = true)
             }
             GlyphKind.SEARCH -> {
-                drawCircle(color, radius = w * 0.26f, center = Offset(w * 0.44f, h * 0.44f), style = st)
+                font(0.44f, 0.44f, 0.26f)
                 line(0.64f, 0.64f, 0.86f, 0.86f)
             }
             GlyphKind.SETTINGS -> {
-                drawCircle(color, radius = w * 0.30f, center = Offset(w * 0.5f, h * 0.5f), style = st)
-                drawCircle(color, radius = w * 0.09f, center = Offset(w * 0.5f, h * 0.5f), style = androidx.compose.ui.graphics.drawscope.Fill)
-                line(0.50f, 0.05f, 0.50f, 0.20f); line(0.50f, 0.80f, 0.50f, 0.95f)
-                line(0.05f, 0.50f, 0.20f, 0.50f); line(0.80f, 0.50f, 0.95f, 0.50f)
+                font(0.50f, 0.50f, 0.30f)
+                font(0.50f, 0.50f, 0.09f, solid = true)
+                line(0.50f, 0.05f, 0.50f, 0.20f)
+                line(0.50f, 0.80f, 0.50f, 0.95f)
+                line(0.05f, 0.50f, 0.20f, 0.50f)
+                line(0.80f, 0.50f, 0.95f, 0.50f)
             }
             GlyphKind.TERMINAL -> {
                 rect(0.08f, 0.16f, 0.84f, 0.68f)
-                line(0.26f, 0.38f, 0.42f, 0.50f); line(0.42f, 0.50f, 0.26f, 0.62f)
+                line(0.26f, 0.38f, 0.42f, 0.50f)
+                line(0.42f, 0.50f, 0.26f, 0.62f)
                 line(0.52f, 0.64f, 0.72f, 0.64f)
             }
             GlyphKind.LAB -> {
@@ -317,22 +350,21 @@ fun Glyph(kind: GlyphKind, size: Int = 18, color: Color = SText) {
                 line(0.30f, 0.66f, 0.70f, 0.66f)
             }
             GlyphKind.INFO -> {
-                drawCircle(color, radius = w * 0.40f, center = Offset(w * 0.5f, h * 0.5f), style = st)
-                drawCircle(color, radius = w * 0.055f, center = Offset(w * 0.5f, h * 0.30f), style = androidx.compose.ui.graphics.drawscope.Fill)
+                font(0.50f, 0.50f, 0.40f)
+                font(0.50f, 0.30f, 0.055f, solid = true)
                 line(0.50f, 0.46f, 0.50f, 0.72f)
             }
             GlyphKind.PLUS -> {
-                line(0.50f, 0.16f, 0.50f, 0.84f); line(0.16f, 0.50f, 0.84f, 0.50f)
+                line(0.50f, 0.16f, 0.50f, 0.84f)
+                line(0.16f, 0.50f, 0.84f, 0.50f)
             }
-            GlyphKind.CHECK -> {
-                poly(0.16f, 0.54f, 0.40f, 0.78f, 0.84f, 0.24f)
-            }
+            GlyphKind.CHECK -> poly(0.16f, 0.54f, 0.40f, 0.78f, 0.84f, 0.24f)
             GlyphKind.REFRESH -> {
                 poly(0.80f, 0.34f, 0.62f, 0.16f, 0.46f, 0.24f, 0.36f, 0.42f)
                 poly(0.20f, 0.66f, 0.38f, 0.84f, 0.54f, 0.76f, 0.64f, 0.58f)
             }
             GlyphKind.POWER -> {
-                drawCircle(color, radius = w * 0.34f, center = Offset(w * 0.5f, h * 0.56f), style = st)
+                font(0.50f, 0.56f, 0.34f)
                 line(0.50f, 0.10f, 0.50f, 0.42f)
             }
             GlyphKind.ROTATE -> {
@@ -341,35 +373,34 @@ fun Glyph(kind: GlyphKind, size: Int = 18, color: Color = SText) {
             }
             GlyphKind.DESKTOP -> {
                 rect(0.10f, 0.18f, 0.80f, 0.50f)
-                line(0.34f, 0.84f, 0.66f, 0.84f); line(0.50f, 0.68f, 0.50f, 0.84f)
+                line(0.34f, 0.84f, 0.66f, 0.84f)
+                line(0.50f, 0.68f, 0.50f, 0.84f)
             }
             GlyphKind.OVERLAY -> {
                 rect(0.10f, 0.24f, 0.80f, 0.40f)
-                rect(0.16f, 0.70f, 0.68f, 0.16f, fill = true)
+                rect(0.16f, 0.70f, 0.68f, 0.16f, solid = true)
             }
             GlyphKind.SHELL -> {
                 poly(0.20f, 0.30f, 0.44f, 0.50f, 0.20f, 0.70f)
                 line(0.54f, 0.72f, 0.80f, 0.72f)
             }
             GlyphKind.PIN -> {
-                drawCircle(color, radius = w * 0.14f, center = Offset(w * 0.5f, h * 0.36f), style = androidx.compose.ui.graphics.drawscope.Fill)
+                font(0.50f, 0.36f, 0.14f, solid = true)
                 line(0.50f, 0.50f, 0.50f, 0.86f)
             }
-            GlyphKind.STAR -> {
-                poly(
-                    0.50f, 0.12f, 0.62f, 0.40f, 0.90f, 0.42f, 0.68f, 0.60f, 0.76f, 0.88f,
-                    0.50f, 0.72f, 0.24f, 0.88f, 0.32f, 0.60f, 0.10f, 0.42f, 0.38f, 0.40f,
-                    close = true
-                )
-            }
-            GlyphKind.FOLDER -> {
-                poly(0.10f, 0.76f, 0.10f, 0.26f, 0.42f, 0.26f, 0.48f, 0.36f, 0.90f, 0.36f, 0.90f, 0.76f, close = true)
-            }
-            GlyphKind.BACK -> {
-                poly(0.56f, 0.22f, 0.30f, 0.50f, 0.56f, 0.78f)
-            }
+            GlyphKind.STAR -> poly(
+                0.50f, 0.12f, 0.62f, 0.40f, 0.90f, 0.42f, 0.68f, 0.60f, 0.76f, 0.88f,
+                0.50f, 0.72f, 0.24f, 0.88f, 0.32f, 0.60f, 0.10f, 0.42f, 0.38f, 0.40f,
+                close = true,
+            )
+            GlyphKind.FOLDER -> poly(
+                0.10f, 0.76f, 0.10f, 0.26f, 0.42f, 0.26f, 0.48f, 0.36f, 0.90f, 0.36f, 0.90f, 0.76f,
+                close = true,
+            )
+            GlyphKind.BACK -> poly(0.56f, 0.22f, 0.30f, 0.50f, 0.56f, 0.78f)
             GlyphKind.CLOSE -> {
-                line(0.24f, 0.24f, 0.76f, 0.76f); line(0.76f, 0.24f, 0.24f, 0.76f)
+                line(0.24f, 0.24f, 0.76f, 0.76f)
+                line(0.76f, 0.24f, 0.24f, 0.76f)
             }
             GlyphKind.MIN -> line(0.18f, 0.50f, 0.82f, 0.50f)
             GlyphKind.MAX -> rect(0.18f, 0.20f, 0.64f, 0.60f)
@@ -380,12 +411,12 @@ fun Glyph(kind: GlyphKind, size: Int = 18, color: Color = SText) {
             GlyphKind.WINDOW -> {
                 rect(0.12f, 0.18f, 0.76f, 0.64f)
                 line(0.12f, 0.34f, 0.88f, 0.34f)
-                rect(0.20f, 0.42f, 0.24f, 0.28f, fill = true)
+                rect(0.20f, 0.42f, 0.24f, 0.28f, solid = true)
             }
             GlyphKind.CHART -> {
-                rect(0.16f, 0.56f, 0.14f, 0.28f, fill = true)
-                rect(0.42f, 0.34f, 0.14f, 0.50f, fill = true)
-                rect(0.68f, 0.18f, 0.14f, 0.66f, fill = true)
+                rect(0.16f, 0.56f, 0.14f, 0.28f, solid = true)
+                rect(0.42f, 0.34f, 0.14f, 0.50f, solid = true)
+                rect(0.68f, 0.18f, 0.14f, 0.66f, solid = true)
             }
         }
     }
@@ -422,13 +453,18 @@ fun FileBadge(code: String, tone: Color = SAccent) {
     }
 }
 
-// ---- Panel jendela: kerangka yang dipakai semua konten jendela ----
+// ---- Kerangka jendela: dipakai semua isi jendela SukiOS ----
 @Composable
-fun WinPanel(title: String, subtitle: String? = null, content: @Composable ColumnScope.() -> Unit) {
+fun WinPanel(
+    title: String,
+    subtitle: String? = null,
+    actions: (@Composable () -> Unit)? = null,
+    content: @Composable () -> Unit,
+) {
     Column(Modifier.fillMaxSize().background(SSurface)) {
         Row(
             Modifier
-                .padding(start = 14.dp, top = 10.dp, bottom = 8.dp, end = 14.dp),
+                .padding(start = 14.dp, top = 10.dp, bottom = 9.dp, end = 14.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween,
         ) {
@@ -436,8 +472,38 @@ fun WinPanel(title: String, subtitle: String? = null, content: @Composable Colum
                 Txt(title, 14, SText, FontWeight.SemiBold)
                 if (subtitle != null) Txt(subtitle, 10, SFaint)
             }
+            if (actions != null) actions()
         }
-        Box(Modifier.height(1.dp).fillMaxSize().background(SLine))
-        content()
+        Box(Modifier.fillMaxWidth().height(1.dp).background(SLine))
+        Box(Modifier.weight(1f).fillMaxWidth()) { content() }
+    }
+}
+
+/** Kolom yang bisa digulir — dipakai hampir semua isi jendela. */
+@Composable
+fun ScrollArea(modifier: Modifier = Modifier, content: @Composable ColumnScope.() -> Unit) {
+    Column(
+        modifier
+            .fillMaxSize()
+            .verticalScroll(rememberScrollState())
+            .padding(14.dp),
+        content = content,
+    )
+}
+
+/** Kotak hasil: menampilkan keluaran perintah apa adanya. */
+@Composable
+fun ResultBox(text: String, tone: Color = SDim, maxHeight: Int = 220) {
+    Box(
+        Modifier
+            .fillMaxWidth()
+            .heightIn(min = 54.dp, max = maxHeight.dp)
+            .clip(RoundedCornerShape(9.dp))
+            .background(SBg)
+            .border(1.dp, SLine, RoundedCornerShape(9.dp))
+            .verticalScroll(rememberScrollState())
+            .padding(10.dp),
+    ) {
+        Txt(text.ifBlank { "(belum ada hasil)" }, 10, tone, maxLines = 400)
     }
 }

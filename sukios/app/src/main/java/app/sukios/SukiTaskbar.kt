@@ -239,7 +239,7 @@ private fun BatteryPill() {
         val fill = ((level.coerceIn(0, 100) / 100f) * (w - 4)).coerceAtLeast(1f)
         Box(
             Modifier
-                .size(width.dp, 13.dp)
+                .size(w.dp, 13.dp)
                 .border(1.dp, SFaint, RoundedCornerShape(4.dp))
                 .padding(1.dp),
         ) {

@@ -38,8 +38,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -263,9 +261,7 @@ fun TerminalContent(app: SukiApp) {
                         value = input,
                         onValueChange = { input = it },
                         singleLine = true,
-                        textStyle = TextStyle(
-                            color = SText, fontSize = 12.sp, fontFamily = FontFamily.Monospace,
-                        ),
+                        textStyle = fieldStyle(12, mono = true),
                         cursorBrush = SolidColor(accentById(SukiRuntime.accentId)),
                         modifier = Modifier.fillMaxWidth(),
                     )
@@ -331,7 +327,7 @@ fun AppsContent(app: SukiApp) {
                     value = q,
                     onValueChange = { q = it },
                     singleLine = true,
-                    textStyle = TextStyle(color = SText, fontSize = 12.sp, fontFamily = FontFamily.SansSerif),
+                    textStyle = fieldStyle(12),
                     cursorBrush = SolidColor(accentById(SukiRuntime.accentId)),
                     modifier = Modifier.fillMaxWidth(),
                 )

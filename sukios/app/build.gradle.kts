@@ -95,6 +95,9 @@ dependencies {
     implementation("androidx.compose.ui:ui")
     implementation("androidx.compose.foundation:foundation")
     implementation("androidx.compose.runtime:runtime")
+    // material3 dipakai HANYA untuk komposisi teks (Text). Tidak memakai
+    // tema Material: seluruh warna dan bentuk berasal dari SukiKit.
+    implementation("androidx.compose.material3:material3")
 
     // Shizuku 13.1.5 — dipakai sebagai KURIR binder saja.
     // Semua eksekusi berjalan di UserService milik SukiOS (ISukiShell),

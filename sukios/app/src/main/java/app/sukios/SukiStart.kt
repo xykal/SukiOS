@@ -38,8 +38,6 @@ import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntSize
@@ -86,11 +84,7 @@ fun StartMenu(app: SukiApp, size: IntSize) {
                             value = q,
                             onValueChange = { q = it },
                             singleLine = true,
-                            textStyle = TextStyle(
-                                color = SText,
-                                fontSize = 12.sp,
-                                fontFamily = FontFamily.SansSerif,
-                            ),
+                            textStyle = fieldStyle(12),
                             cursorBrush = SolidColor(accentById(SukiRuntime.accentId)),
                             modifier = Modifier.fillMaxWidth(),
                         )

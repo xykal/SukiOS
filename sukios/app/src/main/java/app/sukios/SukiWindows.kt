@@ -131,6 +131,7 @@ private fun BoxScope.ResizeHandles(app: SukiApp, w: Win, size: IntSize) {
     val sw = size.width.toFloat()
     val sh = size.height.toFloat()
 
+    @Composable
     fun handle(modifier: Modifier, dirX: Int, dirY: Int) {
         Box(
             modifier.pointerInput(w.id, dirX, dirY) {
