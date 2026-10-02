@@ -7,13 +7,13 @@ import org.junit.Test
 /** Data ikon hasil generator harus berbentuk benar dan tidak keluar dari kisi 24x24. */
 class GlyphDataTest {
 
-    private val cmd = Regex("([MLCZ])([^MLCZ]*)")
-    private val per = mapOf('M' to 2, 'L' to 2, 'C' to 6, 'Z' to 0)
+    private val cmd = Regex("([MLCZHV])([^MLCZHV]*)")
+    private val per = mapOf('M' to 2, 'L' to 2, 'C' to 6, 'H' to 1, 'V' to 1, 'Z' to 0)
 
     private fun check(name: String, d: String) {
         if (d.isBlank()) return
         assertTrue("$name: path harus diawali M", d.trimStart().startsWith("M"))
-        assertTrue("$name: hanya M L C Z, angka, spasi, titik, minus", d.all { it in "MLCZ0123456789 .-" })
+        assertTrue("$name: hanya M L C H V Z, angka, spasi, titik, minus", d.all { it in "MLCHVZ0123456789 .-" })
         var used = 0
         for (m in cmd.findAll(d)) {
             val nums = m.groupValues[2].trim().split(Regex("\\s+")).filter { it.isNotEmpty() }.map { it.toDouble() }
