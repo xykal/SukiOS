@@ -13,11 +13,11 @@ Modul ini (`sukios/`) adalah aplikasi Android-nya. Dokumen produk ada di akar re
 
 | Hal | Keadaan |
 |---|---|
-| Kompilasi | **terverifikasi di CI** (Build APK run 37027127027, commit `4bd59d4`) |
-| Rilis | `v0.3.0-alpha`, APK 1,77 MB di draft release |
+| Kompilasi + 44 uji unit | **terverifikasi di CI** (ID run di `../PROGRESS.md`) |
+| Rilis | `v0.3.1-alpha`, APK sekitar 1,8 MB di draft release |
 | Isi APK | **diperiksa**: kelas `SukiShellService`, `ISukiShell$Stub`, `ShizukuProvider`, `SukiHomeActivity`, `SukiOverlayBar` ada di dex; manifest memuat kategori `HOME` |
 | Tanda tangan | **debug key** — secrets keystore rilis belum diset. Jangan dipakai untuk distribusi publik |
-| Uji di perangkat | **BELUM** — tidak ada yang boleh mengklaim "berfungsi" sebelum ada laporan dari perangkat nyata |
+| Uji di perangkat | **BELUM**. Uji unit membuktikan mesin jendela dan batas eksekusi shell di JVM, bukan tampilan di layar. Jangan klaim "berfungsi" sebelum ada laporan dari perangkat nyata |
 
 ---
 
@@ -61,7 +61,7 @@ Modul ini (`sukios/`) adalah aplikasi Android-nya. Dokumen produk ada di akar re
 | Yang diuji | Caranya | Hasil yang diharapkan |
 |---|---|---|
 | Launcher | Tekan tombol Home | Masuk ke Beranda SukiOS (muncul pilihan launcher saat pertama) |
-| Jendela internal | Ketuk ikon Laboratorium di desktop | Jendela mengambang; coba geser, ubah ukuran, snap ke tepi |
+| Jendela internal | Ketuk ikon Laboratorium di desktop | Jendela mengambang; geser (harus ikut bergerak), ubah ukuran dari tepi/sudut, lepas di tepi untuk snap; seret lagi untuk mengembalikan ukuran asli |
 | Taskbar melayang | Taskbar → ikon overlay → beri izin | Bar "Kembali / Beranda / Menu" muncul di atas aplikasi lain |
 | SukiShell | Laboratorium → Identitas | `uid=2000` (atau 0 bila root) — kode keluar 0 |
 | Jendela app pihak ketiga | Jendela Aplikasi → tombol jendela pada satu aplikasi | Kalau aplikasi tetap penuh layar, perangkat menolak bounds (freeform mati) |
@@ -79,6 +79,10 @@ Kunci rilis dibaca dari environment (`SUKIOS_KEYSTORE_*`), tidak pernah ditulis 
 Panduan: `docs/RELEASE-SIGNING.md`.
 
 ## Catatan teknis yang perlu diingat
+
+- **Properti yang dibaca composable harus state Compose.** `mutableStateListOf<Win>` hanya memantau isi daftar; di v0.3.0 `Win` berisi field biasa sehingga jendela tidak pernah digambar ulang.
+  Sejak 0.3.1 semua properti `Win` memakai `mutableStateOf`, dan `StateFlow` dibaca lewat `collectAsState()`.
+- **Pemanggilan SukiShell dari UI lewat `SukiShell.io { ... }`.** Binder + pembuatan proses tidak boleh jalan di thread utama. `ShellExec` menjatuhkan perintah lewat 15 detik (kode 124) dan memotong keluaran 64 KiB per aliran.
 
 - **Compose 1.7.4 tidak punya lagi fungsi pabrik `TextStyle(color = ...)`.** Diperiksa lewat bytecode `ui-text-android-1.7.4.aar`: yang tersisa hanya konstruktor `(SpanStyle, ParagraphStyle, PlatformTextStyle)` dan `copy()` versi stabil. Karena itu teks memakai `Text` dari material3 dan kolom ketik memakai `TextStyle.Default.copy()` lewat satu fungsi `fieldStyle()` di `SukiKit.kt`.
 - **AIDL wajib disimpan dari R8**: aturannya ada di `proguard-rules.pro`. Tanpa itu, `ISukiShell` dan `SukiShellService` akan dihapus/rename dan SukiShell mati di build rilis.
