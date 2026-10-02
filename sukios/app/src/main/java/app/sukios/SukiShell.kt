@@ -155,6 +155,9 @@ object SukiShell {
             bind()
             return "Izin sudah ada."
         }
+        if (runCatching { Shizuku.shouldShowRequestPermissionRationale() }.getOrDefault(false)) {
+            return "Izin ditolak permanen. Buka Shizuku > Aplikasi terotorisasi, lalu aktifkan SukiOS."
+        }
         return runCatching {
             Shizuku.requestPermission(REQ)
             "Permintaan izin dikirim. Setujui dialog dari Shizuku."
@@ -203,7 +206,18 @@ object SukiShell {
      */
     suspend fun <T> io(block: SukiShell.() -> T): T = withContext(Dispatchers.IO) { block(this@SukiShell) }
 
-    /** Jalankan satu perintah (memblokir). Tidak pernah melempar; panggil lewat [io] dari UI. */
+    /**
+     * Jalankan satu perintah yang sudah lolos [ShellPolicy]; selain itu ditolak dengan kode 126 tanpa
+     * menyentuh Shizuku. Dipakai semua fungsi bertipe di SukiShellCmds.kt.
+     */
+    fun runChecked(vararg argv: String): SukiResult {
+        if (!ShellPolicy.allows(argv.toList())) {
+            return SukiResult(ShellExec.CODE_BAD_ARGS, "", "Perintah tidak ada di daftar yang diizinkan SukiOS")
+        }
+        return run(*argv)
+    }
+
+    /** Jalankan satu perintah apa adanya (memblokir). Tidak pernah melempar; panggil lewat [io] dari UI. Hanya Terminal yang memanggil ini langsung. */
     fun run(vararg argv: String): SukiResult {
         val b = binder
         if (b == null) {
@@ -215,64 +229,17 @@ object SukiShell {
         }.getOrElse { SukiResult(ShellExec.CODE_NOT_RUNNABLE, "", "Gagal memanggil SukiShell: ${it.message}") }
     }
 
-    private fun notReadyReason(): String = when {
+    fun notReadyReason(): String = when {
         !state.value.installed -> "Shizuku belum terpasang."
         !state.value.binderAlive -> "Servis Shizuku belum jalan."
         !state.value.granted -> "Izin SukiOS untuk Shizuku belum diberikan."
         else -> "SukiShell belum tersambung."
     }
 
-    // ------------------------------------------------------------------
-    // Perintah tetap. Argumen divalidasi di sini agar tidak pernah ada
-    // string bebas yang masuk ke sisi shell.
-    // ------------------------------------------------------------------
-
-    fun identity(): SukiResult = run("id")
-
-    fun deviceSummary(): SukiResult {
+    /** Ringkasan perangkat dari sisi shell (dibuat oleh service, bukan dari perintah). */
+    fun deviceSummaryRaw(): SukiResult {
         val b = binder ?: return SukiResult(ShellExec.CODE_NOT_RUNNABLE, "", notReadyReason())
         return runCatching { SukiResult(0, b.deviceSummary(), "") }
             .getOrElse { SukiResult(ShellExec.CODE_NOT_RUNNABLE, "", "deviceSummary gagal: ${it.message}") }
     }
-
-    fun forceResizable(on: Boolean): SukiResult =
-        run("settings", "put", "global", "force_resizable_activities", if (on) "1" else "0")
-
-    fun readForceResizable(): SukiResult =
-        run("settings", "get", "global", "force_resizable_activities")
-
-    fun allowOverlay(pkg: String): SukiResult {
-        if (!ShellArgs.isPackage(pkg)) return SukiResult(ShellExec.CODE_BAD_ARGS, "", "Nama paket tidak valid")
-        return run("appops", "set", pkg, "SYSTEM_ALERT_WINDOW", "allow")
-    }
-
-    fun displays(): SukiResult = run("dumpsys", "display")
-
-    fun windowSize(): SukiResult = run("wm", "size")
-
-    fun forceStop(pkg: String): SukiResult {
-        if (!ShellArgs.isPackage(pkg)) return SukiResult(ShellExec.CODE_BAD_ARGS, "", "Nama paket tidak valid")
-        return run("am", "force-stop", pkg)
-    }
-
-    fun launchOnDisplay(component: String, displayId: Int): SukiResult {
-        if (!ShellArgs.isComponent(component)) {
-            return SukiResult(ShellExec.CODE_BAD_ARGS, "", "Komponen tidak valid")
-        }
-        if (!ShellArgs.isDisplayId(displayId)) return SukiResult(ShellExec.CODE_BAD_ARGS, "", "Id display tidak valid")
-        return run("am", "start", "--display", displayId.toString(), "-n", component)
-    }
-
-    /** Tombol kembali global — berguna saat app pihak ketiga menutupi layar. */
-    fun globalBack(): SukiResult = run("input", "keyevent", "4")
-
-    fun globalHome(): SukiResult = run("input", "keyevent", "3")
-
-    fun systemProperty(key: String): SukiResult {
-        if (!ShellArgs.isProperty(key)) return SukiResult(ShellExec.CODE_BAD_ARGS, "", "Nama properti tidak valid")
-        return run("getprop", key)
-    }
-
-    /** Cermin status bar — hanya kalau shell tersedia. */
-    fun expandStatusBar(): SukiResult = run("cmd", "statusbar", "expand-notifications")
 }

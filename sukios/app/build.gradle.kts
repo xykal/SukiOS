@@ -37,8 +37,8 @@ android {
         applicationId = "app.sukios"
         minSdk = 29          // Android 10 — target minimum SukiOS (PRD 8)
         targetSdk = 35
-        versionCode = 4
-        versionName = "0.3.1"
+        versionCode = 5
+        versionName = "0.4.0"
         resourceConfigurations += listOf("in", "en")
     }
 
@@ -102,6 +102,8 @@ dependencies {
     implementation(platform("androidx.compose:compose-bom:2024.10.01"))
     implementation("androidx.compose.ui:ui")
     implementation("androidx.compose.foundation:foundation")
+    // Animasi (AnimatedVisibility, animate*AsState) dipakai langsung oleh kit tampilan; sudah ikut transitif lewat foundation.
+    implementation("androidx.compose.animation:animation")
     implementation("androidx.compose.runtime:runtime")
     // material3 dipakai HANYA untuk komposisi teks (Text). Tidak memakai
     // tema Material: seluruh warna dan bentuk berasal dari SukiKit.

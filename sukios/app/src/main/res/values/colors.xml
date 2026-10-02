@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- Token warna dari DESIGN.md §4 -->
+    <!-- Token warna Aurora (DESIGN.md). Nilai yang sama dipakai SukiTheme.kt. -->
     <color name="suki_bg">#0B0D12</color>
     <color name="suki_surface">#12151D</color>
     <color name="suki_accent">#7C5CFF</color>

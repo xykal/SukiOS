@@ -173,15 +173,14 @@ class WinEngine {
         win.y = clamp(win.y, work.top, work.bottom - grab)
     }
 
-    fun snap(id: Int, zone: SnapZone, sw: Float, sh: Float) {
-        val win = find(id) ?: return
+    /** Kotak untuk satu zona snap di dalam area kerja. Dipakai snap() dan pratinjau saat bilah judul digeser. */
+    fun boundsFor(zone: SnapZone, sw: Float, sh: Float): Bounds {
         val work = workArea(sw, sh)
-        rememberFree(win)
         val halfW = work.width / 2f
         val halfH = work.height / 2f
         val midX = work.left + halfW
         val midY = work.top + halfH
-        val b = when (zone) {
+        return when (zone) {
             SnapZone.MAX -> Bounds(work.left, work.top, work.width, work.height)
             SnapZone.LEFT -> Bounds(work.left, work.top, halfW, work.height)
             SnapZone.RIGHT -> Bounds(midX, work.top, halfW, work.height)
@@ -192,6 +191,12 @@ class WinEngine {
             SnapZone.BL -> Bounds(work.left, midY, halfW, halfH)
             SnapZone.BR -> Bounds(midX, midY, halfW, halfH)
         }
+    }
+
+    fun snap(id: Int, zone: SnapZone, sw: Float, sh: Float) {
+        val win = find(id) ?: return
+        rememberFree(win)
+        val b = boundsFor(zone, sw, sh)
         win.x = b.x
         win.y = b.y
         win.w = b.w
@@ -202,17 +207,24 @@ class WinEngine {
         focus(id)
     }
 
-    /** Snap berdasarkan posisi jendela: dipakai saat pengguna melepas geseran bilah judul. */
-    fun snapFromPosition(id: Int, sw: Float, sh: Float, density: Float = this.density) {
-        val win = find(id) ?: return
+    /** Zona yang akan dipakai bila geseran dilepas sekarang; null bila jendela masih di tengah. Pratinjau memakai aturan yang sama. */
+    fun previewZone(id: Int, sw: Float, sh: Float, density: Float = this.density): SnapZone? {
+        val win = find(id) ?: return null
         val edge = 96f * density
         val topEdge = 40f * density
         val work = workArea(sw, sh)
-        when {
-            win.y <= work.top + topEdge -> snap(id, SnapZone.MAX, sw, sh)
-            win.x <= work.left + edge -> snap(id, SnapZone.LEFT, sw, sh)
-            win.x + win.w >= work.right - edge -> snap(id, SnapZone.RIGHT, sw, sh)
+        return when {
+            win.y <= work.top + topEdge -> SnapZone.MAX
+            win.x <= work.left + edge -> SnapZone.LEFT
+            win.x + win.w >= work.right - edge -> SnapZone.RIGHT
+            else -> null
         }
+    }
+
+    /** Snap berdasarkan posisi jendela: dipakai saat pengguna melepas geseran bilah judul. */
+    fun snapFromPosition(id: Int, sw: Float, sh: Float, density: Float = this.density) {
+        val zone = previewZone(id, sw, sh, density) ?: return
+        snap(id, zone, sw, sh)
     }
 
     /** Pindah fokus ke jendela yang paling lama tidak dipakai (Alt+Tab sederhana). */

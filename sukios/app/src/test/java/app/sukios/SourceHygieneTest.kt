@@ -36,8 +36,24 @@ class SourceHygieneTest {
 
     @Test
     fun about_window_credits_the_brand_from_the_single_source() {
-        val about = File("src/main/java/app/sukios/SukiApps.kt").readText()
+        val about = File("src/main/java/app/sukios/SukiAbout.kt").readText()
         assertTrue("Tentang harus memakai Brand.COMPANY", about.contains("Brand.COMPANY"))
         assertTrue("Tentang harus menampilkan Brand.COPYRIGHT", about.contains("Brand.COPYRIGHT"))
+    }
+
+    @Test
+    fun hand_written_sources_stay_under_300_lines() {
+        // SukiGlyphData.kt dihasilkan generator; sisanya ditulis tangan dan harus tetap mudah dibaca.
+        val big = sources.filter { it.name != "SukiGlyphData.kt" }
+            .map { it.name to it.readLines().size }.filter { it.second > 300 }
+        assertTrue("berkas melebihi 300 baris: $big", big.isEmpty())
+    }
+
+    @Test
+    fun shell_commands_are_not_built_from_ui_text_outside_the_terminal() {
+        // Hanya Terminal yang boleh memanggil SukiShell.run langsung; sisanya lewat runChecked (ShellPolicy).
+        val offenders = sources.filter { it.name !in setOf("SukiTerminal.kt", "SukiShell.kt") }
+            .filter { Regex("""SukiShell\.run\(|\bthis\.run\(""").containsMatchIn(it.readText()) }.map { it.name }
+        assertTrue("pemanggil SukiShell.run di luar Terminal: $offenders", offenders.isEmpty())
     }
 }

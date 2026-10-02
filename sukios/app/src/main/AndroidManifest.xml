@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
 
     <!--
       QUERY_ALL_PACKAGES
@@ -17,6 +18,18 @@
 
     <!-- Agar aksi "hapus aplikasi" bisa memakai dialog sistem -->
     <uses-permission android:name="android.permission.REQUEST_DELETE_PACKAGES" />
+
+    <!-- Ikon Wi-Fi di tray: hanya membaca status jaringan (izin normal, tanpa dialog) -->
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+
+    <!--
+      Izin ini tidak bisa diminta lewat dialog: hanya bisa diberikan lewat `pm grant` dari Shizuku
+      (SetupPlan, langkah "secure"). Dengannya SukiOS bisa menjaga setelan jendela tetap menyala
+      tanpa bergantung pada Shizuku setiap saat. Lint menandainya "protected"; itu disengaja.
+    -->
+    <uses-permission
+        android:name="android.permission.WRITE_SECURE_SETTINGS"
+        tools:ignore="ProtectedPermissions" />
 
     <!-- Cara Play-friendly untuk melihat app yang punya launcher -->
     <queries>
@@ -48,6 +61,7 @@
             android:exported="true"
             android:launchMode="singleTask"
             android:resizeableActivity="true"
+            android:screenOrientation="sensorLandscape"
             android:stateNotNeeded="true"
             android:windowSoftInputMode="adjustResize">
             <intent-filter>
@@ -57,6 +71,20 @@
                 <category android:name="android.intent.category.DEFAULT" />
             </intent-filter>
         </activity>
+
+        <!--
+          Jendela uji milik SukiOS: dibuka SukiAuto sebagai jendela mengambang untuk membuktikan bahwa
+          mode jendela benar-benar bekerja, lalu menutup dirinya. Diekspor agar `am start` dari shell
+          selalu bisa memanggilnya; ia tidak menerima data apa pun.
+        -->
+        <activity
+            android:name=".ProbeActivity"
+            android:configChanges="orientation|screenSize|screenLayout|smallestScreenSize|keyboard|keyboardHidden|density|uiMode"
+            android:excludeFromRecents="true"
+            android:exported="true"
+            android:resizeableActivity="true"
+            android:screenOrientation="sensorLandscape"
+            android:taskAffinity="" />
 
         <!-- Taskbar melayang; hidup hanya kalau pengguna menyalakannya -->
         <service

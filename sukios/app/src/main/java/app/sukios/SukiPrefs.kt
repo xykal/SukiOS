@@ -16,10 +16,6 @@ class SukiPrefs(ctx: Context) {
 
     private fun flowB(key: String, def: Boolean) = MutableStateFlow(sp.getBoolean(key, def))
     private fun flowS(key: String, def: String) = MutableStateFlow(sp.getString(key, def) ?: def)
-    private fun flowI(key: String, def: Int) = MutableStateFlow(sp.getInt(key, def))
-
-    /** Kunci orientasi mendatar (mode desktop). */
-    val lockLandscape = flowB("lock_landscape", true)
 
     /** Sembunyikan status bar + navigation bar. */
     val fullDesktop = flowB("full_desktop", true)
@@ -27,17 +23,23 @@ class SukiPrefs(ctx: Context) {
     /** Taskbar melayang di atas app lain (butuh izin overlay). */
     val overlayBar = flowB("overlay_bar", false)
 
-    /** Id preset aksen (lihat SukiAccents). */
-    val accent = flowS("accent", "steel")
+    /** Id preset aksen (lihat SukiAccents). Id lama dari versi sebelum Aurora jatuh ke aksen bawaan. */
+    val accent = flowS("accent", "aurora")
 
-    /** Id wallpaper (lihat SukiWalls). */
-    val wallpaper = flowS("wallpaper", "charcoal")
+    /** Id wallpaper (lihat WALL_SPECS). */
+    val wallpaper = flowS("wallpaper", "aurora")
+
+    /** Cahaya wallpaper bergeser pelan. Dimatikan otomatis di perangkat RAM rendah. */
+    val wallMotion = flowB("wall_motion", true)
+
+    /** Aplikasi selalu dibuka sebagai jendela. Bila Shizuku belum siap: tahan dan tawarkan persiapan, jangan diam-diam layar penuh. */
+    val strictWindows = flowB("strict_windows", true)
+
+    /** Hasil uji jendela terakhir: "OK|FULLSCREEN|NOT_STARTED|<epoch>|<catatan>" (kosong = belum pernah diuji). */
+    val probe = flowS("probe", "")
 
     /** Sudah melewati layar persiapan. */
     val setupDone = flowB("setup_done", false)
-
-    /** Batas jendela tambahan dari pengguna (0 = pakai nilai mesin). */
-    val windowLimit = flowI("window_limit", 0)
 
     /** Aplikasi yang disematkan di desktop (pkg dipisah koma, urut). */
     val pinned = flowS("pinned", "")
@@ -45,13 +47,14 @@ class SukiPrefs(ctx: Context) {
     /** Aplikasi terakhir dibuka (pkg dipisah koma, terbaru di depan). */
     val recent = flowS("recent", "")
 
-    fun setLockLandscape(v: Boolean) = put("lock_landscape", v)
     fun setFullDesktop(v: Boolean) = put("full_desktop", v)
     fun setOverlayBar(v: Boolean) = put("overlay_bar", v)
     fun setAccent(v: String) = put("accent", v)
     fun setWallpaper(v: String) = put("wallpaper", v)
     fun setSetupDone(v: Boolean) = put("setup_done", v)
-    fun setWindowLimit(v: Int) = put("window_limit", v)
+    fun setWallMotion(v: Boolean) = put("wall_motion", v)
+    fun setStrictWindows(v: Boolean) = put("strict_windows", v)
+    fun setProbe(v: String) = put("probe", v)
 
     fun setPinned(list: List<String>) = put("pinned", list.joinToString(","))
 
@@ -71,10 +74,11 @@ class SukiPrefs(ctx: Context) {
     private fun put(key: String, v: Boolean) {
         sp.edit().putBoolean(key, v).apply()
         when (key) {
-            "lock_landscape" -> lockLandscape.value = v
             "full_desktop" -> fullDesktop.value = v
             "overlay_bar" -> overlayBar.value = v
             "setup_done" -> setupDone.value = v
+            "wall_motion" -> wallMotion.value = v
+            "strict_windows" -> strictWindows.value = v
         }
     }
 
@@ -83,13 +87,9 @@ class SukiPrefs(ctx: Context) {
         when (key) {
             "accent" -> accent.value = v
             "wallpaper" -> wallpaper.value = v
+            "probe" -> probe.value = v
             "pinned" -> pinned.value = v
             "recent" -> recent.value = v
         }
-    }
-
-    private fun put(key: String, v: Int) {
-        sp.edit().putInt(key, v).apply()
-        if (key == "window_limit") windowLimit.value = v
     }
 }

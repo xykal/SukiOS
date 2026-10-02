@@ -2,6 +2,9 @@ package app.sukios
 
 import android.app.Application
 import android.content.Context
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 
 /**
  * Container proses SukiOS.
@@ -13,7 +16,7 @@ import android.content.Context
  * Engine yang ditanam:
  *  - SukiPrefs  : preferensi pengguna (kunci nilai)
  *  - SukiIndex  : indeks aplikasi terpasang
- *  - WinEngine  : mesin jendela (pindah, ubah ukuran, snap, tumpukan fokus)
+ *  - WinEngine  : mesin jendela milik SukiOS (pindah, ubah ukuran, snap, tumpukan fokus)
  *  - SukiDiag   : diagnostik perangkat + ekspor laporan
  *  - SukiShell  : akses lanjutan lewat Shizuku + UserService milik SukiOS
  */
@@ -27,6 +30,9 @@ class SukiApp : Application() {
         private set
     lateinit var diag: SukiDiag
         private set
+
+    /** Lingkup coroutine seumur proses, untuk pekerjaan yang dimulai dari aksi UI (buka aplikasi, uji jendela). */
+    val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
 
     override fun onCreate() {
         super.onCreate()

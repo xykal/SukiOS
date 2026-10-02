@@ -2,6 +2,7 @@ package app.sukios
 
 import android.app.ActivityManager
 import android.content.Context
+import android.content.res.Configuration
 import android.os.Build
 import android.os.Environment
 import android.os.StatFs
@@ -18,7 +19,7 @@ import java.util.Locale
  *   2. Multi-window dan freeform tersedia atau tidak?
  *   3. Shizuku siap atau tidak?
  */
-class SukiDiag(private val ctx: Context) {
+class SukiDiag(private val ctx: Context, private val app: SukiApp = SukiApp.of(ctx)) {
 
     data class Fact(val key: String, val value: String)
 
@@ -44,8 +45,11 @@ class SukiDiag(private val ctx: Context) {
             Fact("Fitur freeform", featureFact("android.software.freeform_window_management")),
             Fact("Fitur layar sekunder", featureFact("android.software.activities_on_secondary_displays")),
             Fact("Fitur picture-in-picture", featureFact("android.software.picture_in_picture")),
+            Fact("Orientasi", if (ctx.resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE) "mendatar (dikunci manifest)" else "TEGAK (seharusnya terkunci mendatar)"),
             Fact("enable_freeform_support", globalSetting("enable_freeform_support")),
             Fact("force_resizable_activities", globalSetting("force_resizable_activities")),
+            Fact("enable_non_resizable_multi_window", globalSetting("enable_non_resizable_multi_window")),
+            Fact("enable_sizecompat_freeform", globalSetting("enable_sizecompat_freeform")),
             Fact("Penyimpanan data", if (stat != null) "${freeGb(stat)} GB bebas dari ${totalGb(stat)} GB" else "tidak terbaca"),
             Fact("Launcher default", if (SukiRuntime.isDefaultLauncher) "SukiOS" else "aplikasi lain"),
         )
@@ -98,6 +102,19 @@ class SukiDiag(private val ctx: Context) {
         sb.append("\n== Akses lanjutan ==\n")
         shellFacts().forEach { sb.append(pad(it.key)).append(": ").append(it.value).append('\n') }
 
+        sb.append("\n== Jendela ==\n")
+        val s = SukiShell.state.value
+        val auto = SukiAuto.state.value
+        val st = WindowStatusLogic.of(
+            s.installed, s.binderAlive, s.granted, s.serviceBound, auto.coreOn, auto.running,
+            WindowStatusLogic.parseProbe(app.prefs.probe.value),
+        )
+        sb.append(pad("status")).append(": ").append(st.label).append(" - ").append(st.detail).append('\n')
+        sb.append(pad("uji jendela")).append(": ").append(probeLine(app.prefs.probe.value) ?: "belum pernah diuji").append('\n')
+        auto.steps.forEach { sb.append(pad("langkah " + it.id)).append(": ").append(it.status).append(' ').append(it.detail).append('\n') }
+        sb.append(SukiWindowing.report())
+        if (SukiAuto.lastDumpExcerpt.isNotBlank()) sb.append("--- potongan dump uji jendela ---\n").append(SukiAuto.lastDumpExcerpt).append('\n')
+
         val shell = SukiShell.state.value
         if (shell.ready) {
             sb.append("\n== Dari sisi shell ==\n")
@@ -118,27 +135,4 @@ class SukiDiag(private val ctx: Context) {
         val pi = ctx.packageManager.getPackageInfo(ctx.packageName, 0)
         "v${pi.versionName} (${pi.longVersionCode})"
     }.getOrDefault("tidak terbaca")
-
-    /** Jalankan rangkaian uji jendela. Hasilnya jujur: berhasil / gagal / belum bisa dinilai. */
-    fun windowProbe(entry: AppEntry?, bounds: android.graphics.Rect): String {
-        if (entry == null) return "Pilih satu aplikasi di daftar Aplikasi dulu."
-        val launched = ctx.let { app ->
-            runCatching {
-                val i = android.content.Intent(android.content.Intent.ACTION_MAIN)
-                    .addCategory(android.content.Intent.CATEGORY_LAUNCHER)
-                    .setClassName(entry.pkg, entry.activity)
-                    .addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)
-                val opts = android.app.ActivityOptions.makeBasic().apply { setLaunchBounds(bounds) }
-                app.startActivity(i, opts.toBundle())
-                true
-            }.getOrDefault(false)
-        }
-        return if (launched) {
-            "Perintah kirim. Periksa layar: kalau app memenuhi layar penuh, perangkat ini " +
-                "tidak menghormati bounds (freeform mati). Kalau mengambang sesuai kotak, " +
-                "berarti jalur jendela app pihak ketiga TERBUKA di perangkat ini."
-        } else {
-            "Gagal mengirim perintah peluncuran jendela."
-        }
-    }
 }

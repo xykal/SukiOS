@@ -323,4 +323,39 @@ class WinEngineTest {
             }
         }
     }
+
+    @Test
+    fun preview_zone_names_what_a_release_would_snap_to_and_bounds_match() {
+        val e = engine()
+        val w = e.openKind(WinKind.SETTINGS)
+        val work = e.workArea(sw, sh)
+        assertNull(e.previewZone(w.id, sw, sh))
+
+        e.moveTo(w.id, work.left, 300f, sw, sh)
+        assertEquals(SnapZone.LEFT, e.previewZone(w.id, sw, sh))
+        val expected = e.boundsFor(SnapZone.LEFT, sw, sh)
+        e.snapFromPosition(w.id, sw, sh)
+        assertEquals(expected.x, w.x, eps)
+        assertEquals(expected.y, w.y, eps)
+        assertEquals(expected.w, w.w, eps)
+        assertEquals(expected.h, w.h, eps)
+
+        e.moveTo(w.id, 800f, work.top, sw, sh)
+        assertEquals(SnapZone.MAX, e.previewZone(w.id, sw, sh))
+        assertNull(e.previewZone(9999, sw, sh))
+    }
+
+    @Test
+    fun zone_bounds_stay_inside_the_work_area_for_every_zone() {
+        val e = engine()
+        val work = e.workArea(sw, sh)
+        SnapZone.values().forEach { z ->
+            val b = e.boundsFor(z, sw, sh)
+            assertTrue("$z x", b.x >= work.left - eps)
+            assertTrue("$z y", b.y >= work.top - eps)
+            assertTrue("$z kanan", b.x + b.w <= work.right + eps)
+            assertTrue("$z bawah", b.y + b.h <= work.bottom + eps)
+            assertTrue("$z ukuran", b.w > 0f && b.h > 0f)
+        }
+    }
 }

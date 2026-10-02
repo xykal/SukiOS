@@ -1,21 +1,23 @@
 package app.sukios
 
+import android.content.Context
 import androidx.activity.compose.BackHandler
-import androidx.compose.foundation.Image
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -23,18 +25,14 @@ import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.IntSize
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
+import kotlin.math.roundToInt
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
@@ -42,21 +40,16 @@ import kotlinx.coroutines.launch
  * SukiHome — wajah SukiOS.
  *
  * Susunan lapisan, dari belakang ke depan:
- *   wallpaper - ikon desktop - jendela - taskbar - start menu - panel pintasan - pesan
+ *   wallpaper - ikon desktop - jendela - taskbar - start menu / panel pintasan - menu aplikasi - pesan - persiapan
  *
- * Semua isi jendela digambar SukiOS sendiri (Compile), jadi tidak ada
- * ketergantungan pada tampilan sistem. Aplikasi pihak ketiga dibuka oleh
- * Android seperti biasa; kalau perangkat mengizinkan, mereka bisa mengambang.
+ * Isi jendela SukiOS digambar sendiri (Compose). Aplikasi pihak ketiga dibuka sebagai jendela mengambang
+ * oleh Android atas perintah SukiOS lewat Shizuku (SukiWindowing); mereka tampil DI ATAS lapisan ini.
  */
 @Composable
-fun SukiHome(
-    app: SukiApp,
-    onApplyDesktop: (Boolean) -> Unit,
-    onApplyOrientation: (Boolean) -> Unit,
-) {
+fun SukiHome(app: SukiApp, onApplyDesktop: (Boolean) -> Unit) {
     val prefs = app.prefs
-    var size by remember { mutableStateOf(IntSize.Zero) }
     val setupDone by prefs.setupDone.collectAsState()
+    val shell by SukiShell.state.collectAsState()
 
     // Mesin jendela bekerja dalam piksel; kepadatan layar yang benar datang dari sini
     // (bukan perkiraan dari tinggi layar) dan ikut berubah saat density berubah.
@@ -65,23 +58,35 @@ fun SukiHome(
 
     LaunchedEffect(Unit) {
         launch { prefs.fullDesktop.collect { onApplyDesktop(it) } }
-        launch { prefs.lockLandscape.collect { onApplyOrientation(it) } }
         launch { prefs.accent.collect { SukiRuntime.accentId = it } }
         launch { prefs.wallpaper.collect { SukiRuntime.wallpaperId = it } }
+        launch { prefs.wallMotion.collect { SukiRuntime.wallMotion = it } }
         launch { prefs.overlayBar.collect { on -> SukiRuntime.overlayBarOn = on && app.index.hasOverlay() } }
     }
 
     LaunchedEffect(Unit) { app.index.load() }
+    LaunchedEffect(Unit) { SukiTasks.poll(app) }
+
+    // Persiapan otomatis hidup di lingkup proses (bukan lingkup composable): kalau status Shizuku berubah
+    // di tengah jalan, langkahnya tidak terpotong.
+    LaunchedEffect(shell.binderAlive, shell.granted, shell.serviceBound) {
+        app.scope.launch { SukiAuto.onShellChanged(app, SukiShell.state.value) }
+    }
 
     LaunchedEffect(SukiRuntime.toast) {
         if (SukiRuntime.toast != null) {
-            delay(2600)
+            delay(TOAST_MS)
             SukiRuntime.toast = null
         }
     }
 
-    BackHandler(enabled = SukiRuntime.startOpen || SukiRuntime.quickOpen || app.wins.count > 0) {
+    val overlayOpen = SukiRuntime.startOpen || SukiRuntime.quickOpen || SukiRuntime.menuApp != null ||
+        SukiRuntime.blockedApp != null || SukiRuntime.setupOpen
+    BackHandler(enabled = overlayOpen || app.wins.count > 0) {
         when {
+            SukiRuntime.blockedApp != null -> SukiRuntime.blockedApp = null
+            SukiRuntime.menuApp != null -> SukiRuntime.menuApp = null
+            SukiRuntime.setupOpen -> SukiRuntime.setupOpen = false
             SukiRuntime.startOpen || SukiRuntime.quickOpen -> SukiRuntime.closePanels()
             else -> {
                 val id = app.wins.focusedId
@@ -90,124 +95,39 @@ fun SukiHome(
         }
     }
 
-    Box(Modifier.fillMaxSize().background(SBg).onSizeChanged {
-        size = it
-        SukiRuntime.screenW = it.width.toFloat()
-        SukiRuntime.screenH = it.height.toFloat()
-    }) {
-        Wallpaper(SukiRuntime.wallpaperId, Modifier.fillMaxSize())
-        DesktopLayer(app, size)
+    Box(
+        Modifier.fillMaxSize().background(SBg).onSizeChanged {
+            SukiRuntime.screenW = it.width.toFloat()
+            SukiRuntime.screenH = it.height.toFloat()
+        },
+    ) {
+        Wallpaper(SukiRuntime.wallpaperId, Modifier.fillMaxSize(), motion = SukiRuntime.wallMotion && !SukiRuntime.goMode)
+        DesktopLayer(app)
         WindowLayer(app)
-        Box(Modifier.fillMaxSize(), contentAlignment = Alignment.BottomCenter) { Taskbar(app, size) }
-        if (SukiRuntime.startOpen) StartMenu(app, size)
-        if (SukiRuntime.quickOpen) QuickPanel(app, size)
+        Box(Modifier.fillMaxSize(), contentAlignment = Alignment.BottomCenter) { Taskbar(app) }
+        Appear(visible = SukiRuntime.startOpen) { StartMenu(app) }
+        Appear(visible = SukiRuntime.quickOpen) { QuickPanel(app) }
+        SukiRuntime.menuApp?.let { AppMenu(app, it) }
+        SukiRuntime.blockedApp?.let { BlockedCard(app, it) }
         Box(Modifier.fillMaxSize(), contentAlignment = Alignment.BottomCenter) { ToastLayer() }
-        if (!setupDone) SetupLayer(app)
+        if (!setupDone || SukiRuntime.setupOpen) SetupLayer(app)
     }
 }
 
+/** Panel yang muncul dengan memudar dan sedikit membesar; keluar dengan memudar. */
 @Composable
-private fun DesktopLayer(app: SukiApp, size: IntSize) {
-    val prefs = app.prefs
-    val apps by app.index.apps.collectAsState()
-    val loading by app.index.loading.collectAsState()
-    val pinnedCsv by prefs.pinned.collectAsState()
-    val recentCsv by prefs.recent.collectAsState()
-
-    val tiles = listOf(
-        Triple("Setelan", GlyphKind.SETTINGS, WinKind.SETTINGS),
-        Triple("Laboratorium", GlyphKind.LAB, WinKind.LAB),
-        Triple("Terminal", GlyphKind.TERMINAL, WinKind.TERMINAL),
-        Triple("Aplikasi", GlyphKind.APPS, WinKind.APPS),
-    )
-
-    val order = remember(pinnedCsv, recentCsv) {
-        (pinnedCsv.split(",") + recentCsv.split(",")).filter { it.isNotBlank() }.distinct()
-    }
-    val desktopApps = remember(apps, order) {
-        val byPkg = apps.associateBy { it.pkg }
-        order.mapNotNull { byPkg[it] }.take(12)
-    }
-
-    Column(Modifier.padding(start = 22.dp, top = 20.dp).width(460.dp)) {
-        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            tiles.forEach { (label, glyph, kind) ->
-                TileButton(label, glyph, active = app.wins.list.any { it.kind == kind && !it.minimized }) {
-                    openInternal(app, kind)
-                }
-            }
-        }
-        Spacer(Modifier.height(16.dp))
-        when {
-            loading -> Txt("Memuat daftar aplikasi...", 11, SFaint)
-            desktopApps.isEmpty() -> Txt(
-                "Belum ada aplikasi tersemat. Buka jendela Aplikasi, lalu sematkan yang sering dipakai.",
-                11, SFaint, maxLines = 3, modifier = Modifier.width(320.dp)
-            )
-            else -> Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                desktopApps.chunked(6).forEach { row ->
-                    Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                        row.forEach { e -> AppTile(app, e) }
-                    }
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun TileButton(label: String, glyph: GlyphKind, active: Boolean, onClick: () -> Unit) {
-    val accent = accentById(SukiRuntime.accentId)
-    Column(
-        Modifier.width(76.dp).clip(RoundedCornerShape(10.dp)).clickable { onClick() }.padding(vertical = 8.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-    ) {
-        Box(
-            Modifier
-                .size(ICON_DP.dp)
-                .clip(RoundedCornerShape(12.dp))
-                .background(if (active) accent.copy(alpha = 0.22f) else SOverlay)
-                .border(1.dp, SLine, RoundedCornerShape(12.dp)),
-            contentAlignment = Alignment.Center,
-        ) { Glyph(glyph, 20, if (active) accent else SDim) }
-        Spacer(Modifier.height(6.dp))
-        Txt(label, 10, SDim, maxLines = 1)
-    }
-}
-
-@Composable
-private fun AppTile(app: SukiApp, entry: AppEntry) {
-    val accent = accentById(SukiRuntime.accentId)
-    Column(
-        Modifier.width(76.dp).clip(RoundedCornerShape(10.dp)).clickable { launchApp(app, entry) }.padding(vertical = 8.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-    ) {
-        val icon = entry.icon
-        if (icon != null) {
-            Image(
-                bitmap = icon,
-                contentDescription = entry.label,
-                modifier = Modifier.size(ICON_DP.dp).clip(RoundedCornerShape(12.dp)),
-                contentScale = ContentScale.Fit,
-            )
-        } else {
-            Box(
-                Modifier
-                    .size(ICON_DP.dp)
-                    .clip(RoundedCornerShape(12.dp))
-                    .background(accent.copy(alpha = 0.18f))
-                    .border(1.dp, SLine, RoundedCornerShape(12.dp)),
-                contentAlignment = Alignment.Center,
-            ) { Txt(entry.label.take(1).uppercase(), 16, accent, FontWeight.SemiBold) }
-        }
-        Spacer(Modifier.height(6.dp))
-        Txt(entry.label, 10, SDim, maxLines = 1)
-    }
+private fun Appear(visible: Boolean, content: @Composable () -> Unit) {
+    AnimatedVisibility(
+        visible = visible,
+        enter = fadeIn(tween(MOTION_FAST)) + scaleIn(tween(MOTION_FAST), initialScale = 0.96f),
+        exit = fadeOut(tween(MOTION_INSTANT)),
+    ) { content() }
 }
 
 @Composable
 private fun WindowLayer(app: SukiApp) {
     Box(Modifier.fillMaxSize()) {
+        SnapPreview()
         app.wins.list.sortedBy { it.z }.forEach { w ->
             key(w.id) {
                 if (!w.minimized) WinFrame(app, w)
@@ -217,17 +137,43 @@ private fun WindowLayer(app: SukiApp) {
 }
 
 @Composable
-private fun ToastLayer() {
-    val msg = SukiRuntime.toast ?: return
+private fun SnapPreview() {
+    val b = SukiRuntime.snapPreview ?: return
+    val ac = accentNow()
+    val shape = RoundedCornerShape(RADIUS_WIN.dp)
     Box(
         Modifier
-            .padding(bottom = (TASKBAR_DP + 14).dp)
-            .clip(RoundedCornerShape(10.dp))
-            .background(SOverlay)
-            .border(1.dp, SLine, RoundedCornerShape(10.dp))
-            .padding(horizontal = 14.dp, vertical = 9.dp),
+            .offset { IntOffset(b.x.roundToInt(), b.y.roundToInt()) }
+            .size(with(LocalDensity.current) { b.w.toDp() }, with(LocalDensity.current) { b.h.toDp() })
+            .background(ac.main.copy(alpha = 0.16f), shape)
+            .border(1.5.dp, ac.main.copy(alpha = 0.70f), shape),
+    )
+}
+
+@Composable
+private fun ToastLayer() {
+    val t = SukiRuntime.toast ?: return
+    val color = when (t.tone) {
+        Tone.OK -> SSuccess
+        Tone.WARN -> SWarning
+        Tone.ERR -> SDanger
+        Tone.INFO -> accentNow().main
+    }
+    val glyph = when (t.tone) {
+        Tone.OK -> GlyphKind.OK_CIRCLE
+        Tone.WARN -> GlyphKind.ALERT
+        Tone.ERR -> GlyphKind.FAIL_CIRCLE
+        Tone.INFO -> GlyphKind.INFO
+    }
+    Glass(
+        Modifier.padding(bottom = (TASKBAR_DP + 8).dp).widthIn(max = 460.dp),
+        radius = RADIUS_MD, lift = 16,
     ) {
-        Txt(msg, 11, SText, maxLines = 3, modifier = Modifier.width(360.dp))
+        Row(Modifier.padding(horizontal = 14.dp, vertical = 10.dp), verticalAlignment = Alignment.CenterVertically) {
+            Glyph(glyph, 18, color)
+            Spacer(Modifier.width(10.dp))
+            Txt(t.message, 12, SText, FontWeight.Medium, maxLines = 3)
+        }
     }
 }
 
@@ -235,29 +181,50 @@ private fun ToastLayer() {
 // Aksi bersama — dipakai desktop, taskbar, start menu, dan isi jendela.
 // ---------------------------------------------------------------------------
 
+private const val TOAST_MS = 3_400L
+
 fun openInternal(app: SukiApp, kind: WinKind) {
     val sw = SukiRuntime.screenW.coerceAtLeast(1f)
     val sh = SukiRuntime.screenH.coerceAtLeast(1f)
     val w = app.wins.open(kind, kind.title, sw, sh)
-    if (w == null && app.wins.lastBlockedReason.isNotBlank()) SukiRuntime.say(app.wins.lastBlockedReason)
+    if (w == null && app.wins.lastBlockedReason.isNotBlank()) SukiRuntime.say(app.wins.lastBlockedReason, Tone.WARN)
     SukiRuntime.closePanels()
 }
 
+/**
+ * Buka aplikasi pihak ketiga. Jalurnya SELALU jendela (SukiWindowing). Bila Shizuku belum siap, peluncuran
+ * ditahan dan pengguna ditawari persiapan, kecuali kebijakan "selalu jendela" dimatikan di Setelan.
+ */
 fun launchApp(app: SukiApp, entry: AppEntry) {
-    app.prefs.pushRecent(entry.pkg)
-    val ok = app.index.launch(entry)
-    SukiRuntime.say(if (ok) "Membuka ${entry.label}" else "Gagal membuka ${entry.label}")
     SukiRuntime.closePanels()
+    app.prefs.pushRecent(entry.pkg)
+    app.scope.launch {
+        val strict = app.prefs.strictWindows.value
+        if (!SukiShell.state.value.ready && !strict) {
+            val ok = app.index.launch(entry)
+            SukiRuntime.say(
+                if (ok) "${entry.label} dibuka layar penuh (Shizuku belum siap)." else "Gagal membuka ${entry.label}.",
+                if (ok) Tone.WARN else Tone.ERR,
+            )
+            return@launch
+        }
+        val out = SukiWindowing.open(app, entry)
+        if (out.kind == OutcomeKind.BLOCKED) {
+            SukiRuntime.blockedApp = entry
+        } else {
+            SukiRuntime.say(out.message, out.tone)
+        }
+    }
 }
 
-fun toggleOverlayBar(app: SukiApp, ctx: android.content.Context, want: Boolean) {
+fun toggleOverlayBar(app: SukiApp, ctx: Context, want: Boolean) {
     if (want && !app.index.hasOverlay()) {
-        SukiRuntime.say("Beri izin \"tampil di atas aplikasi lain\" dulu.")
+        SukiRuntime.say("Beri izin \"tampil di atas aplikasi lain\" dulu.", Tone.WARN)
         app.index.openOverlaySettings()
         return
     }
     app.prefs.setOverlayBar(want)
     SukiOverlayBar.toggle(ctx, want)
     SukiRuntime.overlayBarOn = want
-    SukiRuntime.say(if (want) "Taskbar melayang dinyalakan" else "Taskbar melayang dimatikan")
+    SukiRuntime.say(if (want) "Taskbar melayang dinyalakan" else "Taskbar melayang dimatikan", Tone.OK)
 }

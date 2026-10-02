@@ -15,6 +15,7 @@ import android.view.WindowManager
 import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
+import androidx.core.content.res.ResourcesCompat
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -72,9 +73,9 @@ class SukiOverlayBar : Service() {
         val strip = LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL
             background = GradientDrawable().apply {
-                setColor(Color.parseColor("#E61B1E21"))
-                cornerRadius = dp(12).toFloat()
-                setStroke(dp(1), Color.parseColor("#26FFFFFF"))
+                setColor(Color.parseColor("#EB161B27"))
+                cornerRadius = dp(16).toFloat()
+                setStroke(dp(1), Color.parseColor("#33FFFFFF"))
             }
             setPadding(dp(6), dp(4), dp(6), dp(4))
             elevation = dp(6).toFloat()
@@ -82,9 +83,10 @@ class SukiOverlayBar : Service() {
 
         fun button(label: String, onClick: () -> Unit): TextView = TextView(this).apply {
             text = label
-            setTextColor(Color.parseColor("#E7E8EA"))
-            textSize = 12f
-            setPadding(dp(12), dp(7), dp(12), dp(7))
+            setTextColor(Color.parseColor("#F2F4F8"))
+            typeface = ResourcesCompat.getFont(this@SukiOverlayBar, R.font.inter_medium)
+            textSize = 13f
+            setPadding(dp(14), dp(9), dp(14), dp(9))
             setOnClickListener { onClick() }
         }
 

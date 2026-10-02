@@ -2,16 +2,15 @@ package app.sukios
 
 import android.content.Context
 import android.content.Intent
+import android.content.pm.ActivityInfo
 import android.content.pm.ApplicationInfo
 import android.content.pm.PackageManager
 import android.content.pm.ResolveInfo
-import android.graphics.Rect
 import android.net.Uri
 import android.os.Build
 import android.provider.Settings
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
-import androidx.core.graphics.drawable.toBitmap
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.withContext
@@ -29,6 +28,8 @@ data class AppEntry(
     val activity: String,
     val system: Boolean,
     val icon: ImageBitmap?,
+    /** Aktivitas peluncur mengunci potret: dipakai untuk memilih bentuk kotak jendela awal. */
+    val portraitOnly: Boolean = false,
 ) {
     val component: String get() = "$pkg/$activity"
 }
@@ -45,6 +46,13 @@ fun filterApps(all: List<AppEntry>, query: String, limit: Int = 48): List<AppEnt
         it.label.lowercase().contains(key) || it.pkg.lowercase().contains(key)
     }.take(limit)
 }
+
+private val PORTRAIT_ORIENTATIONS = setOf(
+    ActivityInfo.SCREEN_ORIENTATION_PORTRAIT,
+    ActivityInfo.SCREEN_ORIENTATION_REVERSE_PORTRAIT,
+    ActivityInfo.SCREEN_ORIENTATION_SENSOR_PORTRAIT,
+    ActivityInfo.SCREEN_ORIENTATION_USER_PORTRAIT,
+)
 
 class SukiIndex(private val ctx: Context) {
 
@@ -72,10 +80,8 @@ class SukiIndex(private val ctx: Context) {
         for (r in resolve) {
             val ai: ApplicationInfo = r.activityInfo?.applicationInfo ?: continue
             val label = runCatching { r.loadLabel(pm).toString() }.getOrDefault(ai.packageName)
-            val icon = runCatching {
-                val d = r.loadIcon(pm)
-                d.toBitmap(96, 96).asImageBitmap()
-            }.getOrNull()
+            val icon = runCatching { IconLoader.render(r.loadIcon(pm)).asImageBitmap() }.getOrNull()
+            val portrait = r.activityInfo.screenOrientation in PORTRAIT_ORIENTATIONS
             found.add(
                 AppEntry(
                     label = label,
@@ -83,6 +89,7 @@ class SukiIndex(private val ctx: Context) {
                     activity = r.activityInfo.name,
                     system = (ai.flags and ApplicationInfo.FLAG_SYSTEM) != 0,
                     icon = icon,
+                    portraitOnly = portrait,
                 )
             )
         }
@@ -100,36 +107,12 @@ class SukiIndex(private val ctx: Context) {
             .setClassName(e.pkg, e.activity)
             .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_RESET_TASK_IF_NEEDED)
 
-    /** Buka seperti biasa: layar penuh. Selalu bisa. */
+    /**
+     * Buka lewat startActivity biasa. Dipakai untuk "layar penuh", untuk membawa jendela yang sudah ada
+     * ke depan, dan saat kebijakan jendela dimatikan. Jalur jendela ada di SukiWindowing.
+     */
     fun launch(e: AppEntry): Boolean = runCatching {
         ctx.startActivity(baseIntent(e)); true
-    }.getOrDefault(false)
-
-    /**
-     * Coba buka sebagai jendela mengambang.
-     *
-     * INI BUKAN JAMINAN. App pihak ketiga hanya bisa mengambang kalau:
-     *  - perangkat mendukung freeform/multi-window, DAN
-     *  - app itu resizable (atau dipaksa lewat SukiShell: force_resizable_activities).
-     * Kalau tidak, sistem mengabaikan bounds dan app tetap layar penuh.
-     * Pemanggil wajib memeriksa hasil dan memberi tahu pengguna apa adanya.
-     */
-    fun launchWindowed(e: AppEntry, bounds: Rect): Boolean = runCatching {
-        val opts = android.app.ActivityOptions.makeBasic().apply {
-            setLaunchBounds(bounds)
-        }
-        ctx.startActivity(baseIntent(e), opts.toBundle())
-        true
-    }.getOrDefault(false)
-
-    /** Coba buka di display lain (dipakai jalur SukiShell / eksperimen Lab). */
-    fun launchOnDisplay(e: AppEntry, displayId: Int): Boolean = runCatching {
-        val i = baseIntent(e)
-        val opts = android.app.ActivityOptions.makeBasic().apply {
-            setLaunchDisplayId(displayId)
-        }
-        ctx.startActivity(i, opts.toBundle())
-        true
     }.getOrDefault(false)
 
     fun openInfo(e: AppEntry) = runCatching {
@@ -158,12 +141,7 @@ class SukiIndex(private val ctx: Context) {
     }
 
     fun openDefaultLauncherSettings() = runCatching {
-        val i = if (Build.VERSION.SDK_INT >= 29) {
-            Intent(Settings.ACTION_HOME_SETTINGS)
-        } else {
-            Intent(Settings.ACTION_HOME_SETTINGS)
-        }
-        ctx.startActivity(i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+        ctx.startActivity(Intent(Settings.ACTION_HOME_SETTINGS).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
     }
 
     fun hasOverlay(): Boolean = Settings.canDrawOverlays(ctx)

@@ -1,18 +1,22 @@
 package app.sukios
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -20,104 +24,114 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import kotlinx.coroutines.launch
 
-/**
- * Layar persiapan.
- *
- * Muncul sekali di awal. Semua langkah di sini OPSIONAL kecuali menandai
- * selesai: SukiOS tetap bisa dipakai tanpa Shizuku dan tanpa izin overlay.
- * Langkah-langkahnya nyata — setiap tombol membuka pengaturan sistem yang
- * benar, bukan sekadar penjelasan.
- */
+// ============================================================================
+// Persiapan: layar yang muncul saat pertama kali dan bisa dibuka lagi dari Setelan, tray, atau desktop.
+//
+// Tidak ada wizard "lanjut-lanjut": semua langkah berjalan otomatis begitu Shizuku siap, dan layar ini
+// menampilkan keadaannya secara langsung. Yang perlu dilakukan pengguna hanya menyalakan Shizuku dan
+// menyetujui izinnya. Aplikasi tetap bisa dipakai tanpa itu; hanya jalur jendela pihak ketiga yang tertutup.
+// ============================================================================
+
 @Composable
 fun SetupLayer(app: SukiApp) {
-    val ctx = LocalContext.current
+    val prefs = app.prefs
     val shell by SukiShell.state.collectAsState()
-    var step by remember { mutableStateOf(0) }
+    val auto by SukiAuto.state.collectAsState()
+    val probeRaw by prefs.probe.collectAsState()
+    val setupDone by prefs.setupDone.collectAsState()
+    var probedOnce by remember { mutableStateOf(false) }
+    val status = WindowStatusLogic.of(
+        installed = shell.installed, alive = shell.binderAlive, granted = shell.granted, bound = shell.serviceBound,
+        coreOn = auto.coreOn, setupRunning = auto.running, probe = WindowStatusLogic.parseProbe(probeRaw),
+    )
 
-    Box(Modifier.fillMaxSize().background(Color(0xCC000000))) {
-        Box(Modifier.align(Alignment.Center)) {
-            Panel(Modifier.width(560.dp), color = SSheet, radius = 16, pad = 20) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Dot(accentById(SukiRuntime.accentId), 10)
-                    Spacer(Modifier.width(10.dp))
-                    Txt("Selamat datang di SukiOS", 17, SText, FontWeight.SemiBold)
+    // Setelah setelan jendela menyala dan belum pernah diuji, buktikan sekali secara otomatis.
+    LaunchedEffect(shell.ready, auto.coreOn, auto.running) {
+        if (shell.ready && auto.coreOn && !auto.running && !auto.probing && probeRaw.isBlank() && !probedOnce) {
+            probedOnce = true
+            app.scope.launch { SukiAuto.probe(app) }
+        }
+    }
+
+    fun finish() {
+        prefs.setSetupDone(true)
+        SukiRuntime.setupOpen = false
+    }
+
+    BoxWithConstraints(Modifier.fillMaxSize().background(SScrim).pointerInput(Unit) { detectTapGestures { } }) {
+        Glass(
+            Modifier
+                .align(Alignment.Center)
+                .width(minOf(700.dp, maxWidth - 24.dp))
+                .height(minOf(344.dp, maxHeight - 20.dp)),
+            radius = 20, lift = 28,
+        ) {
+            Row(Modifier.fillMaxSize()) {
+                Column(Modifier.width(214.dp).fillMaxHeight().background(SBg.copy(alpha = 0.40f)).padding(18.dp)) {
+                    LogoMark(52)
+                    Spacer(Modifier.height(12.dp))
+                    Txt(if (setupDone) "Persiapan" else "Selamat datang", 20, SText, FontWeight.ExtraBold, font = SukiBrand)
+                    Spacer(Modifier.height(6.dp))
+                    Txt(
+                        "SukiOS membuka aplikasi sebagai jendela lewat Shizuku. Semua langkah berjalan otomatis " +
+                            "begitu Shizuku siap; kamu hanya perlu menyalakannya dan menyetujui izinnya.",
+                        12, SDim, maxLines = 8,
+                    )
                     Spacer(Modifier.weight(1f))
-                    Txt("langkah ${step + 1} dari 3", 10, SFaint)
+                    StatusPill(status.label, toneColor(status.tone))
                 }
-                Spacer(Modifier.height(14.dp))
-
-                when (step) {
-                    0 -> {
-                        Txt("1. Jadikan SukiOS launcher", 13, SText, FontWeight.SemiBold)
-                        Spacer(Modifier.height(6.dp))
-                        Txt(
-                            "Supaya tombol Beranda membawamu ke SukiOS, bukan ke launcher bawaan. " +
-                                "Android akan menanyakan konfirmasi.",
-                            11, SDim, maxLines = 4
-                        )
-                        Spacer(Modifier.height(10.dp))
-                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            Btn("Buka pilihan launcher") { app.index.openDefaultLauncherSettings() }
-                            BtnGhost("Sudah, lanjut") { step = 1 }
+                Column(Modifier.weight(1f).fillMaxHeight()) {
+                    Column(Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(start = 18.dp, end = 18.dp, top = 14.dp)) {
+                        Label("Shizuku")
+                        Spacer(Modifier.height(2.dp))
+                        Checklist(shizukuRows(shell))
+                        if (!shell.ready) {
+                            Spacer(Modifier.height(6.dp))
+                            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                Btn(
+                                    if (shell.installed) "Buka Shizuku" else "Unduh Shizuku",
+                                    icon = GlyphKind.EXTERNAL,
+                                ) { SukiShell.openShizukuApp() }
+                                BtnGhost("Minta izin", enabled = shell.binderAlive && !shell.granted) {
+                                    SukiRuntime.say(SukiShell.requestPermission())
+                                }
+                                BtnGhost("Periksa ulang") { SukiShell.refresh() }
+                            }
                         }
-                    }
-                    1 -> {
-                        Txt("2. Taskbar melayang (opsional)", 13, SText, FontWeight.SemiBold)
-                        Spacer(Modifier.height(6.dp))
-                        Txt(
-                            "Izin \"tampil di atas aplikasi lain\" membuat taskbar tetap terlihat " +
-                                "saat kamu memakai aplikasi lain. Tanpa ini, semua fitur lain tetap jalan.",
-                            11, SDim, maxLines = 4
-                        )
-                        Spacer(Modifier.height(10.dp))
-                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            Btn("Beri izin") { app.index.openOverlaySettings() }
-                            BtnGhost("Lewati") { step = 2 }
-                        }
-                    }
-                    else -> {
-                        Txt("3. Akses lanjutan (opsional)", 13, SText, FontWeight.SemiBold)
-                        Spacer(Modifier.height(6.dp))
-                        Txt(
-                            "Shizuku memberi SukiOS identitas shell untuk membuka izin yang biasanya " +
-                                "diblokir: memaksa aplikasi bisa diubah ukurannya, memberi izin overlay " +
-                                "otomatis, dan membaca diagnostik display. Perlu aplikasi Shizuku " +
-                                "terpasang dan dijalankan.",
-                            11, SDim, maxLines = 5
-                        )
-                        Spacer(Modifier.height(8.dp))
-                        KeyValue("Status", shell.note)
-                        Spacer(Modifier.height(10.dp))
-                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            Btn("Buka aplikasi Shizuku") { SukiShell.openShizukuApp() }
-                            BtnGhost("Minta izin") { SukiRuntime.say(SukiShell.requestPermission()) }
-                            BtnGhost("Periksa ulang") { SukiShell.refresh() }
-                        }
-                    }
-                }
-
-                Spacer(Modifier.height(16.dp))
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    BtnGhost("Kembali") { if (step > 0) step-- }
-                    Spacer(Modifier.width(8.dp))
-                    Btn(if (step == 2) "Mulai pakai SukiOS" else "Lanjut") {
-                        if (step == 2) {
-                            app.prefs.setSetupDone(true)
-                            SukiRuntime.say("Selamat memakai SukiOS.")
+                        Spacer(Modifier.height(12.dp))
+                        Label("Mode jendela")
+                        Spacer(Modifier.height(2.dp))
+                        if (auto.steps.isEmpty()) {
+                            Txt("Menunggu Shizuku siap.", 12, SFaint, modifier = Modifier.padding(vertical = 6.dp))
                         } else {
-                            step++
+                            Checklist(stepRows(auto.steps))
                         }
+                        probeLine(probeRaw)?.let {
+                            Spacer(Modifier.height(6.dp))
+                            Txt(it, 11, SFaint, maxLines = 4)
+                        }
+                        Spacer(Modifier.height(8.dp))
                     }
-                    Spacer(Modifier.weight(1f))
-                    BtnGhost("Lewati semua") {
-                        app.prefs.setSetupDone(true)
-                        SukiRuntime.say("Persiapan dilewati. Bisa dibuka lagi dari Setelan.")
+                    HLine()
+                    Row(
+                        Modifier.fillMaxWidth().padding(horizontal = 18.dp, vertical = 10.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
+                        BtnGhost("Uji jendela", icon = GlyphKind.PLAY, enabled = shell.ready && !auto.probing) {
+                            app.scope.launch {
+                                val r = SukiAuto.probe(app)
+                                SukiRuntime.say("Uji jendela: ${r.verdict}. ${r.note}", if (r.ok) Tone.OK else Tone.WARN)
+                            }
+                        }
+                        Spacer(Modifier.weight(1f))
+                        if (!setupDone) BtnGhost("Lewati") { finish() }
+                        Btn(if (setupDone) "Tutup" else "Mulai pakai SukiOS") { finish() }
                     }
                 }
             }
