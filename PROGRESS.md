@@ -104,6 +104,42 @@ Permintaan kall: kunci landscape + desktop penuh, engine pembuka izin untuk Andr
 
 **Belum diuji di perangkat.** Kompilasi terbukti di CI; perilaku runtime (Shizuku, force-resizable, `am start --display`, mode desktop pada berbagai OEM) menunggu laporan dari perangkat nyata.
 
+### 2026-10-02 (Hari 2, lanjutan) — v0.3.0-alpha: jadi launcher + mesin sendiri
+
+Permintaan kall: UI/UX yang lebih bagus dipakai apa adanya, jadikan launcher OS sungguhan, tanam Shizuku langsung, dan bangun engine/lib sendiri.
+
+**Arsitektur berubah**
+- `poc/` menjadi `sukios/`; paket `app.sukios.poc` menjadi `app.sukios`. Aplikasi bukan lagi alat ukur: manifes memuat kategori HOME + DEFAULT + LAUNCHER.
+- Mesin ditulis sendiri, bukan menambal API pihak lain:
+  - **SukiShell** — kontrak AIDL sendiri (`ISukiShell`, `destroy() = 16777114`) + `SukiShellService` yang berjalan sebagai uid 2000. Shizuku 13.1.5 hanya kurir binder; `newProcess` tidak dipakai karena sudah dihapus di 13.x.
+  - **SukiWin** — mesin jendela: geser, ukur ulang 8 arah, snap ke tepi, maximize, minimize, tumpukan fokus, area kerja dikurangi taskbar.
+  - **SukiIndex** — indeks aplikasi terpasang + peluncuran biasa/berjendela/info/hapus.
+  - **SukiKit** — sistem tampilan matte, ikon vektor (tanpa emoji).
+  - **SukiDiag** — diagnostik perangkat + laporan siap dibagikan.
+- UI: Beranda, taskbar, start menu, panel pintasan, jendela Setelan/Laboratorium/Terminal/Aplikasi/Tentang/Diagnostik, taskbar melayang, layar persiapan.
+
+**Rekaman CI**
+
+| Objek | ID / commit | Hasil |
+|---|---|---|
+| Build APK (percobaan 1) | run 37026575743 · `b0f04a0` | **gagal** — 134 error, akar: `TextStyle(color=...)` tidak ada lagi di Compose 1.7.4 |
+| Perbaikan | commit `4bd59d4` | teks memakai `Text` material3; kolom ketik memakai `TextStyle.Default.copy()`; SukiKit ditulis ulang utuh |
+| Build APK (percobaan 2) | run 37027127027 · `4bd59d4` | **sukses** |
+| Release APK | run 37027612561 · tag `v0.3.0-alpha` | **sukses** — draft release + `SukiOS-v0.3.0-alpha.apk` 1,77 MB |
+| Pembersihan | 37026830807, 37027582151, 37027781065 | sukses |
+
+**Pemeriksaan isi APK (bukan asumsi)**
+- Dex memuat: `SukiShellService`, `ISukiShell$Stub`, `ISukiShell$Stub$Proxy`, `ShizukuProvider`, `Shizuku`, `SukiHomeActivity`, `SukiOverlayBar`.
+- Manifest memuat: `android.intent.category.HOME` (+DEFAULT+LAUNCHER), `SYSTEM_ALERT_WINDOW`, `QUERY_ALL_PACKAGES`, provider `rikka.shizuku.ShizukuProvider` dengan authority `app.sukios.shizuku`, izin `API_V23`, metadata `V3_SUPPORT`.
+- APK turun dari 13,78 MB (PoC) ke 1,77 MB karena R8 + shrinkResources kini menyala (sebelumnya minify dimatikan).
+
+**Pelajaran teknis**
+- Menulis kode Compose tanpa kompilator di tangan berbahaya. Verifikasi bytecode AAR sebelum menulis kode adalah cara termurah menghindari satu putaran CI penuh.
+- Dua suntingan paralel ke berkas yang sama bisa saling menimpa. Untuk berkas besar, tulis ulang utuh, jangan sunting paralel.
+
+**Belum diverifikasi**
+- Perilaku di perangkat: launcher, jendela, taskbar melayang, SukiShell, force-resizable. Semua menunggu laporan uji.
+
 ### Langkah berikutnya
 1. Uji 5 lane di perangkat nyata, kirim laporan lewat tombol "Salin laporan" di app.
 2. Set 4 secrets keystore supaya rilis berikutnya benar-benar signed (lihat `docs/RELEASE-SIGNING.md`).

@@ -49,6 +49,19 @@ Ini batasan yang tidak bisa ditawar (permintaan kall, 2026-10-02). Berlaku untuk
 
 ---
 
+### 1.4 Catatan Implementasi (v1.1)
+
+SukiOS **tidak memakai tema Material**. Material3 hanya dipakai untuk satu hal:
+komposisi teks (`Text`), karena Compose 1.7 menghapus konstruktor `TextStyle`
+bergaya lama. Seluruh warna, bentuk, jarak, dan ikon berasal dari `SukiKit.kt`.
+Artinya: tampilan SukiOS tidak akan berubah kalau Google mengubah tema Material.
+
+Ikon antarmuka digambar sebagai vektor (`Glyph()`), bukan emoji dan bukan font
+ikon pihak ketiga. Ini menjaga konsistensi bentuk di semua perangkat dan
+menghindari ketergantungan pada aset luar.
+
+---
+
 ## 2. Identitas Brand
 
 ### 2.1 Nama

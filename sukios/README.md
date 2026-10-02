@@ -1,149 +1,85 @@
-# SukiOS PoC — Window Engine & Capability Probe
+# SukiOS — aplikasi Android
 
-Aplikasi Android kecil yang tugasnya menjawab **satu pertanyaan besar** sebelum kita menulis ribuan baris kode:
+Launcher sekaligus desktop environment untuk Android. Tombol Home membawa pengguna
+ke SukiOS: desktop, taskbar, start menu, panel pintasan, dan jendela mengambang
+untuk isi milik SukiOS sendiri.
 
-> **"App pihak ketiga (WhatsApp, Chrome, YouTube…) sebenernya bisa dijalankan di dalam jendela SukiOS di HP ini, atau nggak?"**
-
-Jawabannya menentukan seluruh arsitektur SukiOS. Makanya kita ukur dulu, jangan menebak.
-
----
-
-## 1. Cara Mendapatkan APK dari Repo Ini
-
-Repo SukiOS memakai tiga workflow GitHub Actions:
-
-| Workflow | Kapan jalan | Hasil |
-|---|---|---|
-| `Build APK` | setiap push ke `main` / pull request | verifikasi kompilasi (tanpa menyimpan artifact) |
-| `Release APK (signed, draft)` | push tag `v*` atau manual | APK bertanda tangan, dilampirkan ke **draft release** |
-| `Cleanup CI traces` | setelah build/release selesai | hapus riwayat run + artifact task itu |
-
-Langkah mendapatkan APK:
-
-```bash
-git tag v0.1.0-poc
-git push origin v0.1.0-poc
-```
-
-1. Buka tab **Releases** -> draft `SukiOS PoC v0.1.0-poc` -> unduh APK.
-2. Kirim APK ke HP, lalu install (aktifkan "Install unknown apps" untuk app yang membuka file itu).
-3. Workflow cleanup menghapus riwayat run + artifact setelah selesai. Draft release dan APK-nya tetap ada.
-
-Kenapa APK tidak disimpan di artifact? Karena policy kerja: artifact CI dibersihkan setelah build selesai. Deliverable APK diletakkan di release, bukan di artifact.
-
-Untuk mengembangkan di PC: buka folder `poc/` di Android Studio (versi terbaru); Studio akan menawarkan membuat Gradle wrapper.
-
-## 2. Yang Diuji — 5 Jalur (Lane)
-
-Buka app **SukiOS PoC** di HP. Kamu akan lihat "desktop" dengan ikon di kiri, taskbar di bawah, dan angka FPS di kanan taskbar.
-
-| Lane | Yang diuji | Kenapa penting |
-|---|---|---|
-| **1** | **Window manager SukiOS** — geser, resize, snap | Ini yang pasti bisa. Kita ukur FPS-nya (target ≥ 55 fps) |
-| **2** | **Freeform window** — app pihak ketiga jadi jendela kecil | Kalau ini jalan → SukiOS bisa jadi desktop beneran |
-| **3** | **Split screen** — 2 app berdampingan | Multitasking paling andal di HP biasa |
-| **4** | **Embed via ActivityView** — app lain di dalam jendela SukiOS | Jalur paling ambisius; riset kami bilang **kemungkinan besar ditolak platform** |
-| **5** | **Overlay taskbar** — taskbar SukiOS mengapung di atas app fullscreen | Jalur fallback yang selalu bisa dipakai |
-| **6** | **Akses Lanjutan (Shizuku)** — force-resizable, appops, launch ke display | Membuka pintu yang diblokir untuk app biasa, terutama di Android Go |
-
-### Yang baru di v0.2.0-poc
-
-1. **Mode Desktop** — dua tombol di taskbar kanan:
-   - **Landscape**: orientasi dikunci mendatar (`SENSOR_LANDSCAPE`) supaya terasa seperti komputer.
-   - **Desktop**: status bar + navigation bar disembunyikan (`WindowInsetsController`); geser dari tepi untuk memunculkannya.
-   Keduanya aktif secara default di build ini.
-2. **LANE 6 — Akses Lanjutan (Shizuku)**: membuka pintu yang diblokir untuk app biasa — force-resizable app pihak ketiga, izin overlay otomatis, dan peluncuran app ke display tertentu. Butuh app Shizuku terpasang & diizinkan.
-3. **Mode Go**: perangkat dengan `isLowRamDevice` otomatis dibatasi 3 jendela dan efek dekoratif dimatikan.
-4. **Tampilan matte** — gradien menyala dihapus; tidak ada neon, glow, atau emoji sebagai ikon (badge huruf untuk berkas).
-
-### Cara mengaktifkan Shizuku (opsional, untuk LANE 6)
-
-1. Pasang app **Shizuku** (Play Store atau GitHub RikkaApps).
-2. Aktifkan servisnya: lewat ADB (`adb shell sh /storage/emulated/0/Android/data/moe.shizuku.privileged.api/start.sh`) atau wireless debugging di Android 11+.
-3. Buka SukiOS PoC lalu **Akses Lanjutan** lalu **Minta izin** lalu konfirmasi dialog dari Shizuku.
-4. Setelah status jadi "Siap: izin diberikan, uid shell = 2000", tombol aksi bisa dipakai.
-
-Tanpa Shizuku, seluruh fitur lain tetap berjalan normal.
-
-### Urutan pengujian yang gue sarankan
-
-**Langkah 0 — Baca Monitor Perangkat**
-Buka ikon **Monitor Perangkat** di desktop. Ini hasil probe otomatis. Screenshot saja halaman ini. Yang paling penting:
-- **Feature FREEFORM** → kalau `tidak ada`, lane 2 kemungkinan besar gagal (normal, bukan berarti app-nya rusak).
-- **RAM rendah** → kalau `YA`, platform memang membatasi semua mode multi-window.
-- **Kelas lebar** → menentukan layout SukiOS nanti (compact/medium/expanded).
-
-**Langkah 1 — Lane 1 (window manager)**
-Geser jendela "Panduan Uji" ke tepi kiri → harus nempel separuh. Ke sudut → seperempat. Ke atas → maximize. Resize dari tepi/sudut. **Perhatikan angka FPS di taskbar saat menggeser.** Lalu tekan chip penilaian di panel LANE 1.
-
-**Langkah 2 — Lane 3 (split screen, manual)**
-Buka **Daftar Aplikasi** → pilih app (misal Chrome) → tombol **Fullscreen**. Lalu tekan tombol **Recents** (kotak di navigasi HP) → tahan app → **Split screen** → pilih app kedua. Bisa? Beri nilai di LANE 3.
-
-**Langkah 3 — Lane 2 (freeform)**
-Di **Daftar Aplikasi**, pilih app yang sama → tombol **Freeform**. Amati: app muncul **fullscreen** (→ freeform tidak didukung) atau **jendela kecil** (→ jackpot!). Beri nilai di LANE 2.
-
-**Langkah 4 — Lane 4 (embed ActivityView)**
-Buka **Uji Embed** → pilih target app dari daftar → tombol **1. Buat ActivityView** → tunggu 1 detik → tombol **2. Jalankan app**. Status-nya bakal nulis persis apa yang terjadi (misal "GAGAL (…): SecurityException …"). Screenshot + nilai LANE 4.
-
-**Langkah 5 — Lane 5 (overlay taskbar)**
-**Monitor Perangkat** → **Izin overlay** → di pengaturan Android aktifkan "Tampilkan di atas app lain" → balik ke app → **Mulai overlay** → tekan tombol Home → buka app lain (misal Chrome). **Apakah bar SukiOS masih kelihatan di bawah layar?** Beri nilai LANE 5.
-
-**Langkah 6 — Kirim hasil**
-Buka **Monitor Perangkat** → **Salin laporan** → tempel di chat kita. Atau **Bagikan** ke WhatsApp/email diri sendiri.
+Modul ini (`sukios/`) adalah aplikasi Android-nya. Dokumen produk ada di akar repo:
+`PRD.md` (apa dan untuk siapa) dan `DESIGN.md` (aturan tampilan).
 
 ---
 
-## 3. Setelah Hasilnya Masuk — Keputusan Arsitektur
+## Status jujur
 
-Ini tabel keputusan yang sudah gue siapkan. Begitu laporanmu masuk, kita tinggal pilih kolomnya:
-
-| Kondisi hasil uji | Arsitektur SukiOS yang dipilih |
+| Hal | Keadaan |
 |---|---|
-| **Lane 2 = jendela** (freeform jalan) |  **Mode Desktop Penuh.** App pihak ketiga jadi jendela beneran. Kita optimalisasi window manager + snap layouts. |
-| **Lane 5 jalan, Lane 2 gagal** |  **Mode Shell + Overlay** (jalur utama untuk HP biasa). App tetap fullscreen, SukiOS memberi: taskbar overlay, title bar overlay, split screen handoff, jendela untuk **app SukiOS sendiri** (Files, Notes, Calculator, Terminal, Settings). Ini yang dipakai launcher PC-style populer. |
-| **Lane 3 jalan** | Tambahan: SukiOS jadi *pengendali* split screen (pintasan cepat "buka 2 app berdampingan"). |
-| **Lane 4 jalan** (sangat tidak mungkin) |  Kita bisa menjalankan app apa pun di dalam jendela — produk jadi jauh lebih kuat dari rencana awal. |
-
-**Catatan penting (temuan riset):** permintaan menjalankan app pihak ketiga di virtual display milik app biasa dibatasi platform sejak Android 9 (AOSP CL bug 63094482) — hanya activity yang mendeklarasikan `allowEmbedded="true"` yang boleh, dan pemanggilnya idealnya punya permission `ACTIVITY_EMBEDDING` (hanya app sistem). Karena itu **Lane 4 kami perlakukan sebagai eksperimen pembuktian, bukan tulang punggung produk.** Detail lengkap + rujukannya ada di `../PRD.md` §16.
-
----
-
-## 4. Isi Kode (Buat Yang Mau Ngoprek)
-
-```
-app/src/main/java/app/sukios/poc/
-├── MainActivity.kt          ← satu Activity = "desktop"
-├── Kit.kt                   ← token desain Suki Glass (port dari DESIGN.md) + primitif UI
-├── State.kt                 ← model jendela + state shell (master kebenaran)
-├── Desktop.kt               ← wallpaper, ikon desktop, taskbar, start menu
-├── WindowChrome.kt          ← title bar, drag, resize 8 arah, snap, geometri zona
-├── WindowContents.kt        ← isi 6 jendela: panduan uji, daftar app, monitor, embed, files, notes
-├── Probes.kt                ← capability probe + 5 lane peluncuran app + laporan
-├── Fps.kt                   ← pengukur FPS (Choreographer)
-└── OverlayTaskbarService.kt ← LANE 5: taskbar melayang (TYPE_APPLICATION_OVERLAY)
-```
-
-**Keputusan teknis yang sengaja diambil:**
-
-- **Versi library dipin** (AGP 8.7.3 · Gradle 8.11.1 · Kotlin 2.0.21 · Compose BOM 2024.10.01) — kombinasi yang teruji, biar build pertama langsung hijau. Upgrade ke AGP 9.x + Compose BOM 2026.09.x **setelah** PoC lolos.
-- **`minSdk 29`** — sama dengan target minimum SukiOS (Android 10).
-- **ActivityView diakses lewat reflection** — karena itu bukan API publik (kelas `@hide`), jadi kalau ditulis langsung, build-nya gagal. Dengan reflection, app tetap ke-build dan kegagalannya justru jadi **data** yang kita catat.
-- **Q2: izin `QUERY_ALL_PACKAGES`** dipasang (Play mengizinkan untuk launcher) + blok `<queries>` sebagai jalur hemat izin.
-- **Signing release pakai debug key** — khusus PoC supaya APK dari CI bisa langsung diinstall. Di produksi nanti: keystore asli di GitHub Secrets.
-- **configChanges lengkap** di manifest — wajib supaya Activity tidak di-recreate saat rotasi/embedding.
+| Kompilasi | **terverifikasi di CI** (Build APK run 37027127027, commit `4bd59d4`) |
+| Rilis | `v0.3.0-alpha`, APK 1,77 MB di draft release |
+| Isi APK | **diperiksa**: kelas `SukiShellService`, `ISukiShell$Stub`, `ShizukuProvider`, `SukiHomeActivity`, `SukiOverlayBar` ada di dex; manifest memuat kategori `HOME` |
+| Tanda tangan | **debug key** — secrets keystore rilis belum diset. Jangan dipakai untuk distribusi publik |
+| Uji di perangkat | **BELUM** — tidak ada yang boleh mengklaim "berfungsi" sebelum ada laporan dari perangkat nyata |
 
 ---
 
-## 5. Batasan PoC (Jujur di Awal)
+## Yang sudah jadi
 
-- Ini **bukan** SukiOS versi cantik. Ini alat ukur. Belum ada blur, animasi halus, atau widget.
-- Jendela **tidak menyimpan posisi** setelah app ditutup.
-- File Explorer masih data contoh (belum menyentuh penyimpanan asli — itu butuh SAF).
-- Belum jadi launcher default (belum `CATEGORY_HOME`) — itu Fase 1 PRD.
-- FPS di taskbar mengukur frame Compose, bukan performa app pihak ketiga di dalam jendela.
-- LANE 6 butuh app Shizuku terpasang & diaktifkan pengguna. Di perangkat tanpa Shizuku, panel itu menampilkan status "belum terpasang" dan tidak melakukan apa pun.
-- Shizuku dipin ke API 12.2.0 karena `newProcess` sudah dihapus dari API 13.x. Migrasi ke UserService adalah pekerjaan terpisah (PRD §16.6).
+**Launcher (Beranda SukiOS)**
+- Kategori `HOME` + `DEFAULT` + `LAUNCHER`: tombol Home masuk ke SukiOS, bukan launcher bawaan.
+- Desktop dengan ikon aplikasi tersemat, baris ikon sistem, dan penanda jendela yang sedang terbuka.
+- Taskbar: tombol mulai, daftar jendela terbuka, indikator Shizuku, saklar cepat, jam, baterai.
+- Start menu: pencarian aplikasi, tombol sematkan, jumlah aplikasi terpasang.
+- Panel pintasan: saklar desktop, pemilih aksen (10 preset) dan wallpaper (6 preset), status Shizuku, pintasan setelan.
+- Layar persiapan tiga langkah (jadikan launcher, izin overlay, akses lanjutan) — semuanya bisa dilewati.
+- Mode Go: perangkat RAM rendah otomatis dibatasi 3 jendela dan efek dekoratif dimatikan.
+
+**Jendela (SukiWin)**
+- Geser dari bilah judul, ubah ukuran 8 arah, snap ke tepi (kiri/kanan/maksimal), maximize, minimize ke taskbar.
+- Tumpukan fokus, siklus fokus, "kecilkan semua" dan "tutup semua".
+- Isi jendela: Setelan, Laboratorium, Terminal, Aplikasi, Tentang, Diagnostik.
+
+**Akses lanjutan (SukiShell) — engine sendiri**
+- Kontrak AIDL sendiri (`app/sukios/shell/ISukiShell.aidl`) dengan `destroy() = 16777114`.
+- `SukiShellService` berjalan di proses terpisah sebagai **uid 2000** (shell) atau **uid 0** (root/Sui).
+- Shizuku 13.1.5 dipakai **hanya sebagai kurir binder**. Tidak ada `newProcess` di mana pun: jalur itu sudah dihapus dari API 13.x.
+- Perintah selalu berbentuk daftar argumen (tanpa shell parsing), jadi tidak ada celah injeksi; nama paket dan id display divalidasi sebelum dipakai.
+- Hasil selalu dilaporkan apa adanya: kode keluar, stdout, stderr.
+- Kemampuan: identitas, force-resizable aplikasi pihak ketiga, izin overlay otomatis (appops), peluncuran ke display lain, diagnostik display, tombol kembali/home global.
+- **Tanpa Shizuku semuanya tetap jalan**; perintah akan melaporkan kode 127 dan alasannya, bukan hasil palsu.
 
 ---
 
-*Setelah laporanmu masuk, langkah berikutnya: kunci arsitektur → bangun `:core:designsystem` → migrasi mockup ke Compose.*
+## Memasang
+
+1. Unduh APK dari draft release `v0.3.0-alpha` di halaman Releases.
+2. Pasang (izinkan "instal dari sumber tidak dikenal" bila diminta).
+3. Buka SukiOS, lalu **Setelan → Jadikan launcher default** (atau tekan Home dan pilih SukiOS).
+4. Opsional: beri izin "tampil di atas aplikasi lain" untuk taskbar melayang.
+5. Opsional: pasang aplikasi Shizuku, jalankan servisnya, lalu **Setelan → Akses lanjutan → Minta izin**.
+
+## Menguji sendiri di perangkat
+
+| Yang diuji | Caranya | Hasil yang diharapkan |
+|---|---|---|
+| Launcher | Tekan tombol Home | Masuk ke Beranda SukiOS (muncul pilihan launcher saat pertama) |
+| Jendela internal | Ketuk ikon Laboratorium di desktop | Jendela mengambang; coba geser, ubah ukuran, snap ke tepi |
+| Taskbar melayang | Taskbar → ikon overlay → beri izin | Bar "Kembali / Beranda / Menu" muncul di atas aplikasi lain |
+| SukiShell | Laboratorium → Identitas | `uid=2000` (atau 0 bila root) — kode keluar 0 |
+| Jendela app pihak ketiga | Jendela Aplikasi → tombol jendela pada satu aplikasi | Kalau aplikasi tetap penuh layar, perangkat menolak bounds (freeform mati) |
+| Diagnostik | Setelan → Diagnostik → Bagikan | Berkas teks berisi fakta perangkat, status Shizuku, dan hasil dari sisi shell |
+
+## Membangun
+
+Build dijalankan CI (`.github/workflows/`), bukan di perangkat:
+
+- `Build APK` — setiap dorongan ke `main`: debug + release, ringkasan APK.
+- `Release APK (signed, draft)` — setiap tag `v*`: membuat draft release dengan APK bertanda tangan.
+- `Cleanup CI traces` — membersihkan riwayat run/artifact/cache sesuai kebijakan (release memurge, build tidak).
+
+Kunci rilis dibaca dari environment (`SUKIOS_KEYSTORE_*`), tidak pernah ditulis ke repo.
+Panduan: `docs/RELEASE-SIGNING.md`.
+
+## Catatan teknis yang perlu diingat
+
+- **Compose 1.7.4 tidak punya lagi fungsi pabrik `TextStyle(color = ...)`.** Diperiksa lewat bytecode `ui-text-android-1.7.4.aar`: yang tersisa hanya konstruktor `(SpanStyle, ParagraphStyle, PlatformTextStyle)` dan `copy()` versi stabil. Karena itu teks memakai `Text` dari material3 dan kolom ketik memakai `TextStyle.Default.copy()` lewat satu fungsi `fieldStyle()` di `SukiKit.kt`.
+- **AIDL wajib disimpan dari R8**: aturannya ada di `proguard-rules.pro`. Tanpa itu, `ISukiShell` dan `SukiShellService` akan dihapus/rename dan SukiShell mati di build rilis.
+- **Batas yang tidak bisa ditembus**: aplikasi pihak ketiga tidak bisa dimasukkan ke jendela SukiOS. Yang bisa dilakukan: membuka mereka layar penuh dengan taskbar mengapung, atau mencoba mengambang lewat bounds bila perangkat mengizinkan.

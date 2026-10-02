@@ -144,6 +144,8 @@ Arah rasa: *glassmorphism modern* + *Mica/acrylic* + sudut membulat besar + grad
 Legenda prioritas: **P0** = wajib MVP · **P1** = wajib V1 · **P2** = nice-to-have · **P3** = masa depan
 
 ### 6.1 MVP (Fase 1) — "Bisa jadi launcher beneran"
+
+> **Status 2 Okt 2026:** v0.3.0-alpha sudah berbentuk launcher (kategori HOME aktif) dengan taskbar, start menu, jendela, snap, dan mesin akses lanjutan sendiri. Kompilasi terverifikasi di CI; uji perangkat belum ada, jadi belum ada klaim "berfungsi".
 | # | Fitur | Prioritas |
 |---|---|---|
 | 1 | Home screen pengganti (bisa diset sebagai launcher default) | P0 |
@@ -409,6 +411,29 @@ Legenda prioritas: **P0** = wajib MVP · **P1** = wajib V1 · **P2** = nice-to-h
 - [ ] Mode Go menampilkan jalur alternatif yang konkret: split screen, overlay taskbar, dan (bila tersedia) Shizuku untuk force-resizable.
 - [ ] Tidak ada fitur yang disembunyikan; hanya dibatasi dengan penjelasan yang terlihat pengguna.
 - [ ] Platform Android tetap bisa memblokir multi-window di perangkat Go — SukiOS **tidak** menjanjikan hal yang tidak bisa dilakukan sistem.
+
+### 7.17 Launcher Penuh (SukiOS Home) — `F-17`
+
+**User Story:** Sebagai pengguna, aku ingin tombol Home membawa aku ke SukiOS, bukan ke launcher bawaan, supaya desktop ini benar-benar rumah di ponselku.
+
+**Acceptance Criteria:**
+- [ ] SukiOS terdaftar sebagai launcher (`HOME` + `DEFAULT` + `LAUNCHER`) dan bisa dijadikan default dari layar persiapan maupun Setelan.
+- [ ] Desktop menampilkan aplikasi tersemat, ikon sistem, dan penanda jendela yang sedang terbuka.
+- [ ] Taskbar memuat tombol mulai, daftar jendela, indikator status, jam, dan baterai.
+- [ ] Start menu dengan pencarian dan sematkan; panel pintasan dengan saklar desktop, aksen, wallpaper, dan status akses lanjutan.
+- [ ] Perangkat RAM rendah otomatis dibatasi 3 jendela dengan penjelasan yang terlihat.
+- [ ] Semua kemampuan tetap berjalan tanpa Shizuku dan tanpa izin overlay; keduanya opsional.
+
+### 7.18 Mesin Sendiri, Bukan Tambalan — `F-18`
+
+**User Story:** Sebagai pemilik produk, aku ingin SukiOS memakai engine dan kontrak miliknya sendiri, supaya aku tidak bergantung pada API pihak lain yang bisa dihapus sewaktu-waktu.
+
+**Acceptance Criteria:**
+- [ ] Akses lanjutan memakai kontrak AIDL milik SukiOS (`ISukiShell`) dengan `destroy() = 16777114` dan UserService sendiri yang berjalan sebagai uid 2000/0.
+- [ ] Tidak ada pemakaian API yang sudah dinyatakan akan dihapus (`Shizuku#newProcess`).
+- [ ] Perintah selalu berbentuk daftar argumen tanpa shell parsing; nama paket dan id display divalidasi sebelum dikirim.
+- [ ] Hasil perintah dilaporkan apa adanya (kode keluar, stdout, stderr) — tidak ada kegagalan yang disembunyikan.
+- [ ] Aturan penyimpanan kelas untuk R8 tertulis di repo, agar kontrak ini tidak terhapus di build rilis.
 
 ## 8. Batasan Platform Android (Realitas Teknis)
 

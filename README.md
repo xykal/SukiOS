@@ -9,9 +9,9 @@ Bukan tiruan merek apa pun: nama, logo, ikon, warna, dan suara dibuat dari nol (
 
 | Path | Isi |
 |---|---|
-| `poc/` | Project Android (Kotlin + Compose) — PoC window engine: 5 lane uji + capability probe |
+| `sukios/` | Aplikasi Android (Kotlin + Compose) — launcher SukiOS + mesin sendiri (SukiShell, SukiWin, SukiIndex, SukiKit) |
 | `PRD.md` | Dokumen kebutuhan produk. **§16 = temuan riset pembatasan platform** (wajib dibaca) |
-| `DESIGN.md` | Design system Suki Glass: warna, tipografi, motion, ukuran komponen |
+| `DESIGN.md` | Design system Suki Glass v1.1 (matte): warna, tipografi, motion, ukuran komponen, aturan anti-neon |
 | `mockup.html` | Prototipe interaktif (drag, resize, snap, start menu, settings) |
 | `assets/` | Logo + set ikon bawaan |
 | `tools/` | `gen-keystore.sh` (pembuat keystore rilis), `cleanup_ci.py` (pembersih jejak CI) |
