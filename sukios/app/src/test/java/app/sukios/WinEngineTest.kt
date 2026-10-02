@@ -203,17 +203,21 @@ class WinEngineTest {
 
     @Test
     fun releasing_a_drag_near_an_edge_snaps_and_in_the_middle_does_not() {
-        fun placed(x: (Win, WorkRect) -> Float, y: Float): Win {
+        fun placed(x: (Win, WorkRect) -> Float, y: Float, wDp: Float? = null): Win {
             val e = engine()
             val w = e.openKind(WinKind.SETTINGS)
-            e.moveTo(w.id, x(w, e.workArea(sw, sh)), y, sw, sh)
+            val work = e.workArea(sw, sh)
+            // Lebar bawaan jendela internal 66% area kerja; di layar lebar sisa ruang di tiap sisi
+            // lebih sempit dari tepi snap, jadi "di tengah" diuji dengan jendela yang memang muat di tengah.
+            if (wDp != null) e.resize(w.id, wDp * 2.75f, w.h, sw, sh)
+            e.moveTo(w.id, x(w, work), y, sw, sh)
             e.snapFromPosition(w.id, sw, sh)
             return w
         }
         assertEquals(SnapZone.LEFT, placed({ _, _ -> 0f }, 300f).snap)
         assertEquals(SnapZone.RIGHT, placed({ w, work -> work.right - w.w + 5f }, 300f).snap)
         assertTrue(placed({ _, _ -> 600f }, 30f).maximized)
-        val middle = placed({ _, _ -> 600f }, 300f)
+        val middle = placed({ w, work -> (work.width - w.w) / 2f + work.left }, 300f, wDp = 360f)
         assertNull(middle.snap)
         assertFalse(middle.maximized)
     }
