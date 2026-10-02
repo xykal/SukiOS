@@ -185,10 +185,65 @@ Jalur purge-saat-rilis kini **terbukti end-to-end lewat tag** (sebelumnya baru s
 - Jendela pengambilan bukti sebelum pembersih menghapus run itu sekitar setengah menit: satu perintah yang polling tiap 3 detik, bukan beberapa panggilan terpisah.
 - `Float.coerceIn(min, max)` melempar saat min > max. Uji acak 4000 langkah dengan benih tetap kini menjaga seluruh mesin jendela dari kelas cacat ini.
 
+### 2026-10-02 (Hari 2, sesi ketiga) — dua implementasi paralel; main diperbaiki sampai hijau
+
+**Temuan.** Sesi ini mengerjakan permintaan yang sama (Aurora kembali, jendela mutlak, kunci mendatar)
+secara lokal dari basis `6eb8a11`, sementara `origin/main` sudah berisi lima commit sesi lain
+(`db65cec`..`af190c1`, 17:22-17:41 UTC) yang mengerjakan hal yang sama dan lebih luas:
+52 berkas utama, 12 berkas uji (91 uji), font Inter + Plus Jakarta Sans (OFL), generator ikon
+`tools/gen_glyphs.py`, `ProbeActivity` untuk uji jendela nyata, `SetupPlan` dengan kunci berjenjang SDK.
+Implementasi di `main` dipakai sebagai kebenaran; hasil kerja lokal sesi ini **tidak** digabung
+(tabrakan nama di SukiKit/SukiWindows/SukiTaskbar/ShellArgs/manifest/build.gradle, kelas rangkap,
+dua sumber nilai warna) dan disimpan sebagai `docs/alt-aurora-5946dbd.bundle` supaya bisa dipetik
+bila diperlukan.
+
+**Keadaan CI saat ditemukan.** Build terakhir `main` **merah** dan tidak pernah diperbaiki:
+run 37042179977 (`ef1a648`, 17:39 UTC) — 91 uji, 2 gagal. Push terakhir `af190c1` (17:41 UTC)
+tidak pernah melewati CI sama sekali.
+
+| Uji yang gagal | Sebab | Tindakan |
+|---|---|---|
+| `SourceHygieneTest:27` kata 'kall' di sumber | Sudah diperbaiki `af190c1` (KDoc `FreeformParse`), tetapi commit itu tidak pernah dibuild | Dibuktikan oleh build di bawah |
+| `WinEngineTest:217` assertNull(middle.snap) | Lebar bawaan jendela internal 66% area kerja: di layar 2400 px / kepadatan 2,75 sisa ruang tiap sisi ~30 dp, lebih sempit dari tepi snap 24 dp, jadi posisi mana pun selalu menempel | `7fa0702`: kasus "di tengah" memakai jendela 360 dp yang memang muat di tengah |
+
+**Catatan verifikasi**
+
+| Waktu (UTC) | Hasil | Bukti |
+|---|---|---|
+| 2026-10-02 20:17 | `Build APK` run **37059399904** (commit `7fa0702`) — **success** | `CI-VERIFIED 37059399904`; kesimpulan dibaca langsung dari API saat polling. Run dihapus pembersih (run `Cleanup CI traces` 37059574454, 20:17:04) sebelum log sempat ditarik, jadi jumlah uji build ini tidak terekam |
+| 2026-10-02 20:22 | `Build APK` run **37059892157** (commit `4ad1062`, dokumen saja) — **success** | `CI-VERIFIED 37059892157`; URL job terekam di `ci-evidence/jobs.txt` sebelum run dihapus. Log gagal ditarik (404) |
+| 2026-10-02 17:39 | run 37042179977 (`ef1a648`) — **failure**, 91 uji / 2 gagal | Run gagal tidak dihapus otomatis; log lengkap tersimpan di `ci-evidence/run37042179977-unit.log` |
+
+**Artefak baru**
+- `docs/release-notes/v0.4.0-alpha.md` — ditulis dari kode yang benar-benar ada di `main`, bukan dari rencana:
+  Aurora v2 (6 aksen dengan turunan `fill`/`on`/`text`, 6 wallpaper, font OFL, ikon hasil generator),
+  jendela mutlak (satu jalur `am start --windowingMode 5`, koreksi kotak hanya bila tidak masuk akal,
+  enam kesimpulan `OutcomeKind`, potongan dump mentah bisa disalin), penyiapan otomatis
+  (`SetupPlan` idempoten + verifikasi lewat API Android + `ProbeActivity`), kunci `sensorLandscape`,
+  `minSdk` 29, enam pemeriksaan untuk uji perangkat, dan batas yang diketahui.
+
+**Pelajaran**
+- Ambil log job **di putaran polling yang sama** dengan terbacanya `completed`, dan langsung lewat
+  `/actions/jobs/<id>/logs` dengan `curl -L`. Jendela bukti kali ini lebih sempit dari setengah menit:
+  dua run sukses terhapus sebelum lognya sempat ditarik.
+- Naikkan versi **setelah** build hijau (aturan `AGENTS.md`). `versionName 0.4.0` sudah dinaikkan di
+  commit yang build-nya merah; tag baru boleh didorong setelah build hijau, yaitu sekarang.
+- Sebelum menulis kode, `git fetch` dulu. Satu permintaan yang dikerjakan dua sesi menghasilkan dua
+  implementasi penuh; yang satu harus dibuang.
+
 ### Langkah berikutnya
-1. **Uji di perangkat (kall):** pasang draft `v0.3.1-alpha`, jalankan 5 pemeriksaan di catatan rilis, kirim hasil "Salin laporan diagnostik".
-2. **Keputusan kall:** lisensi (usul Apache-2.0 + Pro modul terpisah, atau EULA proprietari); `gradle/actions` v6 (komponen cache proprietari) boleh/tidak.
-3. **Set 4 secrets keystore** agar rilis berikutnya benar-benar signed (`docs/RELEASE-SIGNING.md`; perintahnya kini menunjuk repo yang benar). Atau minta pembuat keystore sekali pakai (`IDEAS.md` #13).
-4. **Cabut atau ganti token GitHub** (scope terlalu lebar, lihat audit "Risiko proses").
-5. Setelah laporan perangkat masuk: kunci arsitektur window (PRD 16.2), lalu Fase 1 M6 (Task View + polish).
-6. MED/LOW di `docs/AUDIT-2026-10-02.md` menunggu "gas".
+1. **Uji di perangkat (kall):** build `main` hijau; tag `v0.4.0-alpha` menunggu "gas" supaya ada draft APK.
+   Lalu jalankan 6 pemeriksaan di `docs/release-notes/v0.4.0-alpha.md` dan kirim laporan diagnostik.
+2. **Keputusan kall:** lisensi; `gradle/actions` v6 (komponen cache proprietari) boleh/tidak;
+   4 secrets keystore; pencabutan token GitHub (scope terlalu lebar, lihat audit "Risiko proses").
+3. **[MED] Geometri snap.** Jendela internal bawaan 66% area kerja menyisakan ruang geser ~30 dp per sisi
+   di layar 2400 px, hampir sama dengan tepi snap 24 dp. Usul: tepi snap ikut sisa ruang
+   (`min(24dp, 20% ruang bebas)`), atau lebar bawaan dibatasi maksimum dp.
+4. **[MED] `ProbeActivity` `exported="true"`.** Aplikasi lain bisa memicunya; isinya tidak berbahaya
+   (melaporkan lalu menutup diri), tetapi `am start` dari uid 2000 bisa membuka komponen yang tidak
+   diekspor. Usul: `exported="false"` lalu uji lagi.
+5. **[MED] Pengecualian layar penuh per aplikasi.** Belum ada; `strictWindows` masih global.
+   Usul: satu toggle di menu aplikasi + titik penanda di desktop.
+6. **[LOW] Biaya runtime belum diukur:** polling `dumpsys` 3 detik + wallpaper bergerak.
+7. **[LOW] Pemecahan berkas >300 baris** ditunda; `SourceHygieneTest` di `main` memakai batas 300.
+8. MED/LOW lain di `docs/AUDIT-2026-10-02.md` tetap menunggu "gas".

@@ -15,6 +15,9 @@ Sumber: audit, friksi alur pengguna, celah keamanan, hasil uji perangkat (belum 
 | 8 | Pemeriksaan UID pemanggil di `SukiShellService` (konstruktor `Context`, perlu uji runtime) | lapisan kedua pada kemampuan paling berbahaya | sedang | M |
 | 9 | Lint, detekt/ktlint, CodeQL, OSV, lockfile Gradle, SBOM CycloneDX di CI | menangkap kelas cacat yang baru ketahuan lewat audit manual | sedang | M |
 | 10 | Dependabot mingguan dan dikelompokkan (Gradle + Actions) | BOM Compose sudah dua tahun tertinggal | sedang | S |
-| 11 | Pecah `SukiApps.kt` (543 baris) per jendela | tiap jendela bisa dibaca dan diuji sendiri | rendah | M |
+| 11 | ~~Pecah `SukiApps.kt` (543 baris) per jendela~~ **selesai 2026-10-02** (`db65cec`: jadi SukiSettings/SukiLab/SukiTerminal/SukiAppList/SukiAbout/SukiDiagView) | tiap jendela bisa dibaca dan diuji sendiri | rendah | M |
 | 12 | GIF demo dari perangkat nyata untuk README | bukti paling meyakinkan bagi calon pengguna | tinggi | S (setelah uji) |
 | 13 | Pembuat keystore sekali pakai lewat workflow, bila kall tanpa komputer | `gen-keystore.sh` butuh JDK lokal; kunci yang dibuat di CI tidak bisa dicadangkan | sedang | M |
+| 14 | Pengecualian layar penuh per aplikasi + titik penanda di desktop | satu aplikasi rusak dalam jendela tidak boleh memaksa mode jendela dimatikan untuk semua | tinggi | S |
+| 15 | Tepi snap ikut sisa ruang: `min(24 dp, 20% ruang bebas per sisi)` | jendela internal bawaan 66% area kerja hampir selalu menempel saat digeser di layar lebar | sedang | S |
+| 16 | `ProbeActivity` jadi `exported="false"` | aplikasi lain tidak perlu bisa memicu jendela uji; `am start` uid 2000 tetap bisa membuka komponen tertutup | sedang | S |
