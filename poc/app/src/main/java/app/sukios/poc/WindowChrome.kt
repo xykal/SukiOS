@@ -138,8 +138,11 @@ private fun WinBtn(glyph: Glyph, danger: Boolean = false, onClick: () -> Unit) {
             val sw = 1.5.dp.toPx()
             when (glyph) {
                 Glyph.MIN -> drawLine(
-                    Offset(w * 0.14f, h * 0.50f), Offset(w * 0.86f, h * 0.50f),
-                    tone, strokeWidth = sw, cap = StrokeCap.Round
+                    color = tone,
+                    start = Offset(w * 0.14f, h * 0.50f),
+                    end = Offset(w * 0.86f, h * 0.50f),
+                    strokeWidth = sw,
+                    cap = StrokeCap.Round
                 )
                 Glyph.MAX -> drawRect(
                     color = tone, topLeft = Offset(w * 0.16f, h * 0.20f),
@@ -157,12 +160,18 @@ private fun WinBtn(glyph: Glyph, danger: Boolean = false, onClick: () -> Unit) {
                 }
                 Glyph.CLOSE -> {
                     drawLine(
-                        Offset(w * 0.22f, h * 0.22f), Offset(w * 0.78f, h * 0.78f),
-                        tone, strokeWidth = sw, cap = StrokeCap.Round
+                        color = tone,
+                        start = Offset(w * 0.22f, h * 0.22f),
+                        end = Offset(w * 0.78f, h * 0.78f),
+                        strokeWidth = sw,
+                        cap = StrokeCap.Round
                     )
                     drawLine(
-                        Offset(w * 0.78f, h * 0.22f), Offset(w * 0.22f, h * 0.78f),
-                        tone, strokeWidth = sw, cap = StrokeCap.Round
+                        color = tone,
+                        start = Offset(w * 0.78f, h * 0.22f),
+                        end = Offset(w * 0.22f, h * 0.78f),
+                        strokeWidth = sw,
+                        cap = StrokeCap.Round
                     )
                 }
             }
