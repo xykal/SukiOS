@@ -34,7 +34,28 @@ Catatan penting:
 - Artifact build tidak disimpan (workflow build tidak mengunggah artifact) — jalur distribusi APK adalah lewat draft release.
 - Cache Gradle **tidak** dihapus (sesuai kebijakan) agar build berikutnya tetap cepat.
 
+### 2026-10-02 — kebijakan cleanup diperluas ke cache
+
+Kall meminta jejak CI ikut dibersihkan sampai cache setelah setiap rilis. Perubahan diterapkan:
+
+- `cleanup.yml`: `purge_mode=all` saat dipicu `Release APK`; `none` saat `Build APK` supaya build tetap cepat.
+- `cleanup_ci.py`: mode cache `none|all` + verifikasi sisa entri setelah penghapusan.
+
+| Waktu (UTC) | Hasil | Bukti |
+|---|---|---|
+| 2026-10-02 08:57 | `Build APK` run **36987219073** (commit `3e6f3c0`) — **success** | `CI-VERIFIED`; riwayat run dihapus otomatis. Mode cache saat itu `none` (benar untuk build) |
+| 2026-10-02 09:07 | `Cleanup CI traces` run **36987929145** (dispatch manual, `purge_caches=true`) — **success** | cache 12 entri / 913,8 MB → **0 entri** ("verifikasi: sisa entri cache = 0"); riwayat run dipertahankan karena `keep_run_record=true` |
+
+Catatan:
+- Jalur purge khusus-rilis baru terverifikasi sampai tahap wiring (nama workflow dirujuk persis sama) dan tahap eksekusi purge (lewat dispatch manual). Uji end-to-end lewat tag rilis akan terjadi pada rilis berikutnya.
+- Menghapus cache berarti build berikutnya mengunduh ulang Gradle + dependensi (sekitar 5-8 menit pada repo ini).
+
+### Keadaan akhir repo (2026-10-02)
+- cache: **0 entri** · artifact: **0** · run Actions tersisa: **2** (keduanya run pembersih, dipangkas otomatis ke maksimal 2)
+- draft release `v0.1.0-poc` + APK (~14 MB): **utuh** (release bukan objek cleanup)
+- tag `v0.1.0-poc`: ada
+
 ### Langkah berikutnya
 1. Uji 5 lane di perangkat nyata, kirim laporan lewat tombol "Salin laporan" di app.
-2. Set 4 secrets keystore supaya rilis berikutnya benar-benar signed.
+2. Set 4 secrets keystore supaya rilis berikutnya benar-benar signed (lihat `docs/RELEASE-SIGNING.md`).
 3. Setelah hasil uji masuk: kunci arsitektur window (PRD §16.2) lalu mulai Fase 1.
