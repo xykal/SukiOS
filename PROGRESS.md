@@ -232,6 +232,23 @@ tidak pernah melewati CI sama sekali.
 - Sebelum menulis kode, `git fetch` dulu. Satu permintaan yang dikerjakan dua sesi menghasilkan dua
   implementasi penuh; yang satu harus dibuang.
 
+### 2026-10-02 (Hari 2, sesi ketiga, lanjutan) — dokumen disinkronkan dengan kode `main`
+
+Kode Aurora v2 dan jendela mutlak sudah ada di `main` sejak `db65cec`, tetapi empat dokumen masih
+menjelaskan versi matte v1.1. Disamakan dengan apa yang benar-benar ada di kode (bukan rencana):
+
+| Berkas | Perubahan |
+|---|---|
+| `DESIGN.md` | v1.1 -> **v2.0 Aurora**: §1.3 aturan matte dicabut + aturan jujur (tanpa klaim blur), §1.4 catatan implementasi (token ARGB, ikon hasil generator, font dipaket), §4.1 palet nyata dari `SukiTheme.kt` + konstanta + rasio, §4.2 enam preset aksen dengan `fill`/`on`/`text`, §4.3 material yang benar-benar dipakai (`Glass`, `Panel`, bayangan 30/12 dp, aurora veil), §5 font, §16.1 peta token -> berkas, §16.3 checklist baru, §17 cheat sheet angka nyata, §18 riwayat revisi. §10-14 ditandai **spesifikasi target**, bukan keadaan kode |
+| `PRD.md` | 1.0 -> **1.4**: §16.6 c ditulis ulang (matte dicabut), catatan baru d (jendela mutlak) dan e (kunci mendatar), §7.19 `F-19` + §7.20 `F-20` dengan acceptance criteria yang dicentang sesuai kode dan dua butir yang jujur masih menunggu uji perangkat |
+| `AGENTS.md` | struktur paket diperinci per mesin; aturan kode ditambah: warna hanya dari `SukiTheme.kt` + wajib daftar di `ThemeContrastTest`, ikon tidak disunting tangan, app luar hanya lewat `SukiWindowing` dengan enam `OutcomeKind`, penyiapan diverifikasi API Android bukan kode keluar, shell lewat `runChecked`, orientasi terkunci, batas berkas 300 baris |
+| `README.md` | status jujur diperbarui (uji perangkat v0.3.1-alpha -> apa yang ditindaklanjuti, `main` hijau, tag 0.4.0 menunggu), mesin disebutkan benar, daftar uji CI diperinci |
+| `.github/workflows/build.yml` | nama langkah uji diperbarui (hanya teks; `tools/check_workflows.py --self-test` dan pemeriksaan 3 workflow tetap lulus lokal) |
+
+Belum disinkronkan (dicatat supaya tidak dianggap selesai): `mockup.html` masih prototipe matte,
+`assets/logo.svg` belum diperiksa terhadap ikon launcher gradien, PRD §10-14/§7 lama masih berisi
+angka target yang belum cocok dengan kode.
+
 ### Langkah berikutnya
 1. **Uji di perangkat (kall):** build `main` hijau; tag `v0.4.0-alpha` menunggu "gas" supaya ada draft APK.
    Lalu jalankan 6 pemeriksaan di `docs/release-notes/v0.4.0-alpha.md` dan kirim laporan diagnostik.

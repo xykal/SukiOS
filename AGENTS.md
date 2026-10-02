@@ -10,7 +10,18 @@ Panduan kerja untuk agen/developer yang melanjutkan repo ini. Baca ini sebelum m
 ## Struktur
 ```
 sukios/                    Gradle root project (modul :app)
-  app/src/main/java/app/sukios/   kode aplikasi (SukiWin = mesin jendela, SukiShell = akses lanjutan, SukiKit = tampilan)
+  app/src/main/java/app/sukios/   kode aplikasi:
+    SukiWin/SukiWinModel      mesin + model jendela internal
+    SukiWindowing             jalur tunggal membuka app pihak ketiga sebagai jendela
+    FreeformParse/WindowBounds  pengurai dumpsys + geometri kotak app luar (murni)
+    SetupPlan/SukiAuto        rencana penyiapan Shizuku + pelaksana & verifikasinya
+    ProbeActivity/WindowStatus  jendela uji milik sendiri + kalimat status jujur
+    SukiShell/SukiShellCmds/ShellExec/ShellArgs  akses lanjutan + pagar perintah
+    SukiIndex/SukiIconLoader  indeks aplikasi + penyeragaman ikon
+    SukiTheme/SukiFonts/SukiGlyph(+Data)  token warna/ukuran/gerak, font, ikon vektor
+    SukiKit/SukiKitLayout/SukiControls  komponen tampilan
+    SukiHome/SukiDesktop/SukiWindows/SukiTaskbar/SukiStart/SukiQuick/SukiTray  lapisan UI
+    SukiSettings/SukiLab/SukiTerminal/SukiAppList/SukiAbout/SukiDiag(+View)  isi jendela
   app/src/test/java/app/sukios/   uji unit JVM (gerbang CI)
 .github/workflows/         build.yml · release.yml · cleanup.yml (semua action dipin SHA)
 tools/                     check_workflows.py · cleanup_ci.py · gen-keystore.sh
@@ -37,7 +48,13 @@ PRD.md · DESIGN.md · mockup.html · PROGRESS.md · IDEAS.md · SECURITY.md · 
 4. **Merek hanya dari `Brand.kt`.** Teks `XyVerse Technology Global` tidak ditulis ulang atau diterjemahkan; `BrandTest` dan `SourceHygieneTest` menjaganya. Kata ganti pengembang tidak boleh muncul di teks produk.
 5. **Workflow:** action dipin SHA penuh yang didapat dari `GET /repos/<owner>/<repo>/commits/<tag>` (bukan `git/ref`, yang mengembalikan SHA tag-object untuk tag beranotasi); input yang bisa dikendalikan pengirim masuk lewat `env:`.
    `python3 tools/check_workflows.py` (dan `--self-test`) harus lulus.
-6. Berkas Kotlin di bawah ~250 baris. `SukiApps.kt` dan `SukiKit.kt` masih melanggar; pecah, jangan ditambah.
+6. **Warna hanya dari `SukiTheme.kt`** sebagai `const val` ARGB (`Long`) supaya uji kontras bisa membacanya tanpa Compose. Jangan menulis `Color(0x..)` di berkas UI. Pasangan teks/latar baru wajib didaftarkan di `ThemeContrastTest` (AA 4,5:1; non-teks 3:1). Teks tidak boleh memakai warna aksen murni — pakai turunan `text` dari preset.
+7. **Ikon tidak disunting tangan.** `SukiGlyphData.kt` dihasilkan `tools/gen_glyphs.py`; `GlyphDataTest` mencocokkan berkas dengan generator. Tambah ikon lewat generatornya. Font dipangkas lewat `tools/mkfonts.py`; lisensi OFL wajib ikut di `assets/licenses/`.
+8. **Aplikasi pihak ketiga selalu dibuka lewat `SukiWindowing`** (PRD F-19/F-20): `am start --windowingMode 5` lewat SukiShell, lalu mode tugas **dibaca dari `dumpsys`** (`FreeformParse`). Hasilnya salah satu dari enam `OutcomeKind`; tidak boleh ada "berhasil" tanpa bukti. Jangan pernah mematikan aplikasi yang sudah berjalan tanpa persetujuan pengguna.
+9. **Penyiapan otomatis idempoten dan terverifikasi**: `SetupPlan` hanya mengirim langkah yang belum terpenuhi, kunci berjenjang SDK, dan keberhasilannya diperiksa dengan API Android — bukan dengan kode keluar perintah. Klaim "jendela aktif" hanya boleh muncul bila `ProbeActivity` pernah melaporkan `isInMultiWindowMode` benar di perangkat itu.
+10. **Perintah shell lewat `runChecked` (ShellPolicy)**, argv diperiksa `ShellArgs`; hanya Terminal yang boleh memanggil `SukiShell.run` langsung. Dijaga `ShellPolicyTest` + `SourceHygieneTest`.
+11. **Orientasi terkunci mendatar** (manifest + `SukiHomeActivity`). Keputusan produk; jangan kembalikan jadi preferensi. `ManifestTest` menjaganya.
+12. Berkas Kotlin di bawah 300 baris (batas di `SourceHygieneTest`; `SukiGlyphData.kt` dikecualikan karena dihasilkan). Yang terbesar sekarang `SukiWin.kt` 273 — pecah bila bertambah, jangan ditambah.
 
 ## Label verifikasi
 `LOCAL-VERIFIED` · `CI-VERIFIED <run ID>` · `UNVERIFIED` · `BLOCKED <alasan>` — jangan pakai kata "verified" tanpa bukti yang sesuai.

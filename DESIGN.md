@@ -1,13 +1,13 @@
 # SukiOS — Design System & Konsep Visual
-## "Suki Glass" v1.1 — matte (tanpa neon/cyber)
+## "Suki Glass" v2.0 — Aurora (kembali bercahaya, tetap terkendali)
 
 | | |
 |---|---|
 | **Produk** | SukiOS |
 | **Nama Bahasa Desain** | Suki Glass |
-| **Versi** | 1.0 |
-| **Tanggal** | 1 Oktober 2026 |
-| **Status** | Siap untuk implementasi Compose |
+| **Versi** | 2.0 |
+| **Tanggal** | 2 Oktober 2026 |
+| **Status** | Sesuai kode di `main` (`SukiTheme.kt`, `SukiFonts.kt`, `SukiGlyph.kt`) |
 
 ---
 
@@ -27,38 +27,48 @@ SukiOS adalah **meja kerja**, bukan **layar HP yang diperbesar**.
 - Start menu = rak penyimpanan semua alat.
 - Jendela = lembar kerja yang bisa ditumpuk, digeser, dan disimpan.
 
-### 1.3 Aturan Visual Wajib — Tenang, Matte, Tanpa Neon
+### 1.3 Aturan Visual Wajib — Aurora yang Terkendali
 
-Ini batasan yang tidak bisa ditawar (permintaan kall, 2026-10-02). Berlaku untuk semua permukaan produk: shell, app bawaan, ikon, wallpaper, splash, dan materi pemasaran.
+Revisi 2026-10-02 (permintaan kall setelah uji perangkat v0.3.1-alpha): aturan matte v1.1
+**dicabut**. Tampilan matte terbaca datar dan murah; identitas SukiOS adalah cahaya aurora di
+atas bidang gelap. Yang tidak berubah: cahaya itu harus melayani keterbacaan, bukan menutupinya.
 
 **DILARANG:**
-- Garis/tepi menyala (neon stroke), bloom, glow berwarna, atau `box-shadow` berwarna aksen.
-- Grid siber, garis scanline, efek holografik, chrome/kilau logam, partikel bercahaya.
-- Gradien saturasi tinggi atau lebih dari dua warna dalam satu gradien.
-- Warna aksen sebagai dekorasi: aksen hanya untuk elemen aktif, tombol utama, dan status fokus.
-- Emoji sebagai ikon antarmuka (pakai badge huruf atau ikon vektor).
-- Animasi berkilau/berdenyut yang tidak menyampaikan informasi.
+- Emoji sebagai ikon antarmuka. Ikon hanya dari `SukiGlyph` (path vektor sendiri).
+- Menyalin nama, logo, ikon, suara, atau trade dress sistem operasi lain.
+- Warna aksen murni untuk teks kecil. Teks aksen memakai turunan `text` (lihat §4.2).
+- Bayangan berwarna aksen, bloom, grid siber, scanline, efek holografik, kilau logam.
+- Klaim efek yang tidak benar-benar dipakai (misalnya menyebut "blur" padahal tidak ada).
 
 **DIWAJIBKAN:**
-- Warna diturunkan saturasinya (lihat §4.1); bayangan selalu netral hitam dengan opasitas rendah.
-- Pemisahan antar bidang memakai garis tipis 1 dp dan perbedaan nada, bukan efek cahaya.
-- Wallpaper: gradien dua nada gelap, tanpa sorotan radial menyala.
-- Getaran gerak minimal: durasi mengikuti §8.1, tidak ada animasi dekoratif.
+- Setiap pasangan teks/latar lolos WCAG AA 4,5:1 dan **dibuktikan di CI** (`ThemeContrastTest`
+  membaca konstanta ARGB di `SukiTheme.kt`). Elemen non-teks minimal 3:1.
+- Teks di atas isian aksen memakai pasangan `fill`/`on` dari preset, bukan tebakan putih/hitam.
+- Cahaya aurora datang dari gradien dan cahaya radial berdiameter besar dengan alpha rendah,
+  bukan dari garis menyala.
+- Pemisahan bidang: garis rambut putih 7-20% alpha + perbedaan nada permukaan.
+- Bayangan netral hitam (`ambient 0x66000000`, `spot 0xB3000000`), bukan warna.
 
-**Uji cepat:** ubah screenshot menjadi grayscale. Kalau tampilannya masih terbaca jelas dan terasa nyaman, desainnya sehat. Kalau justru kehilangan seluruh hierarki, berarti warna/glow-nya yang jadi penopang — dan itu yang harus dihindari.
+**Uji cepat:** ubah screenshot menjadi grayscale. Hierarki harus tetap terbaca. Kalau hilangnya
+hierarki terjadi, yang menopang desain adalah warnanya — perbaiki nada permukaannya, bukan
+saturasinya.
 
 ---
 
-### 1.4 Catatan Implementasi (v1.1)
+### 1.4 Catatan Implementasi (v2.0)
 
-SukiOS **tidak memakai tema Material**. Material3 hanya dipakai untuk satu hal:
-komposisi teks (`Text`), karena Compose 1.7 menghapus konstruktor `TextStyle`
-bergaya lama. Seluruh warna, bentuk, jarak, dan ikon berasal dari `SukiKit.kt`.
-Artinya: tampilan SukiOS tidak akan berubah kalau Google mengubah tema Material.
-
-Ikon antarmuka digambar sebagai vektor (`Glyph()`), bukan emoji dan bukan font
-ikon pihak ketiga. Ini menjaga konsistensi bentuk di semua perangkat dan
-menghindari ketergantungan pada aset luar.
+- SukiOS **tidak memakai tema Material**. Material3 hanya dipakai untuk komposisi teks (`Text`),
+  karena Compose 1.7 menyembunyikan konstruktor `TextStyle` bergaya lama. Seluruh warna, bentuk,
+  jarak, dan gerak berasal dari `SukiTheme.kt` + `SukiKit.kt`.
+- Nilai warna ditulis sebagai `const val` ARGB (`Long`) supaya uji kontras membacanya **tanpa
+  memuat Compose** di JVM. Objek `Color` (`SBg`, `SText`, ...) hanyalah pembungkusnya.
+- Tidak ada blur latar nyata. `Modifier.blur`/`RenderEffect` butuh API 31 sedangkan `minSdk` 29,
+  dan biayanya besar di layar penuh. "Kaca" SukiOS = gradien + alpha + garis rambut (§4.3).
+- Ikon antarmuka digambar sebagai vektor oleh `SukiGlyph`; datanya di `SukiGlyphData.kt` yang
+  **dihasilkan** `tools/gen_glyphs.py` dan dicocokkan dengan generator itu oleh `GlyphDataTest`.
+  Jadi ikon tidak boleh disunting tangan.
+- Font dipaketkan sebagai berkas (`res/font`, dipangkas ke aksara Latin oleh `tools/mkfonts.py`),
+  lisensi OFL disimpan di `app/src/main/assets/licenses/`.
 
 ---
 
@@ -88,10 +98,10 @@ Ukuran min:    24 px (favicon) — jika di bawah 32 px gunakan versi tanpa gradi
 **Versi logo:**
 | Varian | Penggunaan |
 |---|---|
-| Full color (solid matte) | Default, splash screen, store listing |
+| Full color (gradien Aurora) | Default, splash screen, store listing |
 | Mono putih | Di atas foto/warna terang, di dalam taskbar |
 | Mono hitam | Dokumen, print |
-| App icon adaptif | Foreground = mark S, Background = warna aksen solid |
+| App icon adaptif | Foreground = mark S putih, Background = gradien ungu-biru-teal (`res/drawable/ic_launcher_background.xml`) |
 
 > File SVG: `assets/logo.svg`
 
@@ -113,86 +123,117 @@ Ukuran min:    24 px (favicon) — jika di bawah 32 px gunakan versi tanpa gradi
 | **3** | Gerak menjelaskan, bukan menghias | Setiap animasi menjelaskan hubungan ruang (dari mana, ke mana). |
 | **4** | Semua bisa dijangkau satu tangan & satu kursor | Target sentuh min 44 dp; elemen penting di area jangkauan. |
 | **5** | Elegan saat lambat, instan saat cepat | Animasi mudah di-skip: interaksi user memotong animasi, tidak menunggu. |
-| **6** | Turun kualitas, bukan turun fungsi | Di HP lemah, blur diganti warna solid — fungsinya tetap sama. |
+| **6** | Turun kualitas, bukan turun fungsi | Di HP lemah, cahaya wallpaper dan animasi dikurangi — fungsinya tetap sama. |
 
 ---
 
 ## 4. Sistem Warna
 
+Sumber kebenaran: `SukiTheme.kt` (konstanta ARGB). Bagian ini salinannya; bila berbeda, kode yang menang.
+
 ### 4.1 Palet Inti
 
-**Aksen (matte — bukan gradien menyala):**
-```
-Suki Steel      #6E8CA8   ← aksen utama (tombol, elemen aktif, fokus)
-Suki Sage       #7B9E8C   ← aksen sekunder (status, kategori)
-Suki Clay       #A08F76   ← kategori ketiga (akses lanjutan)
-```
-Catatan revisi: gradien Aurora ungu-teal v1.0 dihapus karena terbaca sebagai "neon".
-Nilai lama tidak dipakai lagi di kode, mockup, maupun aset.
+**Bidang (gelap kebiruan)**
+| Token | Hex | Konstanta | Penggunaan |
+|---|---|---|---|
+| `bg/base` | `#0B0D12` | `C_BG` | Latar desktop paling belakang |
+| `bg/surface` | `#12151D` | `C_SURFACE` | Isi jendela, panel |
+| `bg/sheet` | `#161B27` | `C_SHEET` | Lembar/menu di atas panel |
+| `bg/elevated` | `#1A1F2B` | `C_ELEVATED` | Kartu, ubin, baris terangkat |
+| `bg/chrome` | `#1F2532` | `C_CHROME` | Bilah judul, taskbar |
+| `bg/overlay` | `#242A38` | `C_OVERLAY` | Tooltip, popover, kontrol melayang |
 
-**Netral (Dark — tema default)**
-| Token | Hex | Penggunaan |
+**Teks** (semuanya lolos AA 4,5:1 di **semua** bidang di atas — dibuktikan `ThemeContrastTest`)
+| Token | Hex | Konstanta | Penggunaan |
+|---|---|---|---|
+| `text/primary` | `#F2F4F8` | `C_TEXT` | Judul, isi utama |
+| `text/secondary` | `#B4BCCC` | `C_DIM` | Deskripsi, metadata |
+| `text/tertiary` | `#8D96AB` | `C_FAINT` | Keterangan halus (rasio terendah, tetap >= 4,5) |
+| `text/ink` | `#0B0D12` | `C_INK` | Teks di atas isian aksen terang (teal, biru, amber, hijau, pink) |
+
+**Cahaya Aurora dan status**
+| Peran | Hex | Konstanta | Catatan |
+|---|---|---|---|
+| Violet | `#7C5CFF` | `C_VIOLET` | Cahaya utama; untuk grafis/isi, bukan teks kecil |
+| Violet fill | `#6C4BF2` | `C_VIOLET_FILL` | Isi tombol aksen Aurora |
+| Violet text | `#A89BFF` | `C_VIOLET_TEXT` | Satu-satunya bentuk ungu yang boleh jadi teks |
+| Teal | `#35D0BA` | `C_TEAL` | Cahaya kedua |
+| Pink | `#FF7AB6` | `C_PINK` | Cahaya ketiga (wallpaper, aksen Mekar) |
+| Biru / info | `#5B9DFF` | `C_BLUE` | Info, tautan |
+| Amber / warning | `#FFB44C` | `C_AMBER` | Peringatan |
+| Hijau / success | `#3FD08A` | `C_GREEN` | Berhasil, aktif |
+| Merah / danger | `#FF5F56` | `C_RED` | Grafis bahaya, tombol tutup |
+| Merah text | `#FF8A82` | `C_RED_TEXT` | Teks bahaya (merah murni gagal AA untuk teks) |
+
+**Garis, scrim**
+| Token | Nilai | Konstanta |
 |---|---|---|
-| `bg/base` | `#0F1113` | Latar desktop paling belakang |
-| `bg/surface` | `#17191C` | Panel, taskbar solid |
-| `bg/elevated` | `#1E2124` | Kartu, menu, jendela |
-| `bg/overlay` | `#262A2E` | Tooltip, popover, title bar |
-| `stroke/subtle` | `rgba(255,255,255,0.06)` | Garis pemisah halus |
-| `stroke/strong` | `rgba(255,255,255,0.10)` | Border jendela tidak aktif |
-| `text/primary` | `#E7E8EA` | Judul, isi utama |
-| `text/secondary` | `#A0A4A9` | Deskripsi, metadata |
-| `text/disabled` | `#6B7076` | Elemen non-aktif |
+| `stroke/hairline` | `#12FFFFFF` (7%) | `SLineSoft` |
+| `stroke/subtle` | `#1FFFFFFF` (12%) | `SLine` |
+| `stroke/strong` | `#33FFFFFF` (20%) | `SLineStrong` |
+| `scrim` | `#8C05060A` (55%) | `SScrim` |
 
-**Netral (Light)**
-| Token | Hex |
-|---|---|
-| `bg/base` | `#EDEEEF` |
-| `bg/surface` | `#F6F7F8` |
-| `bg/elevated` | `#FFFFFF` |
-| `stroke/subtle` | `rgba(10,15,30,0.07)` |
-| `text/primary` | `#14161A` |
-| `text/secondary` | `#4E5359` |
-
-**Semantik**
-| Peran | Dark | Light |
-|---|---|---|
-| Success | `#7FA98A` | `#3F7A55` |
-| Warning | `#C0A06A` | `#8A6A21` |
-| Danger (close) | `#B4675F` | `#A44A44` |
-| Info | `#7E93AC` | `#4A6684` |
+Tema terang tidak dipakai di v2.0. Aurora adalah identitas gelap; tema terang ditunda sampai
+ada permintaan nyata (lihat `IDEAS.md`).
 
 ### 4.2 Accent Color
-User bisa memilih aksen. Setiap aksen punya 4 turunan otomatis:
+
+Satu aksen = **dua cahaya** (`main`, `second`, dipakai untuk gradien) + **tiga turunan keterbacaan**:
 
 ```
-accent/base      100%  → ikon aktif, tombol utama
-accent/hover     115% lightness
-accent/pressed    90%
-accent/subtle     12% opacity  → latar chip, state terpilih
-accent/on-accent  otomatis putih/hitam berdasarkan kontras WCAG
+fill  → isi tombol/chip aktif
+on    → teks di atas fill (sudah dihitung kontrasnya, jangan diganti putih/hitam sendiri)
+text  → warna teks aksen di atas bidang gelap (selalu >= 4,5:1)
 ```
 
-**12 preset (semua saturasi rendah):** Steel (default) · Sage · Slate · Mauve · Sand · Moss · Clay · Graphite · Dust · Olive · Ash · Denim.
+**6 preset** (semua lulus `ThemeContrastTest`):
 
-Aturan: aksen tidak boleh dipakai sebagai latar besar atau gradien dekoratif. Maksimal 8% area layar.
+| id | Label | main | second | on |
+|---|---|---|---|---|
+| `aurora` | Aurora | `#7C5CFF` | `#35D0BA` | putih |
+| `laguna` | Laguna | `#35D0BA` | `#5B9DFF` | ink |
+| `mekar` | Mekar | `#FF7AB6` | `#7C5CFF` | ink |
+| `azur` | Azur | `#5B9DFF` | `#35D0BA` | ink |
+| `bara` | Bara | `#FFB44C` | `#FF7AB6` | ink |
+| `mint` | Mint | `#3FD08A` | `#35D0BA` | ink |
+
+Aturan: aksen adalah **cahaya**, bukan bidang. Maksimal ~8% area layar sebagai isian; sisanya
+muncul sebagai gradien bilah judul, garis fokus, dan cahaya wallpaper.
 
 ### 4.3 Material & Efek
-| Nama | Implementasi | Penggunaan |
-|---|---|---|
-| **Suki Mica** | `surface` + 62% opasitas + blur 28 dp + noise 2% | Latar taskbar, start menu, panel besar |
-| **Suki Acrylic** | `elevated` + 72% opasitas + blur 20 dp + border 1px putih 8% | Jendela, kartu |
-| **Suki Shadow** | shadow netral hitam, blur 24-40, opacity 22-30% | Jendela aktif, menu, dialog (tanpa warna) |
-| **Fallback (API < 31 / mode ringan)** | warna solid + border 1px, tanpa blur | Semua di atas saat blur dimatikan |
 
-> **Aturan blur:** maksimal **3 layer blur** di satu layar. Blur di-nested hanya jika elemen di atasnya opaque.
+| Nama | Implementasi nyata di kode | Penggunaan |
+|---|---|---|
+| **Suki Glass** | gradien linear `main` 70% -> `second` 40% + garis rambut putih + bayangan netral | Bilah judul jendela aktif |
+| **Suki Panel** | `surface`/`elevated` alpha tinggi + `stroke/subtle` 1 dp + radius 12-16 dp | Panel, start menu, quick panel |
+| **Suki Shadow** | `Modifier.shadow`: jendela fokus 30 dp, tidak fokus 12 dp; ambient `0x66000000`, spot `0xB3000000`/`0xCC000000` | Jendela, kartu, menu |
+| **Aurora Veil** | cahaya radial besar (alpha 0,20-0,58) di atas gradien dasar dua nada | Wallpaper; 6 preset |
+| **Scrim** | `#8C05060A` | Di belakang dialog/menu terbuka |
+
+> **Aturan jujur:** tidak ada blur latar. Jangan menulis "acrylic/mica/blur" di dokumen atau
+> materi pemasaran. Yang ada adalah gradien, alpha, dan garis rambut — dan itu cukup untuk
+> kesan kaca di atas bidang gelap.
+
+**Radius** (`SukiTheme.kt`): `RADIUS_SM` 8 · `RADIUS_MD` 12 · `RADIUS_WIN` 14 · `RADIUS_LG` 16 · `RADIUS_PILL` 999.
+**Ukuran tetap:** `TASKBAR_DP` 54 (area yang dipesan taskbar, dipakai mesin jendela), `TASKBAR_BAR_DP` 48, `ICON_DP` 48.
+**Gerak:** `MOTION_INSTANT` 90 · `MOTION_FAST` 150 · `MOTION_BASE` 220 · `MOTION_SLOW` 320 ms, kurva `EaseOut` = `cubic-bezier(.2,0,0,1)`.
 
 ---
 
 ## 5. Tipografi
 
-**Font utama:** Inter (SIL OFL 1.1 — aman untuk komersial)
-**Fallback:** `system-ui, -apple-system, "Segoe UI"*, Roboto, sans-serif`
-*(Sebagai fallback sistem, bukan dipaketkan di aplikasi.)*
+**Font dipaketkan di aplikasi** (`res/font`, lisensi SIL OFL 1.1, salinan lisensi di
+`app/src/main/assets/licenses/`; dipangkas ke aksara Latin oleh `tools/mkfonts.py`):
+
+| Keluarga di kode | Berkas | Penggunaan |
+|---|---|---|
+| `SukiSans` | Inter regular/medium/semibold/bold | Seluruh teks antarmuka |
+| `SukiBrand` | Plus Jakarta Sans bold/extrabold | Judul pendek, nama merek |
+| `SukiClockFont` | Inter Display Light | Jam besar di desktop |
+| `SukiMono` | monospace sistem | Terminal, angka teknis |
+
+Tidak ada fallback ke font sistem untuk teks produk: bila berkas font gagal dimuat, itu cacat
+yang harus terlihat, bukan diam-diam berubah tampilan.
 
 | Token | Ukuran / Line-height / Weight | Penggunaan |
 |---|---|---|
@@ -208,6 +249,7 @@ Aturan: aksen tidak boleh dipakai sebagai latar besar atau gradien dekoratif. Ma
 
 **Aturan:**
 - Letter-spacing negatif halus untuk display/title (-0.02em) agar terasa modern.
+- Skala di atas adalah acuan; yang mengikat di kode adalah ukuran yang dipakai `SukiKit.kt`.
 - Maksimal **3 level tipografi** dalam satu komponen.
 - Angka di jam & kalkulator pakai *tabular figures* agar tidak bergoyang.
 
@@ -317,12 +359,17 @@ Prinsip: **semua suara bisa dimatikan**, default hanya aktif untuk notifikasi & 
 
 ## 10. Komponen Inti (Spesifikasi Ukuran)
 
+> **Catatan v2.0:** bagian 10-14 adalah **spesifikasi target**, bukan keadaan kode. Yang sudah
+> benar-benar ada di `main` dicatat di §17 (cheat sheet). Bila angka di bawah dan di kode
+> berbeda, kode yang menang dan bagian ini yang harus diperbarui.
+
+
 ### 10.1 Taskbar ("Suki Bar")
 ```
 Tinggi              48 dp (default) · 40 dp (compact) · 64 dp (besar)
 Padding horizontal  12 dp
 Radius (floating)   16 dp  [mode floating: taskbar terpisah dari tepi, margin 8 dp]
-Background          Suki Mica + border atas 1px stroke/subtle
+Background          Suki Panel (chrome) + garis rambut stroke/subtle
 ```
 | Zona | Isi | Lebar |
 |---|---|---|
@@ -340,7 +387,7 @@ Background          Suki Mica + border atas 1px stroke/subtle
 Ukuran            640 × 640 dp (HP: 100% lebar - 16 dp, tinggi maks 80% layar)
 Posisi            center horizontal, 12 dp di atas taskbar
 Radius            24 dp
-Background        Suki Mica (blur 32) + border 1px putih 8%
+Background        Suki Panel (sheet/surface + garis rambut putih 12%)
 Shadow            e2
 Animasi           motion/base, origin dari tombol Start
 ```
@@ -476,7 +523,7 @@ Resize handle      8 dp di 4 sisi + 16×16 dp di 4 sudut (zona tak terlihat, kur
 | **Foldable** | Layout berubah dinamis saat dilipat/dibuka tanpa restart activity (Compose adaptive) |
 | **Tablet 10"+** | Desktop mode penuh, jendela mengambang default, snap 4 zona, multi-desktop, ikon 56 dp |
 | **Monitor eksternal** | Desktop diperluas; jendela bisa dipindah antar layar (perangkat yang mendukung) |
-| **Perangkat RAM ≤ 4 GB** | Mode Ringan otomatis: blur off, animasi dipercepat, maks 3 jendela |
+| **Perangkat RAM ≤ 4 GB** | Mode Ringan otomatis: cahaya wallpaper statis (`wall_motion` mati), animasi dipercepat, maks 3 jendela |
 
 ---
 
@@ -491,7 +538,7 @@ Resize handle      8 dp di 4 sisi + 16×16 dp di 4 sudut (zona tak terlihat, kur
 
 ###  Don't
 - Jangan menyalin identitas visual sistem operasi lain (warna khas, logo, ikon, suara, proporsi tombol kontrol jendela).
-- Jangan memakai blur lebih dari 3 layer atau di perangkat kelas bawah tanpa mode ringan.
+- Jangan mengklaim blur/efek yang tidak dipakai kode; jangan menyalakan animasi wallpaper tanpa jalan mematikan.
 - Jangan menaruh lebih dari 3 level teks dalam satu kartu.
 - Jangan membuat animasi lebih dari 400 ms untuk aksi yang sering dipakai.
 - Jangan meminta permission sebelum menjelaskan manfaatnya ke pengguna.
@@ -501,58 +548,72 @@ Resize handle      8 dp di 4 sisi + 16×16 dp di 4 sudut (zona tak terlihat, kur
 
 ## 16. Aset & Handoff untuk Developer
 
-### 16.1 Yang harus ada di `:core:designsystem`
+### 16.1 Peta token -> kode (keadaan sebenarnya)
+
+Tidak ada modul `:core:designsystem`; seluruh sistem desain hidup di paket aplikasi supaya
+satu APK tetap kecil dan tidak ada lapisan yang harus dijaga sinkron.
+
 ```kotlin
-// Warna
-SukiColors            // semua token dari §4
-SukiAccentScheme      // 12 preset + generator turunan
-SukiTypography        // token dari §5
-SukiShapes            // radius dari §7.1
-SukiSpacing           // skala 4 dp dari §7.2
-SukiElevation         // e0–e4
-SukiMotion            // durasi + easing dari §8.1
-
-// Komponen
-SukiTaskbar, SukiStartMenu, SukiSearchField
-SukiWindowChrome, SukiTitleBar, SukiSnapPreview
-SukiToast, SukiCard, SukiButton, SukiToggle, SukiSlider
-SukiContextMenu, SukiIconButton, SukiTooltip
-
-// Efek
-Modifier.sukiMica(), Modifier.sukiAcrylic(), Modifier.sukiShadow()
-Modifier.sukiDragResize(...)   // untuk window engine
+SukiTheme.kt     // semua token §4 (konstanta ARGB), ukuran tetap, durasi + EaseOut,
+                 // ACCENT_SPECS (6), WALL_SPECS (6), SukiAccent, accentNow()
+SukiFonts.kt     // SukiSans, SukiBrand, SukiClockFont, SukiMono (§5)
+SukiGlyph.kt     // Glyph(), glyphStroke; data path di SukiGlyphData.kt (hasil generator)
+SukiKit.kt       // Glass(), Panel(), tombol, chip, baris kunci-nilai, bayangan
+SukiKitLayout.kt // kerangka isi jendela (baris alat tipis + keterangan)
+SukiControls.kt  // kontrol interaktif (chip, toggle, tombol ikon)
+SukiWallpaper.kt // Wallpaper() dari WALL_SPECS + preferensi wall_motion
+SukiWindows.kt   // bilah judul bergradien, pegangan geser/ubah ukuran, pratinjau snap
 ```
+
+Efek: tidak ada `Modifier.sukiMica()` / `sukiAcrylic()`. Yang ada `Glass()` (gradien + garis
+rambut + bayangan) dan `Panel()` (bidang + garis rambut). Lihat §4.3.
 
 ### 16.2 Naming Convention
 - Token: `kategori/varian` (contoh: `bg/elevated`, `motion/base`)
 - Composable: `Suki` + nama komponen (contoh: `SukiTaskbarItem`)
 - Animasi: didefinisikan sekali di `SukiMotion`, tidak ada magic number di komponen.
 
-### 16.3 Checklist Handoff Desain → Dev
-- [ ] Semua token warna tersedia dalam `SukiColors` (dark + light)
-- [ ] Semua ikon dalam format SVG 24 dp
-- [ ] Ukuran semua komponen terdokumentasi (§10)
-- [ ] Interaksi & animasi tercatat (§8)
-- [ ] State kosong, loading, error, dan disabled untuk setiap komponen
-- [ ] Screenshot/mockup untuk orientasi portrait, landscape, dan tablet
-- [ ] Aksesibilitas: label TalkBack & urutan fokus
+### 16.3 Checklist Desain -> Dev (v2.0)
+- [ ] Token warna baru masuk `SukiTheme.kt` sebagai `const val` ARGB, bukan `Color(0x..)` di berkas UI
+- [ ] Pasangan teks/latar baru didaftarkan di `ThemeContrastTest` (AA 4,5:1; non-teks 3:1)
+- [ ] Ikon baru ditambahkan lewat `tools/gen_glyphs.py`, bukan disunting tangan di `SukiGlyphData.kt`
+- [ ] Ukuran komponen tetap di konstanta (`RADIUS_*`, `TASKBAR_DP`, `TITLE_H`), tanpa angka ajaib
+- [ ] Gerak memakai `MOTION_*` dan `EaseOut`
+- [ ] State kosong, loading, error, dan non-aktif ada untuk komponen baru
+- [ ] Tidak ada emoji, tidak ada aset atau istilah dari sistem operasi lain
+- [ ] Klaim efek di dokumen cocok dengan yang benar-benar dipakai kode
 
 ---
 
-## 17. Referensi Cepat (Cheat Sheet)
+## 17. Referensi Cepat (Cheat Sheet) — keadaan kode `main`
 
 ```
-WARNA AKSEN      #6E8CA8 (steel)  ·  #7B9E8C (sage)
-DARK BG          #0F1113
-LIGHT BG         #EDEEEF
-FONT             Inter (fallback system-ui)
-RADIUS JENDELA   16 dp      TASKBAR  48 dp
-ICON DESKTOP     48 dp      IKON TASKBAR 32 dp
-START MENU       640 × 640 dp
-ANIMASI CEPAT    150 ms     ANIMASI NORMAL 220 ms
-MAX BLUR LAYER   3        ATURAN  tanpa neon, tanpa glow, tanpa emoji ikon
+AKSEN            6 preset: aurora laguna mekar azur bara mint (default: aurora)
+WARNA AKSEN      #7C5CFF (violet) · #35D0BA (teal) · teks aksen #A89BFF
+BG / SURFACE     #0B0D12 / #12151D      CHROME #1F2532   OVERLAY #242A38
+TEKS             #F2F4F8 · #B4BCCC · #8D96ABL    INK #0B0D12
+GARIS            putih 7% / 12% / 20%   SCRIM #8C05060A
+FONT             Inter (UI) · Plus Jakarta Sans (merek) · Inter Display Light (jam)
+RADIUS           sm 8 · md 12 · jendela 14 · lg 16 · pill 999
+TASKBAR          area dipesan 54 dp, bar 48 dp, ikon 42 dp, indikator 3 dp
+JENDELA          bilah judul 40 dp, bayangan 30/12 dp, tepi snap kiri-kanan 24 dp, atas 40 dp
+JENDELA INTERNAL lebar bawaan 66% area kerja, tinggi 84%, minimum 320x220 dp
+START MENU       560 dp x maks 340 dp, 6 kolom, 6 dp di atas taskbar
+APK LUAR         kotak awal 62% x 90% area kerja (portrait-only 40% x 94%), dikoreksi hanya bila tidak masuk akal
+GERAK            90 / 150 / 220 / 320 ms, EaseOut cubic-bezier(.2,0,0,1)
+ORIENTASI        dikunci sensorLandscape (keputusan produk, PRD F-20)
+BLUR             tidak ada — kaca = gradien + alpha + garis rambut
+IKON             vektor sendiri (SukiGlyph), tanpa emoji
 ```
 
 ---
+
+## 18. Riwayat Revisi
+
+| Versi | Tanggal | Perubahan |
+|---|---|---|
+| 1.0 | 2026-10-01 | Suki Glass pertama: aurora ungu-teal, kaca, gradien |
+| 1.1 | 2026-10-02 | Matte: aksen Steel/Sage/Clay, aurora dicabut, tanpa glow |
+| 2.0 | 2026-10-02 | **Aurora kembali** setelah uji perangkat: matte dinilai datar. Palet ungu-teal dengan turunan `fill`/`on`/`text`, 6 aksen, 6 wallpaper, font dipaketkan (OFL), ikon hasil generator, kontras AA dibuktikan di CI, blur dinyatakan tidak dipakai, orientasi dikunci mendatar |
 
 *Lihat `PRD.md` untuk requirement fungsional dan `mockup.html` untuk pratinjau interaktif design system ini.*

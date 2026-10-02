@@ -10,7 +10,8 @@ Desktop environment untuk Android: launcher + window manager dengan identitas de
 ## English
 
 **What it is.** SukiOS replaces the Android home screen with a desktop: taskbar, start menu, floating windows for its own tools,
-and an optional advanced-access engine (SukiShell, running through Shizuku).
+and third-party apps opened as freeform windows instead of fullscreen. Orientation is locked to landscape, because this is a desktop.
+Advanced access runs through SukiShell (Shizuku) and is used to set up windowed launch and then *prove* it works on this device.
 **For whom.** People who use a phone or tablet like a small computer: students, tinkerers, mouse-and-keyboard users.
 Not an imitation of any brand: name, logo, icons, colors and sounds are made from scratch (`PRD.md` section 4.2).
 
@@ -18,9 +19,9 @@ Not an imitation of any brand: name, logo, icons, colors and sounds are made fro
 
 | Item | State |
 |---|---|
-| Latest tag | `v0.3.1-alpha`, draft release, debug-signed. Not for distribution |
+| Latest tag | `v0.3.1-alpha` (draft, debug-signed). `main` is green at 0.4.0; the `v0.4.0-alpha` tag is waiting for the go-ahead |
 | Compile + unit tests | verified in CI; run IDs in `PROGRESS.md` |
-| On a real device | **not tested yet.** Nobody should claim it works until a device report exists |
+| On a real device | `v0.3.1-alpha` was tested by the maintainer: the matte UI read as flat and third-party apps opened fullscreen. Both are addressed on `main` (Aurora v2 + verified windowed launch). The new build is **not device-tested yet** |
 | License | none chosen yet; all rights reserved until the maintainer decides |
 
 ### Get the APK
@@ -33,7 +34,7 @@ the debug key and the release notes say so.
 
 | Path | Contents |
 |---|---|
-| `sukios/` | Android app (Kotlin + Compose): launcher + own engines (SukiShell, SukiWin, SukiIndex, SukiKit) |
+| `sukios/` | Android app (Kotlin + Compose): launcher + own engines (SukiWin, SukiWindowing, SukiShell, SukiIndex, SukiTheme/SukiKit) |
 | `PRD.md`, `DESIGN.md` | product requirements (section 16 = platform limits, must read) and the design system |
 | `mockup.html`, `assets/` | interactive prototype, logo and icon set |
 | `docs/` | audits (`AUDIT-*.md`), release signing guide, release notes |
@@ -44,7 +45,7 @@ the debug key and the release notes say so.
 ### Quality gates (CI)
 
 `Build APK` runs on every push to `main`: workflow security check (action pins, no untrusted input in scripts) with its own self-test, JVM unit tests
-(window engine, shell execution limits, argument allowlists, brand string, source hygiene), then debug and release builds.
+(91 tests: window engine, freeform launch parsing, setup plan, shell policy and argument allowlists, WCAG contrast of the Aurora tokens, icon data vs its generator, manifest rules, brand string, source hygiene), then debug and release builds.
 `Release APK (signed, draft)` repeats the unit tests before it builds. `Cleanup CI traces` removes run history after a successful run (policy in `AGENTS.md`).
 
 Built by xykal — XyVerse Technology Global
@@ -62,9 +63,9 @@ Bukan tiruan merek apa pun: nama, logo, ikon, warna, dan suara dibuat dari nol (
 
 | Hal | Keadaan |
 |---|---|
-| Tag terbaru | `v0.3.1-alpha`, draft release, ditandatangani debug key. Bukan untuk distribusi |
+| Tag terbaru | `v0.3.1-alpha` (draft, debug key). `main` hijau di versi 0.4.0; tag `v0.4.0-alpha` menunggu persetujuan |
 | Kompilasi + uji unit | terverifikasi di CI; ID run ada di `PROGRESS.md` |
-| Di perangkat nyata | **belum diuji.** Jangan klaim berfungsi sebelum ada laporan dari perangkat |
+| Di perangkat nyata | `v0.3.1-alpha` sudah diuji pemilik produk: tampilan matte dinilai datar dan aplikasi luar terbuka layar penuh. Keduanya ditindaklanjuti di `main` (Aurora v2 + jendela terverifikasi). Build baru ini **belum diuji di perangkat** |
 | Lisensi | belum dipilih; semua hak dipegang pemilik sampai keputusan diambil |
 
 ### Mendapatkan APK
@@ -77,7 +78,7 @@ menyatakannya.
 
 | Path | Isi |
 |---|---|
-| `sukios/` | Aplikasi Android (Kotlin + Compose): launcher + mesin sendiri (SukiShell, SukiWin, SukiIndex, SukiKit) |
+| `sukios/` | Aplikasi Android (Kotlin + Compose): launcher + mesin sendiri (SukiWin, SukiWindowing, SukiShell, SukiIndex, SukiTheme/SukiKit) |
 | `PRD.md`, `DESIGN.md` | kebutuhan produk (bagian 16 = batas platform, wajib dibaca) dan design system |
 | `mockup.html`, `assets/` | prototipe interaktif, logo, dan set ikon |
 | `docs/` | audit (`AUDIT-*.md`), panduan signing rilis, catatan rilis |
@@ -88,7 +89,8 @@ menyatakannya.
 ### Gerbang kualitas (CI)
 
 `Build APK` jalan di setiap push ke `main`: pemeriksaan keamanan workflow (pin action, tanpa input tak tepercaya di skrip) lengkap dengan self-test-nya,
-uji unit JVM (mesin jendela, batas eksekusi shell, allowlist argumen, tulisan merek, kebersihan sumber), lalu build debug dan release.
+uji unit JVM (91 uji: mesin jendela, pengurai peluncuran freeform, rencana penyiapan, kebijakan shell dan allowlist argumen, kontras WCAG token Aurora, data ikon terhadap generatornya, aturan manifest, tulisan merek, kebersihan sumber),
+lalu build debug dan release.
 `Release APK (signed, draft)` mengulang uji unit sebelum membangun. `Cleanup CI traces` menghapus riwayat run setelah run sukses (kebijakan di `AGENTS.md`).
 
 ### Kebijakan repo

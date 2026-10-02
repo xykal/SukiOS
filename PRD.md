@@ -3,11 +3,11 @@
 | | |
 |---|---|
 | **Produk** | SukiOS — Desktop Environment untuk Android |
-| **Versi Dokumen** | 1.0 (Draft) |
+| **Versi Dokumen** | 1.4 |
 | **Tanggal** | 1 Oktober 2026 |
 | **Platform** | Android 10 (API 29) → Android 16 (API 36) |
 | **Bahasa UI** | Indonesia (default), English (opsional) |
-| **Status** | Discovery & Design — belum masuk development |
+| **Status** | Development (Fase 1); §16.6 = keputusan terbaru |
 
 ---
 
@@ -435,6 +435,31 @@ Legenda prioritas: **P0** = wajib MVP · **P1** = wajib V1 · **P2** = nice-to-h
 - [ ] Hasil perintah dilaporkan apa adanya (kode keluar, stdout, stderr) — tidak ada kegagalan yang disembunyikan.
 - [ ] Aturan penyimpanan kelas untuk R8 tertulis di repo, agar kontrak ini tidak terhapus di build rilis.
 
+### 7.19 Jendela Mutlak untuk Aplikasi Pihak Ketiga — `F-19`
+
+**User Story:** Sebagai pengguna, aku ingin setiap aplikasi yang kubuka dari SukiOS muncul sebagai jendela yang bisa kupindahkan dan kuubah ukurannya, supaya HP terasa seperti komputer kecil — dan bila perangkatku tidak sanggup, aku ingin diberi tahu alasan sebenarnya, bukan dibohongi.
+
+**Acceptance Criteria:**
+- [x] Peluncuran memakai satu jalur: `am start --windowingMode 5 -n <pkg>/<activity>` lewat SukiShell; argv divalidasi `ShellArgs` sebelum dikirim (`ShellArgsTest`).
+- [x] Mode tugas dibaca dari `dumpsys activity activities` lewat pengurai yang toleran terhadap bentuk dump Android 10/11/14 (`FreeformParse`, `FreeformParseTest` memakai fixture dari bentuk AOSP).
+- [x] Enam kesimpulan yang mungkin (`WINDOWED`, `UNVERIFIED`, `FULLSCREEN`, `RUNNING_FULLSCREEN`, `BLOCKED`, `FAILED`) masing-masing punya kalimat sendiri; tidak ada jalur yang melaporkan "berhasil" tanpa bukti.
+- [x] Kotak jendela awal dibiarkan dipilih sistem; dikoreksi hanya bila menutupi taskbar, keluar layar, atau lebih kecil dari 320x220 dp (`WindowBounds`, `WindowBoundsTest`).
+- [x] Penyiapan otomatis idempoten, kunci berjenjang SDK, dan diverifikasi dengan API Android — bukan dengan kode keluar perintah (`SetupPlan`, `SetupPlanTest`, `SukiAuto`).
+- [x] Ada uji jendela nyata: `ProbeActivity` dibuka sebagai jendela dan melaporkan `isInMultiWindowMode` dari dalam; hasilnya disimpan, dan status "Jendela aktif" hanya muncul bila uji itu lulus.
+- [x] Aplikasi yang sudah berjalan layar penuh tidak pernah dihentikan diam-diam; pengguna ditawari (`SukiAppMenu`).
+- [x] Potongan dump mentah tersimpan dan bisa disalin untuk diperiksa sendiri.
+- [ ] Terbukti di minimal dua perangkat nyata dengan ROM berbeda (menunggu laporan uji).
+
+### 7.20 Orientasi Dikunci Mendatar — `F-20`
+
+**User Story:** Sebagai pengguna, aku ingin SukiOS selalu mendatar, supaya geometri desktop (taskbar, jendela, snap) tidak berubah bentuk saat HP diputar.
+
+**Acceptance Criteria:**
+- [x] `SukiHomeActivity` dan `ProbeActivity` memakai `android:screenOrientation="sensorLandscape"`, `resizeableActivity="true"`, dan `configChanges` yang menutup `orientation|screenSize|screenLayout|smallestScreenSize` supaya shell tidak pernah di-recreate.
+- [x] Preferensi orientasi dihapus dari Setelan; tidak ada jalan mematikan kunci ini dari UI.
+- [x] Aturan dijaga di CI oleh `ManifestTest`.
+- [ ] Memutar perangkat dari portrait ke landscape saat aplikasi pihak ketiga sedang berjalan tidak boleh menghilangkan jendela itu (menunggu uji perangkat).
+
 ## 8. Batasan Platform Android (Realitas Teknis)
 
 Bagian ini penting supaya ekspektasi realistis. SukiOS **bukan** ROM — ia berjalan di atas Android sebagai aplikasi biasa (non-root).
@@ -728,10 +753,26 @@ Artinya, **Lapis C (embed app pihak ketiga)** di §16.2 naik statusnya dari "eks
 
 Android Go / perangkat RAM rendah diblokir platform dari multi-window. SukiOS tidak bisa (dan tidak boleh) menjanjikan yang sebaliknya. Yang dilakukan: mendeteksi kelas perangkat, menurunkan batas jendela ke 3, mematikan efek dekoratif, dan menampilkan jalur alternatif yang benar-benar bisa dipakai (split screen, overlay, force-resizable via Shizuku).
 
-**c. Aturan visual: matte, tanpa neon (DESIGN.md §1.3)**
+**c. Aturan visual: Aurora v2.0 (DESIGN.md §1.3) — aturan matte DICABUT**
 
-Gradien Aurora v1.0 (ungu-teal) dihapus dari kode, mockup, aset logo, dan dokumen. Penggantinya: palet turun-saturasi (steel `#6E8CA8`, sage `#7B9E8C`, clay `#A08F76`) dengan bayangan netral. Emoji tidak lagi dipakai sebagai ikon antarmuka (diganti badge huruf di File Explorer).
+Uji perangkat v0.3.1-alpha (2026-10-02) memberi dua keputusan: tampilan matte (steel/sage/clay) terbaca datar dan tidak meyakinkan, dan aplikasi pihak ketiga masih terbuka layar penuh. Permintaan pemilik produk eksplisit: kembalikan Aurora, dan buat lebih rapi dari v1.0.
+
+Yang berlaku sekarang: palet gelap kebiruan dengan cahaya ungu `#7C5CFF` → teal `#35D0BA`, 6 preset aksen yang masing-masing punya turunan `fill`/`on`/`text` yang dihitung untuk keterbacaan, 6 wallpaper aurora, font dipaketkan (Inter + Plus Jakarta Sans, OFL), ikon vektor hasil generator. Kontras WCAG AA 4,5:1 untuk teks dibuktikan di CI (`ThemeContrastTest`), bukan diperkirakan.
+
+Yang tetap dilarang dari aturan matte: emoji sebagai ikon, menyalin aset/trade dress OS lain, klaim efek yang tidak dipakai kode (tidak ada blur), dan laporan status yang dikarang.
+
+**d. Jendela mutlak untuk aplikasi pihak ketiga (F-19)**
+
+Setiap aplikasi yang dibuka dari SukiOS harus mendarat sebagai jendela, di perangkat apa pun yang bisa. Jalurnya satu: `am start --windowingMode 5 -n <pkg>/<activity>` lewat SukiShell (uid 2000). Hasilnya **selalu diverifikasi** dari `dumpsys activity activities` (`FreeformParse`), dan kesimpulannya salah satu dari enam: `WINDOWED`, `UNVERIFIED`, `FULLSCREEN`, `RUNNING_FULLSCREEN`, `BLOCKED`, `FAILED`. Kotak jendela awal dipilih sistem; SukiOS hanya mengoreksi bila tidak masuk akal (menutupi taskbar, keluar layar, di bawah 320x220 dp).
+
+Penyiapan otomatis (Shizuku) idempoten dan terverifikasi: `SetupPlan` mengirim hanya langkah yang belum terpenuhi, kunci yang baru dikenal Android 12L+ hanya dikirim pada SDK yang sesuai, keberhasilan diperiksa dengan API Android (bukan kode keluar perintah), dan kalimat "Jendela aktif" hanya muncul bila `ProbeActivity` (jendela uji milik SukiOS sendiri) pernah melaporkan `isInMultiWindowMode` benar di perangkat itu. Aplikasi yang sudah berjalan layar penuh tidak pernah dimatikan diam-diam: pengguna ditawari menghentikannya.
+
+Batas yang diakui: sebagian ROM pabrikan membuang dukungan freeform; di sana hasilnya `FULLSCREEN` dan dikatakan apa adanya. Mode jendela resmi dikenal sejak API 31, `minSdk` tetap 29 (keputusan produk, §8).
+
+**e. Orientasi dikunci mendatar (F-20)**
+
+Beranda dan `ProbeActivity` memakai `android:screenOrientation="sensorLandscape"` + `resizeableActivity="true"` + `configChanges` lengkap. Alasannya produk, bukan teknis: ini desktop, geometri jendela dan taskbar diukur untuk rasio mendatar, dan mode jendela di banyak ROM hanya masuk akal pada layar lebar. Preferensi pengguna untuk orientasi dihapus; `ManifestTest` menjaga aturan ini di CI.
 
 ---
 
-*Dokumen ini hidup — akan diperbarui setiap ada keputusan baru. Versioning: 1.0 → 1.1 (temuan riset window engine) → 1.2 (Shizuku + mode desktop) → 1.3 (setelah hasil uji perangkat masuk).*
+*Dokumen ini hidup — akan diperbarui setiap ada keputusan baru. Versioning: 1.0 → 1.1 (temuan riset window engine) → 1.2 (Shizuku + mode desktop) → 1.3 (aturan matte) → 1.4 (Aurora v2.0, jendela mutlak F-19, kunci mendatar F-20).*
