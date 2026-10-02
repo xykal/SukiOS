@@ -87,6 +87,23 @@ Permintaan kall: kunci landscape + desktop penuh, engine pembuka izin untuk Andr
 **Pelajaran**
 - Verifikasi lewat CI menemukan bug nyata yang tidak tertangkap uji statis (kesalahan urutan argumen pada API Compose). Karena itu klaim "berfungsi" selalu menunggu CI.
 
+### 2026-10-02 (Hari 2) — rekaman rilis v0.2.0-poc
+
+| Objek | ID / Nilai | Hasil |
+|---|---|---|
+| Build APK (percobaan 1) | run 36988978988 · commit `7952258` | gagal kompilasi (3 error `drawLine`) — run dihapus setelah diagnosis |
+| Perbaikan | commit `e2c300b` | argumen `drawLine(color, start, end)` |
+| Build APK (percobaan 2) | run 36989176265 · commit `e2c300b` | **success** (kesimpulan tercatat di log pembersih run 36989402222) |
+| Release APK | run 36991200698 · tag `v0.2.0-poc` | **success** |
+| Build APK (commit dokumen) | run 36991199736 · commit `676ba4f` | success |
+| Pembersihan | run 36991293763 dan 36991358091 | success, riwayat run dihapus |
+
+**Keadaan repo setelah pembersihan:** 2 run pembersih (riwayat pembersih dipangkas otomatis ke 2), 0 artifact, cache 4 entri / 296 MB (ditinggalkan build terakhir yang selesai setelah rilis dipurge — sesuai desain build mempertahankan cache), 2 tag, 2 draft release berisi APK, 0 secret.
+
+**Artefak:** `SukiOS-PoC-v0.2.0-poc.apk` 13,78 MB (14.113 KB), debug-signed karena secrets keystore rilis belum diset.
+
+**Belum diuji di perangkat.** Kompilasi terbukti di CI; perilaku runtime (Shizuku, force-resizable, `am start --display`, mode desktop pada berbagai OEM) menunggu laporan dari perangkat nyata.
+
 ### Langkah berikutnya
 1. Uji 5 lane di perangkat nyata, kirim laporan lewat tombol "Salin laporan" di app.
 2. Set 4 secrets keystore supaya rilis berikutnya benar-benar signed (lihat `docs/RELEASE-SIGNING.md`).
