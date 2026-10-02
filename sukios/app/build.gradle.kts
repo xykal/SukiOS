@@ -37,8 +37,8 @@ android {
         applicationId = "app.sukios"
         minSdk = 29          // Android 10 — target minimum SukiOS (PRD 8)
         targetSdk = 35
-        versionCode = 3
-        versionName = "0.3.0"
+        versionCode = 4
+        versionName = "0.3.1"
         resourceConfigurations += listOf("in", "en")
     }
 
