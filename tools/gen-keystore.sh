@@ -21,7 +21,7 @@ set -euo pipefail
 
 ALIAS="${1:-sukios}"
 OUT="${2:-sukios-release.jks}"
-REPO="${REPO:-xyikal/SukiOS}"
+REPO="${REPO:-xykal/SukiOS}"
 
 if [ -e "$OUT" ]; then
   echo "File '$OUT' sudah ada. Hapus atau pakai nama lain agar tidak menimpa." >&2
@@ -47,7 +47,7 @@ keytool -genkeypair \
   -keysize 4096 \
   -validity 10000 \
   -storetype PKCS12 \
-  -dname "CN=SukiOS, OU=Release, O=SukiOS, C=ID"
+  -dname "CN=SukiOS, OU=Release, O=XyVerse Technology Global, C=ID"
 
 echo
 echo "== Keystore dibuat: $OUT =="

@@ -44,10 +44,10 @@ Lewat CLI:
 
 ```bash
 B64=$(base64 -w0 sukios-release.jks)
-printf '%s' "$B64" | gh secret set SUKIOS_KEYSTORE_BASE64 --repo xyikal/SukiOS
-gh secret set SUKIOS_KEY_ALIAS --repo xyikal/SukiOS --body "sukios"
-gh secret set SUKIOS_KEYSTORE_PASSWORD --repo xyikal/SukiOS   # akan meminta input
-gh secret set SUKIOS_KEY_PASSWORD --repo xyikal/SukiOS        # akan meminta input
+printf '%s' "$B64" | gh secret set SUKIOS_KEYSTORE_BASE64 --repo xykal/SukiOS
+gh secret set SUKIOS_KEY_ALIAS --repo xykal/SukiOS --body "sukios"
+gh secret set SUKIOS_KEYSTORE_PASSWORD --repo xykal/SukiOS   # akan meminta input
+gh secret set SUKIOS_KEY_PASSWORD --repo xykal/SukiOS        # akan meminta input
 unset B64
 ```
 
