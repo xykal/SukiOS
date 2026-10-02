@@ -13,5 +13,5 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "SukiOS-PoC"
+rootProject.name = "SukiOS"
 include(":app")

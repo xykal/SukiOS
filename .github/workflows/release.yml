@@ -13,7 +13,7 @@ on:
   workflow_dispatch:
     inputs:
       tag:
-        description: 'Tag rilis (contoh: v0.1.0-poc)'
+        description: 'Tag rilis (contoh: v0.3.0)'
         required: true
         type: string
       notes:
@@ -31,7 +31,7 @@ concurrency:
 
 defaults:
   run:
-    working-directory: poc
+    working-directory: sukios
 
 jobs:
   release:
@@ -99,7 +99,7 @@ jobs:
             echo "::error::APK release tidak ditemukan."
             exit 1
           fi
-          OUT="SukiOS-PoC-${TAG}.apk"
+          OUT="SukiOS-${TAG}.apk"
           cp "$APK" "$OUT"
           VERSION="$(grep -m1 'versionName' app/build.gradle.kts | sed 's/.*"\(.*\)".*/\1/')"
           {
@@ -124,13 +124,13 @@ jobs:
           fi
 
           {
-            echo "## SukiOS PoC ${{ steps.meta.outputs.tag }}"
+            echo "## SukiOS ${{ steps.meta.outputs.tag }}"
             echo
-            echo "APK PoC untuk menguji window engine (6 lane uji) di perangkat nyata."
+            echo "APK SukiOS: launcher/desktop environment dengan taskbar, start menu, dan jendela mengambang."
             echo
-            echo "Yang baru di 0.2.0: mode kunci landscape + desktop penuh, panel Akses Lanjutan"
-            echo "(Shizuku: force-resizable, izin overlay, peluncuran app ke display lain), mode Go"
-            echo "untuk perangkat RAM rendah, dan tampilan matte tanpa neon."
+            echo "Yang baru di 0.3.0: jadi launcher (tombol Home masuk SukiOS), mesin jendela sendiri,"
+            echo "mesin akses lanjutan SukiShell (AIDL + UserService sendiri di atas Shizuku),"
+            echo "start menu + panel pintasan, taskbar melayang, dan mode Go untuk perangkat RAM rendah."
             echo
             echo "- Commit: \`${{ steps.meta.outputs.sha }}\`"
             echo "- versionName: \`${{ steps.meta.outputs.version }}\`"
@@ -139,7 +139,7 @@ jobs:
             echo
             echo "${NOTES_EXTRA}"
             echo
-            echo "Panduan uji: \`poc/README.md\`."
+            echo "Panduan pakai: \`sukios/README.md\`."
           } > "${RUNNER_TEMP}/notes.md"
 
           TARGET=""

@@ -8,8 +8,8 @@ plugins {
 // Signing rilis
 //
 // Prioritas: environment SUKIOS_KEYSTORE_* (diisi dari GitHub Secrets saat CI).
-// Kalau tidak lengkap, PoC jatuh ke debug key supaya build tetap jalan —
-// workflow rilis akan menandai APK seperti itu sebagai TIDAK resmi.
+// Kalau tidak lengkap, build jatuh ke debug key supaya tetap jalan — workflow
+// rilis menandai APK seperti itu sebagai TIDAK resmi.
 // Nilai rahasia tidak pernah ditulis ke file ini, hanya dibaca dari env.
 // ---------------------------------------------------------------------------
 val ksFile = System.getenv("SUKIOS_KEYSTORE_FILE")
@@ -19,7 +19,7 @@ val ksKeyPass = System.getenv("SUKIOS_KEY_PASSWORD")
 val hasReleaseSigning = listOf(ksFile, ksStorePass, ksAlias, ksKeyPass).all { !it.isNullOrBlank() }
 
 android {
-    namespace = "app.sukios.poc"
+    namespace = "app.sukios"
     compileSdk = 35
 
     signingConfigs {
@@ -34,11 +34,11 @@ android {
     }
 
     defaultConfig {
-        applicationId = "app.sukios.poc"
-        minSdk = 29          // Android 10 — sama dengan target minimum SukiOS (PRD §8)
+        applicationId = "app.sukios"
+        minSdk = 29          // Android 10 — target minimum SukiOS (PRD 8)
         targetSdk = 35
-        versionCode = 2
-        versionName = "0.2.0-poc"
+        versionCode = 3
+        versionName = "0.3.0"
         resourceConfigurations += listOf("in", "en")
     }
 
@@ -47,7 +47,10 @@ android {
             isMinifyEnabled = false
         }
         release {
-            isMinifyEnabled = false
+            // R8 menyala: AIDL Stub dan kelas UserService wajib disimpan,
+            // aturannya ada di proguard-rules.pro.
+            isMinifyEnabled = true
+            isShrinkResources = true
             signingConfig = if (hasReleaseSigning) {
                 signingConfigs.getByName("release")
             } else {
@@ -71,6 +74,9 @@ android {
 
     buildFeatures {
         compose = true
+        // AIDL menyala karena SukiShell memakai kontrak sendiri (ISukiShell),
+        // bukan API yang sudah ditinggalkan.
+        aidl = true
     }
 
     packaging {
@@ -85,16 +91,16 @@ dependencies {
     implementation("androidx.activity:activity-compose:1.9.3")
 
     // Compose BOM: menyamakan versi semua library Compose.
-    // Kalau mau versi terbaru, lihat developer.android.com/develop/ui/compose/bom/bom-mapping
     implementation(platform("androidx.compose:compose-bom:2024.10.01"))
     implementation("androidx.compose.ui:ui")
     implementation("androidx.compose.foundation:foundation")
     implementation("androidx.compose.runtime:runtime")
 
-    // Shizuku — engine akses lanjutan (identitas shell/uid 2000).
-    // Versi dipin ke 12.2.0 secara SENGAJA: API 13.x sudah menghapus newProcess
-    // (penggantinya UserService). Keputusan ini didasarkan pada pemeriksaan
-    // bytecode AAR, bukan asumsi. Lihat ShizukuEngine.kt untuk catatan lengkap.
-    implementation("dev.rikka.shizuku:api:12.2.0")
-    implementation("dev.rikka.shizuku:provider:12.2.0")
+    // Shizuku 13.1.5 — dipakai sebagai KURIR binder saja.
+    // Semua eksekusi berjalan di UserService milik SukiOS (ISukiShell),
+    // karena Shizuku#newProcess sudah dihapus sejak 13.x.
+    // Dipastikan lewat pemeriksaan bytecode AAR: newProcess = 0 hasil,
+    // bindUserService + UserServiceArgs tersedia penuh.
+    implementation("dev.rikka.shizuku:api:13.1.5")
+    implementation("dev.rikka.shizuku:provider:13.1.5")
 }

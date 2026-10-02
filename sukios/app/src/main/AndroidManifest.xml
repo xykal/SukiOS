@@ -3,26 +3,33 @@
 
     <!--
       QUERY_ALL_PACKAGES
-      Google Play mengizinkan permission ini untuk LAUNCHER (lihat PRD §8).
-      Di sini dipakai untuk mengukur: berapa banyak app yang terlihat oleh SukiOS.
-      Alternatif yang lebih hemat izin: blok <queries> di bawah (sudah dipasang).
+      Google Play mengizinkan permission ini untuk LAUNCHER (PRD 8). SukiOS
+      memang launcher: butuh daftar aplikasi terpasang untuk desktop, start
+      menu, dan pencarian. Alternatif hemat izin (blok <queries>) tetap dipasang.
     -->
     <uses-permission android:name="android.permission.QUERY_ALL_PACKAGES" />
 
-    <!-- Dipakai HANYA untuk uji coba "taskbar melayang di atas app lain" -->
+    <!-- Taskbar melayang di atas app lain (opsional, diminta lewat UI Setup) -->
     <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
 
-    <!-- Cara Play-friendly untuk melihat app yang punya launcher, tanpa izin di atas -->
+    <!-- Untuk panel pintasan: cermin status bar (baterai, jam) -->
+    <uses-permission android:name="android.permission.EXPAND_STATUS_BAR" />
+
+    <!-- Agar aksi "hapus aplikasi" bisa memakai dialog sistem -->
+    <uses-permission android:name="android.permission.REQUEST_DELETE_PACKAGES" />
+
+    <!-- Cara Play-friendly untuk melihat app yang punya launcher -->
     <queries>
         <intent>
             <action android:name="android.intent.action.MAIN" />
             <category android:name="android.intent.category.LAUNCHER" />
         </intent>
-        <!-- Agar aplikasi Shizuku bisa dideteksi/dibuka dari jendela Akses Lanjutan -->
+        <!-- Agar aplikasi Shizuku bisa dideteksi/dibuka dari panel Akses Lanjutan -->
         <package android:name="moe.shizuku.privileged.api" />
     </queries>
 
     <application
+        android:name=".SukiApp"
         android:allowBackup="false"
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
@@ -31,23 +38,29 @@
         android:theme="@style/SukiTheme">
 
         <!--
-          configChanges: WAJIB untuk host yang memakai virtual display / activity embedding.
-          Kalau Activity di-recreate, semua jendela embed ikut mati.
+          Beranda SukiOS — sekaligus launcher (HOME + DEFAULT).
+          configChanges dipasang supaya shell tidak pernah di-recreate saat
+          orientasi/ukuran berubah: jendela yang sedang terbuka harus selamat.
         -->
         <activity
-            android:name=".MainActivity"
+            android:name=".SukiHomeActivity"
             android:configChanges="orientation|screenSize|screenLayout|smallestScreenSize|keyboard|keyboardHidden|density|uiMode|layoutDirection|fontScale|locale|touchscreen|navigation"
             android:exported="true"
             android:launchMode="singleTask"
-            android:resizeableActivity="true">
+            android:resizeableActivity="true"
+            android:stateNotNeeded="true"
+            android:windowSoftInputMode="adjustResize">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
+                <category android:name="android.intent.category.HOME" />
+                <category android:name="android.intent.category.DEFAULT" />
             </intent-filter>
         </activity>
 
+        <!-- Taskbar melayang; hidup hanya kalau pengguna menyalakannya -->
         <service
-            android:name=".OverlayTaskbarService"
+            android:name=".SukiOverlayBar"
             android:exported="false" />
 
         <!--
