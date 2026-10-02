@@ -214,6 +214,8 @@ tidak pernah melewati CI sama sekali.
 | 2026-10-02 20:22 | `Build APK` run **37059892157** (commit `4ad1062`, dokumen saja) — **success** | `CI-VERIFIED 37059892157`; URL job terekam di `ci-evidence/jobs.txt` sebelum run dihapus. Log gagal ditarik (404) |
 | 2026-10-02 20:26 | `Build APK` run **37060453979** (commit `eb14c46`, dokumen + bundel) — **success** | `CI-VERIFIED 37060453979`; **log tersimpan** di `ci-evidence/run37060453979.log`: `uji unit: 91 dijalankan, 0 gagal, 0 error, 0 dilewati`; self-test workflow lulus (5 contoh buruk ditolak); `assembleDebug` + `assembleRelease` BUILD SUCCESSFUL; APK debug 22 MB, release 2,2 MB |
 | 2026-10-02 20:40 | `Build APK` run **37061983778** (commit `c1ef801`, dokumen saja) — **success** | `CI-VERIFIED 37061983778`; log di `ci-evidence/run37061983778.log`: `uji unit: 91 dijalankan, 0 gagal`; `3 workflow bersih (W1-W4)` setelah nama langkah uji diubah; debug + release BUILD SUCCESSFUL |
+| 2026-10-02 20:42 | `Build APK` run **37062204334** (commit `e91f695`) — **success** | `CI-VERIFIED 37062204334`; log di `ci-evidence/run37062204334.log`. Commit inilah yang di-tag `v0.4.0-alpha` |
+| 2026-10-02 20:51 | `Build APK` run **37062663145** (commit `0f93217`, dokumen saja) — **success** | `CI-VERIFIED 37062663145`; log di `ci-evidence/run37062663145.log`: `uji unit: 91 dijalankan, 0 gagal, 0 error, 0 dilewati`. Build ini lambat (5,5 menit) karena cache Gradle baru dihapus oleh purge pasca-rilis — sesuai kebijakan `AGENTS.md` |
 | 2026-10-02 17:39 | run 37042179977 (`ef1a648`) — **failure**, 91 uji / 2 gagal | Run gagal tidak dihapus otomatis; log lengkap tersimpan di `ci-evidence/run37042179977-unit.log` |
 
 **Rilis**
