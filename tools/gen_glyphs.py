@@ -249,6 +249,7 @@ def kotlin():
         s, f = ICONS[name]
         end = ";" if i == len(NAMES) - 1 else ","
         lines.append('    %s("%s", "%s")%s' % (name, s, f, end))
+    lines.append("}")
     return "\n".join(lines) + "\n"
 
 
