@@ -34,6 +34,6 @@
    public static final android.os.Parcelable$Creator CREATOR;
 }
 
-# --- Nama kelas yang muncul di laporan diagnostik tetap terbaca ---
--keepattributes SourceFile,LineNumberTable
--renamesourcefileattribute SourceFile
+# --- Ukuran rilis ---
+# SourceFile/LineNumberTable tidak disimpan di APK release/debug-minified; bukti versi datang dari commit + CI log.
+# Ini mengurangi dex/metadata yang ikut terpasang tanpa menyentuh kontrak binder.

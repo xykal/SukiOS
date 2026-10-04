@@ -14,10 +14,10 @@ Modul ini (`sukios/`) adalah aplikasi Android-nya. Dokumen produk ada di akar re
 | Hal | Keadaan |
 |---|---|
 | Kompilasi + uji unit | **terverifikasi di CI**; run dan bukti log dicatat di `../PROGRESS.md` |
-| Rilis uji terbaru | `v0.4.1-alpha`, draft release setelah workflow rilis selesai |
+| Rilis uji terbaru | `v0.4.2-alpha`, draft release setelah workflow rilis selesai |
 | Tanda tangan | **debug key** bila 4 secrets keystore rilis belum diset. Jangan dipakai untuk distribusi publik |
-| Uji di perangkat | `v0.4.1-alpha` **belum diuji di perangkat nyata**. Uji unit membuktikan logika JVM/kompilasi, bukan perilaku OEM/ROM |
-| Checklist uji | Ikuti `../docs/release-notes/v0.4.1-alpha.md`, bagian “Yang harus diuji di perangkat” |
+| Uji di perangkat | `v0.4.2-alpha` **belum diuji di perangkat nyata**. Uji unit membuktikan logika JVM/kompilasi, bukan perilaku OEM/ROM |
+| Checklist uji | Ikuti `../docs/release-notes/v0.4.2-alpha.md`, bagian “Yang harus diuji di perangkat” |
 
 ---
 
@@ -30,6 +30,7 @@ Modul ini (`sukios/`) adalah aplikasi Android-nya. Dokumen produk ada di akar re
 - Start menu: pencarian aplikasi, grid sematan, daftar aplikasi, dan aksi cepat.
 - Panel pintasan: status jendela, status Shizuku, saklar desktop penuh, taskbar melayang, pemilih 6 aksen dan 6 wallpaper.
 - Setelan Tampilan bisa memakai Aurora bawaan atau live wallpaper sistem Android di belakang desktop SukiOS.
+- Liquid glass pass: dock/taskbar dan panel lebih transparan, rim Aurora lebih halus, radius tidak setumpul versi sebelumnya.
 - Mode Go/RAM rendah: batas jendela internal turun ke 3 dan gerak wallpaper dimatikan.
 
 **Tampilan Aurora v2**
@@ -66,7 +67,7 @@ Modul ini (`sukios/`) adalah aplikasi Android-nya. Dokumen produk ada di akar re
 
 ## Memasang build uji
 
-1. Unduh APK dari draft release `v0.4.1-alpha` di halaman Releases.
+1. Unduh APK dari draft release `v0.4.2-alpha` di halaman Releases.
 2. Pasang APK (izinkan “instal dari sumber tidak dikenal” bila diminta).
 3. Buka SukiOS, lalu jadikan launcher default dari pilihan Home atau Setelan Android.
 4. Opsional: beri izin “tampil di atas aplikasi lain” untuk taskbar melayang.
@@ -74,7 +75,7 @@ Modul ini (`sukios/`) adalah aplikasi Android-nya. Dokumen produk ada di akar re
 
 ## Menguji sendiri di perangkat
 
-Checklist utama ada di `../docs/release-notes/v0.4.1-alpha.md`. Ringkasnya:
+Checklist utama ada di `../docs/release-notes/v0.4.2-alpha.md`. Ringkasnya:
 
 | Yang diuji | Caranya | Hasil yang diharapkan |
 |---|---|---|

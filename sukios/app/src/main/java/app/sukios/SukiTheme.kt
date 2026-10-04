@@ -43,10 +43,10 @@ const val TASKBAR_DP = 54
 const val TASKBAR_BAR_DP = 48
 const val ICON_DP = 48
 
-const val RADIUS_SM = 8
-const val RADIUS_MD = 12
-const val RADIUS_LG = 16
-const val RADIUS_WIN = 14
+const val RADIUS_SM = 6
+const val RADIUS_MD = 9
+const val RADIUS_LG = 12
+const val RADIUS_WIN = 10
 const val RADIUS_PILL = 999
 
 // ---- Gerak (ms) ----

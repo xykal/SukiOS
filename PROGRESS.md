@@ -420,3 +420,33 @@ Setelah draft release terverifikasi, sisa riwayat Actions yang masih terlihat di
 - Actions cache: **0**.
 - Tag `v0.4.1-alpha`: tetap ada.
 - Draft release `v0.4.1-alpha`: tetap ada, asset `SukiOS-v0.4.1-alpha.apk` **2.283.840 byte** tetap ada.
+
+## 2026-10-04 — R8/fullscreen/liquid glass UI pass
+
+Permintaan: ukuran install melonjak, tambah R8, UI/UX kurang konsisten dan terlalu bulat, tambah liquid glass yang terasa di background/dock, pastikan fullscreen, tambah yang kurang dan perbaiki yang rusak.
+
+**Audit singkat**
+- Release sudah R8 + shrink resources, APK draft v0.4.1 hanya 2.283.840 byte. Angka install 200 MB kemungkinan dari build debug tanpa shrink atau perhitungan Android Settings yang memasukkan data/cache/compiled oat.
+- Debug build belum memakai R8; ini bisa membengkak bila dipasang manual.
+- UI radius masih besar (8/12/16/14 dp), icon mask 26%, dan Glass masih terlalu opaque sehingga belum terasa liquid.
+- Fullscreen perlu re-apply saat kembali fokus dari picker/settings Android.
+
+**Done**
+- `android.enableR8.fullMode=true` ditambahkan.
+- Debug dan release sama-sama memakai R8 + shrinkResources.
+- R8 rules tidak lagi menyimpan `SourceFile/LineNumberTable`.
+- Radius token diperkecil: 6/9/12/10 dp; icon mask turun ke 21%.
+- `Glass()` dan `Panel()` diberi liquid Aurora refraction; taskbar/dock alpha turun ke 0.76.
+- Theme fullscreen/cutout/transparent bars ditambah; `SukiHomeActivity` re-apply fullscreen di `onResume` dan `onWindowFocusChanged`.
+- Dokumen audit baru: `docs/AUDIT-2026-10-04-R8-UI.md`.
+- Catatan rilis baru: `docs/release-notes/v0.4.2-alpha.md`.
+
+**Verifikasi lokal**
+- `python3 tools/check_workflows.py` — `LOCAL-VERIFIED`.
+- `python3 tools/check_workflows.py --self-test` — `LOCAL-VERIFIED`.
+- `python3 tools/gen_glyphs.py --check` — `LOCAL-VERIFIED`.
+- Semua sumber Kotlin tulisan tangan tetap <300 baris.
+
+**Belum dilakukan**
+- Build/unit test Gradle lokal: `BLOCKED` karena workspace ini tidak punya Gradle/Android SDK/JDK 17.
+- CI/release draft v0.4.2-alpha: menunggu push/tag.

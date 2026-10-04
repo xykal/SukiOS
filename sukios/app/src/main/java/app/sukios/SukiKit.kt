@@ -98,24 +98,36 @@ fun fieldStyle(size: Int = 13, mono: Boolean = false): TextStyle =
     )
 
 // ---- Permukaan ----
-/** Permukaan kaca: bidang gelap hampir buram, kilau tipis di atas, garis tepi gradien, bayangan netral. */
+/** Permukaan liquid glass: transparan, punya rim terang, dan bias warna Aurora dari wallpaper di belakangnya. */
 @Composable
 fun Glass(
     modifier: Modifier = Modifier,
     radius: Int = RADIUS_LG,
     tint: Color = SSheet,
-    alpha: Float = 0.94f,
+    alpha: Float = 0.82f,
     lift: Int = 20,
     content: @Composable BoxScope.() -> Unit,
 ) {
+    val ac = accentNow()
     val shape = RoundedCornerShape(radius.dp)
+    val liquid = Brush.linearGradient(
+        listOf(ac.main.copy(alpha = 0.10f), Color.Transparent, ac.second.copy(alpha = 0.08f)),
+        start = Offset(0f, 0f),
+        end = Offset(900f, 220f),
+    )
+    val rim = Brush.linearGradient(
+        listOf(Color.White.copy(alpha = 0.34f), ac.main.copy(alpha = 0.20f), Color.White.copy(alpha = 0.08f)),
+        start = Offset(0f, 0f),
+        end = Offset(700f, 260f),
+    )
     Box(
         modifier
             .shadow(lift.dp, shape, clip = false, ambientColor = SHADOW_AMBIENT, spotColor = SHADOW_SPOT)
             .clip(shape)
             .background(tint.copy(alpha = alpha))
+            .background(liquid)
             .background(SHEEN)
-            .border(1.dp, EDGE, shape),
+            .border(1.dp, rim, shape),
         content = content,
     )
 }
@@ -129,11 +141,14 @@ fun Panel(
     pad: Int = 12,
     content: @Composable ColumnScope.() -> Unit,
 ) {
+    val ac = accentNow()
     val shape = RoundedCornerShape(radius.dp)
     Column(
         modifier
             .clip(shape)
-            .background(color.copy(alpha = 0.72f))
+            .background(color.copy(alpha = 0.68f))
+            .background(Brush.linearGradient(listOf(ac.main.copy(alpha = 0.06f), Color.Transparent, ac.second.copy(alpha = 0.04f))))
+            .background(SHEEN)
             .border(1.dp, SLineSoft, shape)
             .padding(pad.dp),
         content = content,

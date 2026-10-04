@@ -53,7 +53,7 @@ fun Taskbar(app: SukiApp) {
 
     Glass(
         Modifier.fillMaxWidth().padding(start = 10.dp, end = 10.dp, bottom = 6.dp).height(TASKBAR_BAR_DP.dp),
-        radius = RADIUS_LG, tint = SSheet, alpha = 0.92f, lift = 18,
+        radius = RADIUS_LG, tint = SSheet, alpha = 0.76f, lift = 18,
     ) {
         Row(Modifier.fillMaxSize().padding(horizontal = 6.dp), verticalAlignment = Alignment.CenterVertically) {
             BarItem(

@@ -37,14 +37,21 @@ android {
         applicationId = "app.sukios"
         minSdk = 29          // Android 10 — target minimum SukiOS (PRD 8)
         targetSdk = 35
-        versionCode = 6
-        versionName = "0.4.1"
+        versionCode = 7
+        versionName = "0.4.2"
         resourceConfigurations += listOf("in", "en")
     }
 
     buildTypes {
         debug {
-            isMinifyEnabled = false
+            // Debug ikut R8 supaya APK yang tidak sengaja dipasang dari build biasa tidak membengkak,
+            // dan supaya keep-rule SukiShell/Shizuku ketahuan lebih awal di CI.
+            isMinifyEnabled = true
+            isShrinkResources = true
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro"
+            )
         }
         release {
             // R8 menyala: AIDL Stub dan kelas UserService wajib disimpan,

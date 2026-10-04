@@ -54,7 +54,7 @@ fun initialOf(label: String): String = label.trim().take(1).uppercase().ifBlank 
 /** Ikon aplikasi asli (sudah dinormalkan jadi kotak bulat oleh SukiIndex), atau huruf awal di atas gradien. */
 @Composable
 fun AppIcon(entry: AppEntry, size: Int = ICON_DP, modifier: Modifier = Modifier, lift: Boolean = false) {
-    val shape = RoundedCornerShape((size * 0.26f).dp)
+    val shape = RoundedCornerShape((size * 0.21f).dp)
     val base = if (lift) modifier.shadow(6.dp, shape, clip = false, ambientColor = Color(0x66000000), spotColor = Color(0x99000000)) else modifier
     val icon = entry.icon
     if (icon != null) {
@@ -80,7 +80,7 @@ fun AppIcon(entry: AppEntry, size: Int = ICON_DP, modifier: Modifier = Modifier,
 /** Ubin ikon bawaan SukiOS: glyph di atas plat gradien berwarna [tone]. */
 @Composable
 fun IconTile(kind: GlyphKind, tone: Color, size: Int = ICON_DP, modifier: Modifier = Modifier, lift: Boolean = false) {
-    val shape = RoundedCornerShape((size * 0.26f).dp)
+    val shape = RoundedCornerShape((size * 0.21f).dp)
     val base = if (lift) modifier.shadow(6.dp, shape, clip = false, ambientColor = Color(0x66000000), spotColor = Color(0x99000000)) else modifier
     Box(
         base

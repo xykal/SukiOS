@@ -77,6 +77,12 @@ class SukiHomeActivity : ComponentActivity() {
         SukiAuto.refreshCore(app)
         SukiRuntime.isDefaultLauncher = app.index.isCurrentLauncher()
         SukiRuntime.overlayBarOn = app.prefs.overlayBar.value && app.index.hasOverlay()
+        applyDesktopMode(app.prefs.fullDesktop.value)
+    }
+
+    override fun onWindowFocusChanged(hasFocus: Boolean) {
+        super.onWindowFocusChanged(hasFocus)
+        if (hasFocus) applyDesktopMode(app.prefs.fullDesktop.value)
     }
 
     override fun onNewIntent(intent: Intent) {
