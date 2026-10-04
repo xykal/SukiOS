@@ -450,3 +450,33 @@ Permintaan: ukuran install melonjak, tambah R8, UI/UX kurang konsisten dan terla
 **Belum dilakukan**
 - Build/unit test Gradle lokal: `BLOCKED` karena workspace ini tidak punya Gradle/Android SDK/JDK 17.
 - CI/release draft v0.4.2-alpha: menunggu push/tag.
+
+## 2026-10-04 — v0.4.2-alpha CI, draft release, cleanup
+
+Target commit untuk build UI/R8: `49d3cfc feat(ui): tighten R8 and liquid glass fullscreen`.
+
+**Build CI**
+- Build APK run `37169363723` untuk `49d3cfc`: `CI-VERIFIED`, selesai `success`.
+- Workflow cleanup `37169630056`: `CI-VERIFIED`, selesai `success`, menghapus run build sesuai kebijakan tidak menyimpan jejak CI.
+
+**Draft release**
+- Tag: `v0.4.2-alpha` -> `49d3cfc`.
+- Release APK run `37169644016`: `CI-VERIFIED`, selesai `success`.
+- Draft release id: `402778868`.
+- Draft: `true`.
+- Asset: `SukiOS-v0.4.2-alpha.apk`, ukuran **2.283.848 byte**.
+- versionCode: `7`; versionName: `0.4.2`.
+- Tanda tangan: debug key bila secrets keystore rilis belum diset oleh repo.
+
+**Pembersihan akhir**
+- Cleanup run `37169697905`: `CI-VERIFIED`, selesai `success`.
+- Manual API DELETE run cleanup yang tersisa: `37169697905` dan `37169630056` -> HTTP `204`.
+- Verifikasi akhir API:
+  - Actions runs: **0**.
+  - Actions artifacts: **0**.
+  - Actions cache: **0**.
+- Draft release `v0.4.2-alpha` tetap ada, asset APK tetap ada.
+
+**Belum terverifikasi perangkat**
+- Angka ukuran setelah instal di Android Settings perlu dicek di perangkat nyata karena OS bisa menghitung data/cache/compiled oat.
+- Efek visual liquid glass/fullscreen juga perlu konfirmasi di ROM target.
