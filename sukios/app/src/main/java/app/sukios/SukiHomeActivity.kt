@@ -3,6 +3,7 @@ package app.sukios
 import android.app.ActivityManager
 import android.content.Intent
 import android.os.Bundle
+import android.view.WindowManager
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.core.view.WindowCompat
@@ -30,6 +31,9 @@ class SukiHomeActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         val prefs = app.prefs
+        // Izinkan wallpaper sistem/live wallpaper digambar di belakang Beranda. Saat mode Aurora biasa,
+        // lapisan Compose tetap menutupnya; saat wallpaper sistem dipilih, lapisan itu dibuat transparan.
+        window.addFlags(WindowManager.LayoutParams.FLAG_SHOW_WALLPAPER)
 
         // Kelas perangkat menentukan batas jendela SukiOS: perangkat RAM rendah/Go dibatasi 3 jendela
         // (sistem memang membatasi multi-window di sana) dan tidak menjalankan animasi dekoratif.

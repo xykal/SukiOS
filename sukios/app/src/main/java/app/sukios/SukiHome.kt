@@ -96,8 +96,9 @@ fun SukiHome(app: SukiApp, onApplyDesktop: (Boolean) -> Unit) {
         }
     }
 
+    val systemWallpaper = isSystemLiveWallpaper(SukiRuntime.wallpaperId)
     Box(
-        Modifier.fillMaxSize().background(SBg).onSizeChanged {
+        Modifier.fillMaxSize().background(if (systemWallpaper) SBg.copy(alpha = 0f) else SBg).onSizeChanged {
             SukiRuntime.screenW = it.width.toFloat()
             SukiRuntime.screenH = it.height.toFloat()
         },

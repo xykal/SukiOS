@@ -76,8 +76,10 @@ fun SettingsContent(app: SukiApp) {
 
 @Composable
 private fun LookTab(app: SukiApp) {
+    val ctx = LocalContext.current
     val prefs = app.prefs
     val motion by prefs.wallMotion.collectAsState()
+    val wallpaperId by prefs.wallpaper.collectAsState()
     ScrollArea {
         Label("Aksen")
         ColSpacer(8)
@@ -127,11 +129,37 @@ private fun LookTab(app: SukiApp) {
             }
             Spacer(Modifier.height(8.dp))
         }
+        ColSpacer(8)
+        Panel(Modifier.fillMaxWidth(), pad = 12) {
+            val liveOn = wallpaperId == WALLPAPER_SYSTEM_LIVE
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                IconTile(GlyphKind.SPARK, if (liveOn) SSuccess else SInfo, 38)
+                Spacer(Modifier.width(10.dp))
+                Column(Modifier.weight(1f)) {
+                    Txt("Live wallpaper sistem", 13, SText, FontWeight.SemiBold)
+                    Txt("Pakai live wallpaper Android di belakang desktop SukiOS.", 11, SDim, maxLines = 2)
+                }
+                StatusPill(if (liveOn) "aktif" else "opsional", if (liveOn) SSuccess else SInfo)
+            }
+            ColSpacer(8)
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Btn(if (liveOn) "Mode aktif" else "Pakai", icon = GlyphKind.CHECK, enabled = !liveOn) {
+                    prefs.setWallpaper(WALLPAPER_SYSTEM_LIVE)
+                    SukiRuntime.say("Live wallpaper sistem dipakai di belakang SukiOS.", Tone.OK)
+                }
+                BtnGhost("Pilih live wallpaper", icon = GlyphKind.EXTERNAL) {
+                    prefs.setWallpaper(WALLPAPER_SYSTEM_LIVE)
+                    val ok = openLiveWallpaperPicker(ctx)
+                    SukiRuntime.say(if (ok) "Pilih live wallpaper dari Android." else "Pemilih wallpaper tidak tersedia.", if (ok) Tone.INFO else Tone.WARN)
+                }
+            }
+        }
         ColSpacer(10)
         ToggleRow(
-            "Wallpaper bergerak", motion && !SukiRuntime.goMode,
-            if (SukiRuntime.goMode) "Dimatikan di perangkat RAM rendah (mode Go)." else "Cahaya aurora bergeser pelan. Mematikannya menghemat baterai.",
-        ) { if (!SukiRuntime.goMode) prefs.setWallMotion(it) }
+            "Wallpaper bergerak", motion && !SukiRuntime.goMode && wallpaperId != WALLPAPER_SYSTEM_LIVE,
+            if (wallpaperId == WALLPAPER_SYSTEM_LIVE) "Tidak dipakai saat live wallpaper sistem aktif."
+            else if (SukiRuntime.goMode) "Dimatikan di perangkat RAM rendah (mode Go)." else "Cahaya aurora bergeser pelan. Mematikannya menghemat baterai.",
+        ) { if (!SukiRuntime.goMode && wallpaperId != WALLPAPER_SYSTEM_LIVE) prefs.setWallMotion(it) }
     }
 }
 

@@ -1,7 +1,7 @@
 # SukiOS
 
-Android desktop environment: launcher + window manager with its own design identity (**Suki Glass**).
-Desktop environment untuk Android: launcher + window manager dengan identitas desain sendiri (**Suki Glass**).
+Android desktop environment: launcher + window manager with its own design identity (**Suki Glass / Aurora v2**).
+Desktop environment untuk Android: launcher + window manager dengan identitas desain sendiri (**Suki Glass / Aurora v2**).
 
 [English](#english) · [Bahasa Indonesia](#bahasa-indonesia)
 
@@ -10,8 +10,9 @@ Desktop environment untuk Android: launcher + window manager dengan identitas de
 ## English
 
 **What it is.** SukiOS replaces the Android home screen with a desktop: taskbar, start menu, floating windows for its own tools,
-and third-party apps opened as freeform windows instead of fullscreen. Orientation is locked to landscape, because this is a desktop.
-Advanced access runs through SukiShell (Shizuku) and is used to set up windowed launch and then *prove* it works on this device.
+and third-party apps opened as Android freeform windows instead of fullscreen when the device allows it. Orientation is locked to landscape,
+because this is a desktop. Advanced access runs through SukiShell (Shizuku) and is used to set up windowed launch and then *prove* it works on this device.
+
 **For whom.** People who use a phone or tablet like a small computer: students, tinkerers, mouse-and-keyboard users.
 Not an imitation of any brand: name, logo, icons, colors and sounds are made from scratch (`PRD.md` section 4.2).
 
@@ -19,9 +20,9 @@ Not an imitation of any brand: name, logo, icons, colors and sounds are made fro
 
 | Item | State |
 |---|---|
-| Latest tag | `v0.3.1-alpha` (draft, debug-signed). `main` is green at 0.4.0; the `v0.4.0-alpha` tag is waiting for the go-ahead |
-| Compile + unit tests | verified in CI; run IDs in `PROGRESS.md` |
-| On a real device | `v0.3.1-alpha` was tested by the maintainer: the matte UI read as flat and third-party apps opened fullscreen. Both are addressed on `main` (Aurora v2 + verified windowed launch). The new build is **not device-tested yet** |
+| Latest tag | `v0.4.0-alpha` (draft release, debug-signed until release keystore secrets are configured) |
+| Compile + unit tests | verified in CI; run IDs and captured evidence are in `PROGRESS.md` |
+| On a real device | `v0.3.1-alpha` was tested by the maintainer: the matte UI read as flat and third-party apps opened fullscreen. Both were addressed in `v0.4.0-alpha` (Aurora v2 + verified windowed launch), but this new build is **not device-tested yet** |
 | License | none chosen yet; all rights reserved until the maintainer decides |
 
 ### Get the APK
@@ -30,22 +31,24 @@ APKs are not kept as CI artifacts. Push a tag (`git tag vX.Y.Z-suffix && git pus
 attaches the APK to a **draft release**. Signed releases need 4 repository secrets (`docs/RELEASE-SIGNING.md`); without them the APK uses
 the debug key and the release notes say so.
 
+For current device testing, use the draft `v0.4.0-alpha` APK and follow `docs/release-notes/v0.4.0-alpha.md`.
+
 ### Repository
 
 | Path | Contents |
 |---|---|
 | `sukios/` | Android app (Kotlin + Compose): launcher + own engines (SukiWin, SukiWindowing, SukiShell, SukiIndex, SukiTheme/SukiKit) |
-| `PRD.md`, `DESIGN.md` | product requirements (section 16 = platform limits, must read) and the design system |
-| `mockup.html`, `assets/` | interactive prototype, logo and icon set |
+| `PRD.md`, `DESIGN.md` | product requirements (section 16 = platform limits, must read) and the Aurora v2 design system |
+| `mockup.html`, `assets/` | legacy interactive prototype (currently stale matte v1.1), logo and icon assets |
 | `docs/` | audits (`AUDIT-*.md`), release signing guide, release notes |
-| `tools/` | `check_workflows.py`, `cleanup_ci.py`, `gen-keystore.sh` |
+| `tools/` | `check_workflows.py`, `cleanup_ci.py`, `gen-keystore.sh`, glyph/font helpers |
 | `PROGRESS.md`, `IDEAS.md` | dated work log, idea backlog |
-| `SECURITY.md`, `THIRD_PARTY_NOTICES.md` | disclosure policy, third-party licenses (DRAFT) |
+| `SECURITY.md`, `THIRD_PARTY_NOTICES.md` | disclosure policy, third-party notices (DRAFT) |
 
 ### Quality gates (CI)
 
 `Build APK` runs on every push to `main`: workflow security check (action pins, no untrusted input in scripts) with its own self-test, JVM unit tests
-(91 tests: window engine, freeform launch parsing, setup plan, shell policy and argument allowlists, WCAG contrast of the Aurora tokens, icon data vs its generator, manifest rules, brand string, source hygiene), then debug and release builds.
+(window engine, freeform launch parsing, setup plan, shell policy and argument allowlists, WCAG contrast of the Aurora tokens, icon data vs its generator, manifest rules, brand string, source hygiene), then debug and release builds.
 `Release APK (signed, draft)` repeats the unit tests before it builds. `Cleanup CI traces` removes run history after a successful run (policy in `AGENTS.md`).
 
 Built by xykal — XyVerse Technology Global
@@ -55,7 +58,9 @@ Built by xykal — XyVerse Technology Global
 ## Bahasa Indonesia
 
 **Apa ini.** SukiOS mengganti layar utama Android dengan desktop: taskbar, start menu, jendela mengambang untuk alat bawaannya,
-dan mesin akses lanjutan opsional (SukiShell, lewat Shizuku).
+dan aplikasi pihak ketiga yang dicoba dibuka sebagai jendela freeform Android saat perangkat mengizinkan. Orientasi dikunci mendatar karena ini desktop.
+Akses lanjutan opsional berjalan lewat SukiShell (Shizuku) untuk menyiapkan mode jendela dan membuktikan hasilnya di perangkat itu.
+
 **Untuk siapa.** Orang yang memakai HP atau tablet seperti komputer kecil: mahasiswa, tinkerer, pengguna mouse dan keyboard.
 Bukan tiruan merek apa pun: nama, logo, ikon, warna, dan suara dibuat dari nol (`PRD.md` bagian 4.2).
 
@@ -63,9 +68,9 @@ Bukan tiruan merek apa pun: nama, logo, ikon, warna, dan suara dibuat dari nol (
 
 | Hal | Keadaan |
 |---|---|
-| Tag terbaru | `v0.3.1-alpha` (draft, debug key). `main` hijau di versi 0.4.0; tag `v0.4.0-alpha` menunggu persetujuan |
-| Kompilasi + uji unit | terverifikasi di CI; ID run ada di `PROGRESS.md` |
-| Di perangkat nyata | `v0.3.1-alpha` sudah diuji pemilik produk: tampilan matte dinilai datar dan aplikasi luar terbuka layar penuh. Keduanya ditindaklanjuti di `main` (Aurora v2 + jendela terverifikasi). Build baru ini **belum diuji di perangkat** |
+| Tag terbaru | `v0.4.0-alpha` (draft release, debug key sampai secrets keystore rilis diset) |
+| Kompilasi + uji unit | terverifikasi di CI; ID run dan bukti log ada di `PROGRESS.md` |
+| Di perangkat nyata | `v0.3.1-alpha` sudah diuji pemilik produk: tampilan matte dinilai datar dan aplikasi luar terbuka layar penuh. Keduanya ditindaklanjuti di `v0.4.0-alpha` (Aurora v2 + jalur jendela terverifikasi), tetapi build baru ini **belum diuji di perangkat** |
 | Lisensi | belum dipilih; semua hak dipegang pemilik sampai keputusan diambil |
 
 ### Mendapatkan APK
@@ -74,22 +79,24 @@ APK tidak disimpan sebagai artifact CI. Dorong tag (`git tag vX.Y.Z-sufiks && gi
 ke **draft release**. Rilis bertanda tangan butuh 4 secrets repo (`docs/RELEASE-SIGNING.md`); tanpa itu APK memakai debug key dan catatan rilis
 menyatakannya.
 
+Untuk uji perangkat sekarang, pakai draft APK `v0.4.0-alpha` dan ikuti `docs/release-notes/v0.4.0-alpha.md`.
+
 ### Isi repo
 
 | Path | Isi |
 |---|---|
 | `sukios/` | Aplikasi Android (Kotlin + Compose): launcher + mesin sendiri (SukiWin, SukiWindowing, SukiShell, SukiIndex, SukiTheme/SukiKit) |
-| `PRD.md`, `DESIGN.md` | kebutuhan produk (bagian 16 = batas platform, wajib dibaca) dan design system |
-| `mockup.html`, `assets/` | prototipe interaktif, logo, dan set ikon |
+| `PRD.md`, `DESIGN.md` | kebutuhan produk (bagian 16 = batas platform, wajib dibaca) dan design system Aurora v2 |
+| `mockup.html`, `assets/` | prototipe interaktif lama (saat ini stale matte v1.1), logo, dan aset ikon |
 | `docs/` | audit (`AUDIT-*.md`), panduan signing rilis, catatan rilis |
-| `tools/` | `check_workflows.py`, `cleanup_ci.py`, `gen-keystore.sh` |
+| `tools/` | `check_workflows.py`, `cleanup_ci.py`, `gen-keystore.sh`, helper glyph/font |
 | `PROGRESS.md`, `IDEAS.md` | log kerja bertanggal, backlog ide |
-| `SECURITY.md`, `THIRD_PARTY_NOTICES.md` | kebijakan pelaporan celah, lisensi pihak ketiga (DRAFT) |
+| `SECURITY.md`, `THIRD_PARTY_NOTICES.md` | kebijakan pelaporan celah, catatan lisensi pihak ketiga (DRAFT) |
 
 ### Gerbang kualitas (CI)
 
 `Build APK` jalan di setiap push ke `main`: pemeriksaan keamanan workflow (pin action, tanpa input tak tepercaya di skrip) lengkap dengan self-test-nya,
-uji unit JVM (91 uji: mesin jendela, pengurai peluncuran freeform, rencana penyiapan, kebijakan shell dan allowlist argumen, kontras WCAG token Aurora, data ikon terhadap generatornya, aturan manifest, tulisan merek, kebersihan sumber),
+uji unit JVM (mesin jendela, pengurai peluncuran freeform, rencana penyiapan, kebijakan shell dan allowlist argumen, kontras WCAG token Aurora, data ikon terhadap generatornya, aturan manifest, tulisan merek, kebersihan sumber),
 lalu build debug dan release.
 `Release APK (signed, draft)` mengulang uji unit sebelum membangun. `Cleanup CI traces` menghapus riwayat run setelah run sukses (kebijakan di `AGENTS.md`).
 

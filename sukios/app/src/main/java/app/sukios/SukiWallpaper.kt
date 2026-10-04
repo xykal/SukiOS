@@ -41,6 +41,10 @@ import kotlin.math.sin
 // hitam), kalau tidak tepinya menggelap kelabu.
 // ============================================================================
 
+const val WALLPAPER_SYSTEM_LIVE = "system-live"
+
+fun isSystemLiveWallpaper(id: String): Boolean = id == WALLPAPER_SYSTEM_LIVE
+
 private const val RAD_TO_DEG = 57.29578f
 private const val DRIFT_MS = 36_000
 
@@ -58,6 +62,10 @@ private fun grainBrush(): Brush? = runCatching {
 
 @Composable
 fun Wallpaper(id: String, modifier: Modifier = Modifier, motion: Boolean = true) {
+    if (isSystemLiveWallpaper(id)) {
+        SystemWallpaperVeil(modifier)
+        return
+    }
     val spec = remember(id) { wallById(id) }
     val colors = remember(spec) { spec.lights.map { Color(it.color) } }
     val base0 = remember(spec) { Color(spec.base0) }
@@ -118,5 +126,36 @@ fun Wallpaper(id: String, modifier: Modifier = Modifier, motion: Boolean = true)
             ),
         )
         grain?.let { drawRect(it, alpha = 0.022f) }
+    }
+}
+
+@Composable
+private fun SystemWallpaperVeil(modifier: Modifier = Modifier) {
+    val grain = remember { grainBrush() }
+    val bg = remember { Color(C_BG) }
+    val violet = remember { Color(C_VIOLET) }
+    val teal = remember { Color(C_TEAL) }
+    Canvas(modifier.fillMaxSize()) {
+        val w = this.size.width
+        val h = this.size.height
+        // Live wallpaper sistem tetap terlihat, tetapi diberi lapisan gelap agar teks/taskbar SukiOS tetap terbaca.
+        drawRect(bg.copy(alpha = 0.56f))
+        drawRect(
+            Brush.radialGradient(
+                0f to violet.copy(alpha = 0.18f),
+                1f to violet.copy(alpha = 0f),
+                center = Offset(w * 0.16f, h * 0.10f),
+                radius = hypot(w, h) * 0.48f,
+            ),
+        )
+        drawRect(
+            Brush.radialGradient(
+                0f to teal.copy(alpha = 0.13f),
+                1f to teal.copy(alpha = 0f),
+                center = Offset(w * 0.88f, h * 0.20f),
+                radius = hypot(w, h) * 0.42f,
+            ),
+        )
+        grain?.let { drawRect(it, alpha = 0.018f) }
     }
 }

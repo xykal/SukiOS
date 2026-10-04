@@ -69,6 +69,11 @@ body{
   -webkit-font-smoothing:antialiased; user-select:none;
 }
 button{font:inherit;color:inherit;background:none;border:none;cursor:pointer}
+
+.stale-banner{position:fixed;top:10px;left:50%;transform:translateX(-50%);z-index:9998;
+  max-width:min(920px,calc(100vw - 24px));padding:9px 14px;border-radius:999px;
+  background:rgba(255,180,76,.16);border:1px solid rgba(255,180,76,.55);color:#FFE2A8;
+  font-size:12px;font-weight:700;text-align:center;box-shadow:0 10px 30px rgba(0,0,0,.28)}
 .icon{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:1.75;
       stroke-linecap:round;stroke-linejoin:round;flex:none}
 
@@ -369,6 +374,7 @@ textarea{width:100%;height:100%;min-height:220px;background:none;border:none;out
 </style>
 </head>
 <body>
+<div class="stale-banner">Mockup lama v1.1 matte — kode nyata sudah Aurora v2.0. Jangan pakai file ini sebagai sumber visual sampai diperbarui.</div>
 
 <!-- ============ BOOT ============ -->
 <div id="boot">
@@ -377,7 +383,7 @@ textarea{width:100%;height:100%;min-height:220px;background:none;border:none;out
   </div>
   <div class="boot-text">SukiOS</div>
   <div class="boot-dots"><i></i><i></i><i></i></div>
-  <div id="bootTip">Suki Glass v1.0 · memuat desktop…</div>
+  <div id="bootTip">Mockup lama v1.1 · kode nyata Aurora v2.0…</div>
 </div>
 
 <!-- ============ WALLPAPER ============ -->
@@ -1146,10 +1152,10 @@ function renderSettings(){
 
       <div class="card">
         <div class="row"><b style="font-size:13px">SukiOS</b>
-          <span class="muted" style="margin-left:auto">v0.9 mockup</span></div>
+          <span class="muted" style="margin-left:auto">mockup lama</span></div>
         <div class="muted" style="margin-top:8px">Versi Android minimum: 10 (API 29) · Target: Android 16 (API 36)<br>
-        Suki Glass v1.1 (matte) · Dibuat dari nol, tanpa merek pihak lain.<br>
-Mode perangkat: kunci landscape + desktop penuh + dukungan Shizuku ada di app PoC.</div>
+        STALE: Suki Glass v1.1 (matte). Kode nyata sudah Aurora v2.0; lihat DESIGN.md.<br>
+Dibuat dari nol, tanpa merek pihak lain. Mode perangkat dan Shizuku kini ada di aplikasi Android `sukios/`.</div>
       </div>
     </div></div>`;
 }

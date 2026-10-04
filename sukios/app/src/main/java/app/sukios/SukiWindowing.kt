@@ -85,10 +85,9 @@ object SukiWindowing {
                 "mode=${task.mode.ifEmpty { "?" }}",
             )
         }
-        if (WindowBounds.needsFix(task.bounds, work, density)) {
-            val b = task.bounds
-            val target = if (b == null) WindowBounds.initial(work, entry.portraitOnly, SukiTasks.windows.value.size, density)
-            else WindowBounds.clampInto(b, work, density)
+        val bounds = task.bounds
+        if (bounds != null && WindowBounds.needsFix(bounds, work, density)) {
+            val target = WindowBounds.clampInto(bounds, work, density)
             SukiShell.io { taskResize(task.taskId, target) }
         }
         SukiTasks.refresh(app.packageName)

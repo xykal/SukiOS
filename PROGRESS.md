@@ -277,9 +277,76 @@ angka target yang belum cocok dengan kode.
    (`min(24dp, 20% ruang bebas)`), atau lebar bawaan dibatasi maksimum dp.
 4. **[MED] `ProbeActivity` `exported="true"`.** Aplikasi lain bisa memicunya; isinya tidak berbahaya
    (melaporkan lalu menutup diri), tetapi `am start` dari uid 2000 bisa membuka komponen yang tidak
-   diekspor. Usul: `exported="false"` lalu uji lagi.
+   diekspor. Usul: `exported="false"` lalu uji lagi. Masih menunggu uji runtime sebelum diubah.
 5. **[MED] Pengecualian layar penuh per aplikasi.** Belum ada; `strictWindows` masih global.
    Usul: satu toggle di menu aplikasi + titik penanda di desktop.
 6. **[LOW] Biaya runtime belum diukur:** polling `dumpsys` 3 detik + wallpaper bergerak.
 7. **[LOW] Pemecahan berkas >300 baris** ditunda; `SourceHygieneTest` di `main` memakai batas 300.
 8. MED/LOW lain di `docs/AUDIT-2026-10-02.md` tetap menunggu "gas".
+
+## 2026-10-04 — audit follow-up: sinkronisasi dokumen status + lisensi APK
+
+Permintaan: lanjut dari audit 2026-10-04 (“gasken”). Dikerjakan lokal tanpa push dan tanpa memakai token GitHub.
+
+**Done**
+- `docs/AUDIT-2026-10-04.md` ditambahkan sebagai audit status `322b579`.
+- `README.md` disinkronkan ke keadaan sekarang: tag terbaru `v0.4.0-alpha`, bukti uji unit CI terakhir, draft release debug-signed, build baru belum diuji perangkat, dan `mockup.html` ditandai stale.
+- `sukios/README.md` ditulis ulang supaya tidak lagi menyuruh install `v0.3.0-alpha`; status rilis, checklist perangkat, Aurora v2, SukiWindowing, SukiAuto, dan batas platform diperbarui.
+- `THIRD_PARTY_NOTICES.md` disinkronkan dengan kondisi nyata: font Inter/Plus Jakarta Sans memang ikut APK, ikon SukiOS digambar sendiri, dan salinan lisensi APK dicatat.
+- Asset lisensi APK ditambah:
+  - `sukios/app/src/main/assets/licenses/MIT-Shizuku-API.txt`
+  - `sukios/app/src/main/assets/licenses/Apache-2.0.txt`
+- `mockup.html` diberi banner visible bahwa file itu mockup lama matte v1.1 dan bukan sumber visual Aurora v2.
+
+**Verifikasi lokal**
+- `python3 tools/check_workflows.py` — `LOCAL-VERIFIED`.
+- `python3 tools/check_workflows.py --self-test` — `LOCAL-VERIFIED`.
+- `python3 tools/gen_glyphs.py --check` — `LOCAL-VERIFIED`.
+- Pemeriksaan teks: README modul tidak lagi menyebut instruksi install `v0.3.0-alpha`; asset lisensi MIT/Apache ada.
+
+**Belum dilakukan**
+- Build/unit test Gradle lokal: `BLOCKED` karena workspace ini tidak punya Gradle/Android SDK/JDK 17.
+- Push/CI: belum dilakukan. Kalau patch ini dipush, commit dokumen+asset lisensi boleh memakai `[skip ci]` kecuali ingin bukti CI baru.
+- Perangkat nyata: `UNVERIFIED` untuk `v0.4.0-alpha` sampai laporan diagnostik dikirim.
+
+## 2026-10-04 — cleanup kecil: bounds null dibuat eksplisit
+
+Permintaan lanjutan: “bebas”. Dipilih perubahan paling aman dari audit: hapus cabang mati tanpa mengubah perilaku runtime yang dimaksud.
+
+**Done**
+- `SukiWindowing.openLocked` tidak lagi punya cabang `WindowBounds.initial(...)` saat `task.bounds == null`, karena `WindowBounds.needsFix(null, ...)` memang mengembalikan `false` dan test mengunci aturan itu.
+- Aturan kini eksplisit: **bounds null = jangan menebak kotak jendela**; SukiOS hanya mengirim `am task resize` bila dump memberi bounds valid yang memang perlu dikoreksi.
+- `docs/AUDIT-2026-10-04.md` diperbarui: L-02 menjadi `LOCAL-FIXED`.
+
+**Verifikasi lokal**
+- `python3 tools/check_workflows.py` — `LOCAL-VERIFIED`.
+- `python3 tools/check_workflows.py --self-test` — `LOCAL-VERIFIED`.
+- `python3 tools/gen_glyphs.py --check` — `LOCAL-VERIFIED`.
+- Pemeriksaan XML manifest via Python — `LOCAL-VERIFIED` (Home+Probe masih exported sesuai kode saat ini; perubahan exported Probe sengaja belum dilakukan karena butuh uji runtime).
+
+**Belum dilakukan**
+- Build/unit test Gradle lokal: `BLOCKED` karena workspace ini tidak punya Gradle/Android SDK/JDK 17.
+- Push/CI: belum dilakukan.
+
+## 2026-10-04 — live wallpaper sistem untuk desktop SukiOS
+
+Permintaan: “Tambah juga agar bisa pasang live wallpaper”. Audit singkat dilakukan dulu di `docs/AUDIT-2026-10-04.md`, lalu implementasi lokal.
+
+**Done**
+- Mode wallpaper baru `WALLPAPER_SYSTEM_LIVE = "system-live"` ditambahkan. Id ini sengaja bukan bagian dari `WALL_SPECS` agar tidak dianggap preset Aurora biasa.
+- `SukiHomeActivity` menyalakan `FLAG_SHOW_WALLPAPER`; theme `SukiTheme` memakai `windowShowWallpaper=true` dan background window transparan.
+- `SukiHome` membuat root background transparan saat mode live wallpaper aktif.
+- `Wallpaper()` menampilkan `SystemWallpaperVeil`: lapisan gelap/transparan + cahaya Aurora tipis di atas wallpaper sistem agar teks/taskbar tetap terbaca.
+- `SukiWallpaperPicker.kt` membuka pemilih live wallpaper Android (`ACTION_LIVE_WALLPAPER_CHOOSER`) dengan fallback ke picker wallpaper umum.
+- Setelan > Tampilan mendapat kartu **Live wallpaper sistem**: tombol `Pakai` dan `Pilih live wallpaper`.
+- `sukios/README.md` diperbarui; `PureHelpersTest` ditambah untuk menjaga id live wallpaper tidak bentrok dengan preset Aurora.
+
+**Verifikasi lokal**
+- `python3 tools/check_workflows.py` — `LOCAL-VERIFIED`.
+- `python3 tools/check_workflows.py --self-test` — `LOCAL-VERIFIED`.
+- `python3 tools/gen_glyphs.py --check` — `LOCAL-VERIFIED`.
+- Hitung baris: semua sumber Kotlin tulisan tangan tetap <300 baris (`SukiSettings.kt` 286).
+
+**Belum dilakukan**
+- Build/unit test Gradle lokal: `BLOCKED` karena workspace ini tidak punya Gradle/Android SDK/JDK 17.
+- Uji perangkat: `UNVERIFIED`. Yang perlu dicek: live wallpaper benar-benar terlihat di belakang desktop pada ROM target, dan picker Android muncul dari tombol Setelan.

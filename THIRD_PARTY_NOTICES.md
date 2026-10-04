@@ -2,19 +2,35 @@
 
 > DRAFT — review by licensed counsel before publishing. / DRAFT — tinjau oleh konsultan hukum berlisensi sebelum dipublikasikan.
 
-SukiOS memakai pustaka pihak ketiga berikut. Daftar ini mengikuti `sukios/app/build.gradle.kts`; perbarui setiap kali dependensi berubah.
+SukiOS memakai pustaka, font, dan aset pihak ketiga berikut. Daftar ini mengikuti `sukios/app/build.gradle.kts`,
+`tools/mkfonts.py`, dan isi `sukios/app/src/main/assets/licenses/`; perbarui setiap kali dependensi berubah.
 Daftar dependensi transitif lengkap belum dibuat otomatis (usulan: SBOM CycloneDX di CI, lihat `IDEAS.md`).
 
-| Komponen | Versi | Lisensi | Ikut di APK |
+## Ringkasan komponen
+
+| Komponen | Versi / sumber | Lisensi | Ikut di APK |
 |---|---|---|---|
 | Shizuku-API (`dev.rikka.shizuku:api`, `dev.rikka.shizuku:provider`) | 13.1.5 | MIT | ya |
 | AndroidX Core KTX, Activity Compose | 1.13.1, 1.9.3 | Apache-2.0 | ya |
-| Jetpack Compose (BOM 2024.10.01: ui, foundation, runtime, material3) | mengikuti BOM | Apache-2.0 | ya |
+| Jetpack Compose (BOM 2024.10.01: ui, foundation, runtime, material3, animation) | mengikuti BOM | Apache-2.0 | ya |
 | Kotlin standard library, kotlinx.coroutines | 2.0.21, transitif | Apache-2.0 | ya |
+| Inter | subset Latin dari The Inter Project Authors | SIL OFL 1.1 | ya |
+| Plus Jakarta Sans | subset Latin dari The Plus Jakarta Sans Project Authors | SIL OFL 1.1 | ya |
 | JUnit 4 | 4.13.2 | EPL-1.0 | tidak (hanya uji) |
 
-Aplikasi Shizuku (`moe.shizuku.privileged.api`, Apache-2.0) bukan bagian dari APK SukiOS; pengguna memasangnya sendiri. SukiOS tidak menyertakan font atau
-ikon pihak ketiga: teks memakai font sistem, ikon digambar sebagai vektor di `SukiKit.kt`.
+Aplikasi Shizuku (`moe.shizuku.privileged.api`, Apache-2.0) bukan bagian dari APK SukiOS; pengguna memasangnya sendiri.
+Ikon SukiOS digambar sendiri sebagai path vektor (`SukiGlyphData.kt`) dari generator `tools/gen_glyphs.py`; tidak memakai paket ikon pihak ketiga.
+
+## Salinan lisensi di APK
+
+Teks lisensi yang perlu dibawa penerima APK disertakan di:
+
+- `sukios/app/src/main/assets/licenses/MIT-Shizuku-API.txt`
+- `sukios/app/src/main/assets/licenses/Apache-2.0.txt`
+- `sukios/app/src/main/assets/licenses/OFL-Inter.txt`
+- `sukios/app/src/main/assets/licenses/OFL-PlusJakartaSans.txt`
+
+Layar “Lisensi sumber terbuka” di dalam aplikasi masih backlog (`IDEAS.md`), tetapi berkas lisensi sudah ikut sebagai asset APK.
 
 ## Shizuku-API — MIT License
 
@@ -46,10 +62,17 @@ SOFTWARE.
 
 ## Apache License 2.0 (AndroidX, Jetpack Compose, Kotlin, kotlinx.coroutines)
 
-Teks lengkap: https://www.apache.org/licenses/LICENSE-2.0.txt. Masing-masing proyek memegang hak ciptanya sendiri.
+Teks lengkap Apache License 2.0 disertakan di `sukios/app/src/main/assets/licenses/Apache-2.0.txt`.
+Masing-masing proyek memegang hak ciptanya sendiri; lihat metadata paket upstream untuk notice per artefak.
 
-Belum dikerjakan: salinan teks lisensi di dalam APK (layar "Lisensi sumber terbuka"). Apache-2.0 meminta penerima distribusi mendapat salinan lisensi;
-tautan di berkas ini belum memenuhinya untuk APK. Dicatat di `IDEAS.md`.
+## SIL Open Font License 1.1 (Inter, Plus Jakarta Sans)
+
+Teks OFL untuk masing-masing font disertakan di:
+
+- `sukios/app/src/main/assets/licenses/OFL-Inter.txt`
+- `sukios/app/src/main/assets/licenses/OFL-PlusJakartaSans.txt`
+
+Font dipangkas ke subset Latin oleh `tools/mkfonts.py`. Nama font upstream tetap dicatat sebagai atribusi; jangan menjual font sebagai produk font tersendiri.
 
 ## Merek
 

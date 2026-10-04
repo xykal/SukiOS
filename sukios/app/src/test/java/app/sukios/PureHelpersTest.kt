@@ -1,6 +1,7 @@
 package app.sukios
 
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import java.util.Locale
@@ -42,6 +43,13 @@ class PureHelpersTest {
             TimeZone.setDefault(zone)
             Locale.setDefault(locale)
         }
+    }
+
+    @Test
+    fun live_wallpaper_mode_has_a_dedicated_non_preset_id() {
+        assertTrue(isSystemLiveWallpaper(WALLPAPER_SYSTEM_LIVE))
+        assertFalse(isSystemLiveWallpaper("aurora"))
+        assertFalse(WALL_SPECS.any { it.id == WALLPAPER_SYSTEM_LIVE })
     }
 
     @Test
