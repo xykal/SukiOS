@@ -28,6 +28,7 @@ jobs:
 
     steps:
       - name: Batasi eksekusi ke maintainer
+        working-directory: .
         env:
           ACTOR: ${{ github.actor }}
           ALLOWED_ACTOR: xykal
