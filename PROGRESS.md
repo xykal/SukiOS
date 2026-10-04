@@ -403,3 +403,20 @@ Permintaan: lanjut rilis, tetap draft, repo tetap public, Actions dibatasi untuk
 **Masih perlu uji perangkat**
 - Live wallpaper sistem: tombol picker muncul, wallpaper benar-benar terlihat di belakang desktop, dan veil Aurora cukup menjaga keterbacaan.
 - Jendela freeform tetap perlu diuji ulang di perangkat nyata dan laporan Diagnostik disalin.
+
+### 2026-10-04 — verifikasi akhir pembersihan Actions
+
+Setelah draft release terverifikasi, sisa riwayat Actions yang masih terlihat dihapus manual via API sesuai permintaan pemilik repo.
+
+**Run yang dihapus manual via API:**
+- `37167063475` — Cleanup CI traces (rilis v0.4.1-alpha)
+- `37166998502` — Cleanup CI traces (build `7483e89`)
+- `37166874565` — Build APK gagal (guard working-directory sebelum checkout, sudah diperbaiki)
+- `37042179977`, `37040612695`, `37040236234` — run gagal lama yang masih tersisa
+
+**Verifikasi akhir:**
+- Actions runs: **0** terlihat dari API.
+- Actions artifacts: **0**.
+- Actions cache: **0**.
+- Tag `v0.4.1-alpha`: tetap ada.
+- Draft release `v0.4.1-alpha`: tetap ada, asset `SukiOS-v0.4.1-alpha.apk` **2.283.840 byte** tetap ada.
