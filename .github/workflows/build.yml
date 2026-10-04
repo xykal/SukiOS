@@ -7,7 +7,6 @@ name: Build APK
 on:
   push:
     branches: [ main ]
-  pull_request:
   workflow_dispatch:
 
 permissions:
@@ -28,6 +27,17 @@ jobs:
     timeout-minutes: 30
 
     steps:
+      - name: Batasi eksekusi ke maintainer
+        env:
+          ACTOR: ${{ github.actor }}
+          ALLOWED_ACTOR: xykal
+        run: |
+          set -euo pipefail
+          if [ "$ACTOR" != "$ALLOWED_ACTOR" ]; then
+            echo "::error::Workflow ini hanya boleh dijalankan oleh maintainer SukiOS."
+            exit 1
+          fi
+
       - name: Checkout
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:

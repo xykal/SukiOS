@@ -48,8 +48,14 @@ jobs:
         working-directory: .
         env:
           RAW_TAG: ${{ github.event.inputs.tag || github.ref_name }}
+          ACTOR: ${{ github.actor }}
+          ALLOWED_ACTOR: xykal
         run: |
           set -euo pipefail
+          if [ "$ACTOR" != "$ALLOWED_ACTOR" ]; then
+            echo "::error::Release hanya boleh dijalankan oleh maintainer SukiOS."
+            exit 1
+          fi
           if [[ ! "$RAW_TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.]+)?$ ]]; then
             echo "::error::Tag rilis tidak valid. Format: vX.Y.Z atau vX.Y.Z-sufiks (huruf, angka, titik)."
             exit 1

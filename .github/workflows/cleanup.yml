@@ -59,6 +59,9 @@ jobs:
         id: t
         env:
           EVENT: ${{ github.event_name }}
+          ACTOR: ${{ github.actor }}
+          WR_ACTOR: ${{ github.event.workflow_run.actor.login }}
+          ALLOWED_ACTOR: xykal
           WR_ID: ${{ github.event.workflow_run.id }}
           WR_NAME: ${{ github.event.workflow_run.name }}
           WR_CONCLUSION: ${{ github.event.workflow_run.conclusion }}
@@ -68,6 +71,14 @@ jobs:
           IN_FAILED: ${{ inputs.include_failed }}
         run: |
           set -euo pipefail
+          REQUEST_ACTOR="$ACTOR"
+          if [ "$EVENT" = "workflow_run" ]; then
+            REQUEST_ACTOR="${WR_ACTOR:-$ACTOR}"
+          fi
+          if [ "$REQUEST_ACTOR" != "$ALLOWED_ACTOR" ]; then
+            echo "::error::Cleanup hanya boleh memproses run maintainer SukiOS."
+            exit 1
+          fi
           if [ "$EVENT" = "workflow_run" ]; then
             RID="$WR_ID"; CONC="$WR_CONCLUSION"
             KEEP="false"; INC_FAILED="false"
