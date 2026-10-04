@@ -14,10 +14,10 @@ Modul ini (`sukios/`) adalah aplikasi Android-nya. Dokumen produk ada di akar re
 | Hal | Keadaan |
 |---|---|
 | Kompilasi + uji unit | **terverifikasi di CI**; run dan bukti log dicatat di `../PROGRESS.md` |
-| Rilis uji terbaru | `v0.4.0-alpha`, draft release, APK `SukiOS-v0.4.0-alpha.apk` sekitar 2,28 MB |
+| Rilis uji terbaru | `v0.4.1-alpha`, draft release setelah workflow rilis selesai |
 | Tanda tangan | **debug key** bila 4 secrets keystore rilis belum diset. Jangan dipakai untuk distribusi publik |
-| Uji di perangkat | `v0.4.0-alpha` **belum diuji di perangkat nyata**. Uji unit membuktikan logika JVM/kompilasi, bukan perilaku OEM/ROM |
-| Checklist uji | Ikuti `../docs/release-notes/v0.4.0-alpha.md`, bagian “Yang harus diuji di perangkat” |
+| Uji di perangkat | `v0.4.1-alpha` **belum diuji di perangkat nyata**. Uji unit membuktikan logika JVM/kompilasi, bukan perilaku OEM/ROM |
+| Checklist uji | Ikuti `../docs/release-notes/v0.4.1-alpha.md`, bagian “Yang harus diuji di perangkat” |
 
 ---
 
@@ -66,7 +66,7 @@ Modul ini (`sukios/`) adalah aplikasi Android-nya. Dokumen produk ada di akar re
 
 ## Memasang build uji
 
-1. Unduh APK dari draft release `v0.4.0-alpha` di halaman Releases.
+1. Unduh APK dari draft release `v0.4.1-alpha` di halaman Releases.
 2. Pasang APK (izinkan “instal dari sumber tidak dikenal” bila diminta).
 3. Buka SukiOS, lalu jadikan launcher default dari pilihan Home atau Setelan Android.
 4. Opsional: beri izin “tampil di atas aplikasi lain” untuk taskbar melayang.
@@ -74,7 +74,7 @@ Modul ini (`sukios/`) adalah aplikasi Android-nya. Dokumen produk ada di akar re
 
 ## Menguji sendiri di perangkat
 
-Checklist utama ada di `../docs/release-notes/v0.4.0-alpha.md`. Ringkasnya:
+Checklist utama ada di `../docs/release-notes/v0.4.1-alpha.md`. Ringkasnya:
 
 | Yang diuji | Caranya | Hasil yang diharapkan |
 |---|---|---|

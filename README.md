@@ -20,9 +20,9 @@ Not an imitation of any brand: name, logo, icons, colors and sounds are made fro
 
 | Item | State |
 |---|---|
-| Latest tag | `v0.4.0-alpha` (draft release, debug-signed until release keystore secrets are configured) |
+| Latest tag | `v0.4.1-alpha` (draft release, debug-signed until release keystore secrets are configured) |
 | Compile + unit tests | verified in CI; run IDs and captured evidence are in `PROGRESS.md` |
-| On a real device | `v0.3.1-alpha` was tested by the maintainer: the matte UI read as flat and third-party apps opened fullscreen. Both were addressed in `v0.4.0-alpha` (Aurora v2 + verified windowed launch), but this new build is **not device-tested yet** |
+| On a real device | `v0.3.1-alpha` was tested by the maintainer: the matte UI read as flat and third-party apps opened fullscreen. Both were addressed in `v0.4.0-alpha`; `v0.4.1-alpha` adds system live wallpaper mode and workflow actor guards. This new build is **not device-tested yet** |
 | License | none chosen yet; all rights reserved until the maintainer decides |
 
 ### Get the APK
@@ -31,7 +31,7 @@ APKs are not kept as CI artifacts. Push a tag (`git tag vX.Y.Z-suffix && git pus
 attaches the APK to a **draft release**. Signed releases need 4 repository secrets (`docs/RELEASE-SIGNING.md`); without them the APK uses
 the debug key and the release notes say so.
 
-For current device testing, use the draft `v0.4.0-alpha` APK and follow `docs/release-notes/v0.4.0-alpha.md`.
+For current device testing, use the draft `v0.4.1-alpha` APK and follow `docs/release-notes/v0.4.1-alpha.md`.
 
 ### Repository
 
@@ -68,9 +68,9 @@ Bukan tiruan merek apa pun: nama, logo, ikon, warna, dan suara dibuat dari nol (
 
 | Hal | Keadaan |
 |---|---|
-| Tag terbaru | `v0.4.0-alpha` (draft release, debug key sampai secrets keystore rilis diset) |
+| Tag terbaru | `v0.4.1-alpha` (draft release, debug key sampai secrets keystore rilis diset) |
 | Kompilasi + uji unit | terverifikasi di CI; ID run dan bukti log ada di `PROGRESS.md` |
-| Di perangkat nyata | `v0.3.1-alpha` sudah diuji pemilik produk: tampilan matte dinilai datar dan aplikasi luar terbuka layar penuh. Keduanya ditindaklanjuti di `v0.4.0-alpha` (Aurora v2 + jalur jendela terverifikasi), tetapi build baru ini **belum diuji di perangkat** |
+| Di perangkat nyata | `v0.3.1-alpha` sudah diuji pemilik produk: tampilan matte dinilai datar dan aplikasi luar terbuka layar penuh. Keduanya ditindaklanjuti di `v0.4.0-alpha`; `v0.4.1-alpha` menambah mode live wallpaper sistem dan guard actor workflow. Build baru ini **belum diuji di perangkat** |
 | Lisensi | belum dipilih; semua hak dipegang pemilik sampai keputusan diambil |
 
 ### Mendapatkan APK
@@ -79,7 +79,7 @@ APK tidak disimpan sebagai artifact CI. Dorong tag (`git tag vX.Y.Z-sufiks && gi
 ke **draft release**. Rilis bertanda tangan butuh 4 secrets repo (`docs/RELEASE-SIGNING.md`); tanpa itu APK memakai debug key dan catatan rilis
 menyatakannya.
 
-Untuk uji perangkat sekarang, pakai draft APK `v0.4.0-alpha` dan ikuti `docs/release-notes/v0.4.0-alpha.md`.
+Untuk uji perangkat sekarang, pakai draft APK `v0.4.1-alpha` dan ikuti `docs/release-notes/v0.4.1-alpha.md`.
 
 ### Isi repo
 
