@@ -350,3 +350,14 @@ Permintaan: “Tambah juga agar bisa pasang live wallpaper”. Audit singkat dil
 **Belum dilakukan**
 - Build/unit test Gradle lokal: `BLOCKED` karena workspace ini tidak punya Gradle/Android SDK/JDK 17.
 - Uji perangkat: `UNVERIFIED`. Yang perlu dicek: live wallpaper benar-benar terlihat di belakang desktop pada ROM target, dan picker Android muncul dari tombol Setelan.
+
+### 2026-10-04 — CI setelah live wallpaper
+
+Perubahan live wallpaper + sinkronisasi dokumen dipush ke `main`.
+
+| Waktu (UTC) | Hasil | Bukti |
+|---|---|---|
+| 2026-10-04 00:54 | `Build APK` run **37166215942** (commit `b4e5a48`) — **success** | `CI-VERIFIED 37166215942`; kesimpulan success terekam dari API saat polling. Log build gagal disalin karena run dihapus pembersih sebelum endpoint logs masih bisa diakses |
+| 2026-10-04 00:54 | `Cleanup CI traces` run **37166399385** — **success** | log cleanup mencatat target run `37166215942`, commit `b4e5a48`, kesimpulan **success**, riwayat run dihapus (GET 404), `purge_mode=none`, artifact 0, cache 0 |
+
+Catatan: karena ini build biasa, cache tidak dipurge sesuai kebijakan. Perilaku live wallpaper di perangkat nyata tetap `UNVERIFIED` sampai diuji dari Setelan > Tampilan > Live wallpaper sistem.
