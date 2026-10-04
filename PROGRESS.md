@@ -361,3 +361,45 @@ Perubahan live wallpaper + sinkronisasi dokumen dipush ke `main`.
 | 2026-10-04 00:54 | `Cleanup CI traces` run **37166399385** — **success** | log cleanup mencatat target run `37166215942`, commit `b4e5a48`, kesimpulan **success**, riwayat run dihapus (GET 404), `purge_mode=none`, artifact 0, cache 0 |
 
 Catatan: karena ini build biasa, cache tidak dipurge sesuai kebijakan. Perilaku live wallpaper di perangkat nyata tetap `UNVERIFIED` sampai diuji dari Setelan > Tampilan > Live wallpaper sistem.
+
+## 2026-10-04 — v0.4.1-alpha draft release + workflow guard
+
+Permintaan: lanjut rilis, tetap draft, repo tetap public, Actions dibatasi untuk maintainer/token holder, dan setelah selesai jejak Actions/artifact/cache dibersihkan.
+
+**Workflow guard**
+- `Build APK`: trigger `pull_request` publik dihapus; workflow tinggal `push main` dan `workflow_dispatch`.
+- `Build APK`, `Release APK`, dan `Cleanup CI traces`: ditambah guard actor `xykal`.
+- Repo tetap **public**; pembatasan ada di workflow, bukan mengubah visibility repo.
+- Commit guard: `5a8a09a` (`[skip ci]`).
+- Perbaikan guard build: `7483e89`, karena langkah guard pertama harus `working-directory: .` sebelum checkout membuat folder `sukios/` tersedia.
+
+**Build pra-rilis**
+
+| Waktu (UTC) | Hasil | Bukti |
+|---|---|---|
+| 2026-10-04 01:04 | `Build APK` run **37166874565** (commit `ce81b4c`) — **failure** | Guard actor dijalankan sebelum checkout tetapi masih memakai default `working-directory: sukios`, sehingga folder belum ada. Diperbaiki di `7483e89` |
+| 2026-10-04 01:09 | `Build APK` run **37166902796** (commit `7483e89`) — **success** | `CI-VERIFIED 37166902796`; kesimpulan success dibaca dari API saat polling |
+| 2026-10-04 01:10 | `Cleanup CI traces` run **37166998502** — **success** | Build run `37166902796` dibersihkan otomatis |
+
+**Rilis**
+
+| Waktu (UTC) | Hasil | Bukti |
+|---|---|---|
+| 2026-10-04 01:11 | `Release APK (signed, draft)` run **37167016458** (tag `v0.4.1-alpha`, commit `7483e89`) — **success** | `CI-VERIFIED 37167016458`; draft release dibuat dengan asset `SukiOS-v0.4.1-alpha.apk` |
+| 2026-10-04 01:12 | `Cleanup CI traces` run **37167063475** — **success** | release run dibersihkan otomatis; mode release `purge_mode=all`, cache repo terverifikasi **0 entri / 0 byte** |
+
+**Artefak rilis**
+- Draft release `v0.4.1-alpha`, id GitHub `402764728`.
+- Asset: `SukiOS-v0.4.1-alpha.apk`, **2.283.840 byte**.
+- Signing: debug key bila secrets keystore rilis belum diset (workflow memberi peringatan di catatan rilis).
+- Catatan rilis: `docs/release-notes/v0.4.1-alpha.md`.
+
+**Pembersihan jejak**
+- Artifact Actions: tidak ada artifact workflow yang tersisa (APK tersimpan sebagai asset draft release, bukan artifact Actions).
+- Cache Actions: **0 entri** setelah cleanup rilis.
+- Riwayat run build/release sukses dihapus oleh workflow cleanup.
+- Riwayat run gagal/cleanup yang masih terlihat setelah verifikasi akan dihapus manual via API sesuai permintaan pemilik repo; release, tag, branch, dan draft APK tidak dihapus.
+
+**Masih perlu uji perangkat**
+- Live wallpaper sistem: tombol picker muncul, wallpaper benar-benar terlihat di belakang desktop, dan veil Aurora cukup menjaga keterbacaan.
+- Jendela freeform tetap perlu diuji ulang di perangkat nyata dan laporan Diagnostik disalin.
